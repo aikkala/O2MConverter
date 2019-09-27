@@ -1,9 +1,10 @@
 import xmltodict
 import numpy as np
 import vtk
-import os
-import sys
 import admesh
+import sys
+import os
+from contextlib import contextmanager
 
 
 class Converter:
@@ -36,6 +37,9 @@ class Converter:
         # Setup writer
         self.stl_writer.SetInputConnection(self.vtk_reader.GetOutputPort())
         self.stl_writer.SetFileTypeToBinary()
+
+        self.origin_body = None
+        self.origin_joint = None
 
     def convert(self, input_xml, output_folder, geometry_folder=None):
         """Convert given OpenSim XML model to MuJoCo XML model"""
@@ -103,22 +107,27 @@ class Converter:
 
         # Go through all muscle types (typically there are only one type of muscle)
         for muscle_type in p:
+
+            # Skip some forces
+            if muscle_type in ["HuntCrossleyForce", "CoordinateLimitForce"]:
+                print("Skipping a force: {}".format(muscle_type))
+                continue
+
             if isinstance(p[muscle_type], dict):
-                self.add_muscles_tendons_actuators(Muscle(p[muscle_type]))
-            elif isinstance(p[muscle_type], list):
-                for muscle in p[muscle_type]:
-                    self.add_muscles_tendons_actuators(Muscle(muscle))
-            else:
-                raise "Unexpected type"
+                p[muscle_type] = [p[muscle_type]]
 
-    def add_muscles_tendons_actuators(self, muscle):
-        self.muscles.append(muscle)
-        self.tendon.append(muscle.get_tendon())
-        self.actuator.append(muscle.get_actuator())
+            for muscle in p[muscle_type]:
+                m = Muscle(muscle)
+                self.muscles.append(m)
+                if m.is_disabled():
+                    continue
+                else:
+                    self.tendon.append(m.get_tendon())
+                    self.actuator.append(m.get_actuator())
 
-        # Add sites to all bodies this muscle/tendon spans
-        for body_name in muscle.path_point_set:
-            self.bodies[body_name].add_sites(muscle.path_point_set[body_name])
+                    # Add sites to all bodies this muscle/tendon spans
+                    for body_name in m.path_point_set:
+                        self.bodies[body_name].add_sites(m.path_point_set[body_name])
 
     def build_mujoco_model(self, model_name):
         # Initialise model
@@ -127,7 +136,7 @@ class Converter:
         # Set defaults
         model["mujoco"]["compiler"] = {"@inertiafromgeom": "true", "@angle": "radian"}
         model["mujoco"]["default"] = {
-            "joint": {"@limited": "true", "@damping": "1", "@armature": "0"},
+            "joint": {"@limited": "true", "@damping": "1", "@armature": "0.01"},
             "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "1", "@rgba": "0.8 0.6 .4 1",
                      "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
             "site": {"@size": "0.01"}}
@@ -143,7 +152,10 @@ class Converter:
                               "@type": "plane", "@material": "MatPlane", "@condim": "3"}}
 
         # We should probably find the "origin" body, where the kinematic chain begins
-        origin = self.find_origin()
+        self.origin_body, self.origin_joint = self.find_origin()
+
+        # Add sites to worldbody / "ground" in OpenSim
+        worldbody["site"] = self.bodies[self.origin_joint.parent_body].sites
 
         # Add some more defaults
         worldbody["body"] = {
@@ -154,7 +166,8 @@ class Converter:
                 "@damping": "0", "@armature": "0", "@stiffness": "0"}}
 
         # Build the kinematic chains
-        worldbody["body"] = self.add_body(worldbody["body"], origin, self.joints[origin.name])
+        worldbody["body"] = self.add_body(worldbody["body"], self.origin_body,
+                                          self.joints[self.origin_body.name])
 
         # Add worldbody to the model
         model["mujoco"]["worldbody"] = worldbody
@@ -198,17 +211,18 @@ class Converter:
         # Add sites
         worldbody["site"] = current_body.sites
 
-        # Add joint -- this is done slightly awkwardly, since we have to
-        # add the joint from this body's parent to this body
-        joints = []
-        for j in joint_to_parent.mujoco_joints:
-            joints.append(
-                {"@name": j["name"], "@type": j["type"], "@pos": "0 0 0",
-                 "@axis": np.array2string(j["axis"])[1:-1],
-                 "@range": np.array2string(j["range"])[1:-1],
-                 "@damping": "0", "@stiffness": "0", "@armature": "0.02"})
-        if len(joints) > 0:
-            worldbody["joint"] = joints
+        # Add joints (except between origin body and it's parent, which
+        # is typically "ground")
+        if joint_to_parent.parent_body is not self.origin_joint.parent_body:
+            joints = []
+            for j in joint_to_parent.mujoco_joints:
+                joints.append(
+                    {"@name": j["name"], "@type": j["type"], "@pos": "0 0 0",
+                     "@axis": np.array2string(j["axis"])[1:-1],
+                     "@range": np.array2string(j["range"])[1:-1],
+                     "@damping": "0", "@stiffness": "0", "@armature": "0.02"})
+            if len(joints) > 0:
+                worldbody["joint"] = joints
 
         # And we're done if there are no joints
         if current_joints is None:
@@ -225,13 +239,16 @@ class Converter:
 
     def add_geom(self, body):
 
+        # Collect all geoms here
+        geom = []
+
         if self.geometry_folder is None:
 
             # By default use a capsule
             # Try to figure out capsule size by mass or something
             size = np.array([0.01, 0.01])*np.sqrt(body.mass)
-            geom = {"@name": body.name, "@type": "capsule",
-                    "@size": np.array2string(size)[1:-1]}
+            geom.append({"@name": body.name, "@type": "capsule",
+                         "@size": np.array2string(size)[1:-1]})
 
         else:
 
@@ -239,35 +256,36 @@ class Converter:
             os.makedirs(self.output_folder + self.output_geometry_folder, exist_ok=True)
 
             # Grab the mesh from given geometry folder
-            geom = []
-            for file in body.mesh_files:
+            for m in body.mesh:
 
                 # Get file path
-                vtk_file = self.geometry_folder + "/" + file
+                vtk_file = self.geometry_folder + "/" + m["geometry_file"]
 
                 # Check the file exists
                 if not os.path.exists(vtk_file) or not os.path.isfile(vtk_file):
                     raise "Mesh file doesn't exist"
 
                 # Transform the vtk file into an stl file and save it
-                mesh_name = file[:-4]
+                mesh_name = m["geometry_file"][:-4]
                 stl_file = self.output_geometry_folder + mesh_name + ".stl"
                 self.vtk_reader.SetFileName(vtk_file)
                 self.stl_writer.SetFileName(self.output_folder + stl_file)
                 self.stl_writer.Write()
 
                 # Add mesh to asset
-                self.add_mesh_to_asset(mesh_name, stl_file)
+                self.add_mesh_to_asset(mesh_name, stl_file, m)
 
                 # Create the geom
                 geom.append({"@name": mesh_name, "@type": "mesh", "@mesh": mesh_name})
 
         return geom
 
-    def add_mesh_to_asset(self, mesh_name, mesh_file):
+    def add_mesh_to_asset(self, mesh_name, mesh_file, mesh):
         if "mesh" not in self.asset:
             self.asset["mesh"] = []
-        self.asset["mesh"].append({"@name": mesh_name, "@file": mesh_file})
+        self.asset["mesh"].append({"@name": mesh_name,
+                                   "@file": mesh_file,
+                                   "@scale": mesh["scale_factors"]})
 
     def find_origin(self):
         # Start from a random joint and work your way backwards until you find
@@ -294,7 +312,7 @@ class Converter:
 
             # No further joints, child of current joint is the origin body
             if not new_joint_found:
-                return self.bodies[current_joint.child_body]
+                return self.bodies[current_joint.child_body], current_joint
 
     def find_joint_to_parent(self, body_name):
         joint_to_parent = None
@@ -352,6 +370,12 @@ class Joint:
         self.mujoco_joints = []
         if self.joint_type == "CustomJoint":
             self.parse_custom_joint(joint)
+        elif self.joint_type == "WeldJoint":
+            # Don't add anything to self.mujoco_joints, bodies are by default
+            # attached rigidly to each other in MuJoCo
+            pass
+        else:
+            print("Skipping a joint of type [{}]".format(self.joint_type))
 
         # And other parameters
         self.location_in_parent = np.array(joint["location_in_parent"].split(), dtype=float)
@@ -369,12 +393,13 @@ class Joint:
         # Go through axes; they should be ordered so first there are rotations and then translations
         for t in transform_axes:
 
-            # If there's a constant value, ignore this transformation
+            # If there's a constant value or a SimmSpline, ignore this transformation
             if "Constant" in t["function"]:
                 continue
-            elif "MultiplierFunction" in t["function"] \
-                    and "Constant" in t["function"]["MultiplierFunction"]["function"]:
-                continue
+            elif "MultiplierFunction" in t["function"]:
+                if "Constant" in t["function"]["MultiplierFunction"]["function"] \
+                        or "SimmSpline" in t["function"]["MultiplierFunction"]["function"]:
+                    continue
 
             # Figure out whether this is rotation or translation
             params = dict()
@@ -383,15 +408,12 @@ class Joint:
 
             # Find range from CoordinateSet
             coordinate = joint["CoordinateSet"]["objects"]["Coordinate"]
-            if isinstance(coordinate, list):
-                for c in coordinate:
-                    if c["@name"] == t["coordinates"]:
-                        params["range"] = np.array(c["range"].split(), dtype=float)
-                        break
-            elif isinstance(coordinate, dict):
-                if coordinate["@name"] != t["coordinates"]:
-                    raise "Incompatible coordinates"
-                params["range"] = np.array(coordinate["range"].split(), dtype=float)
+            if isinstance(coordinate, dict):
+                coordinate = [coordinate]
+            for c in coordinate:
+                if c["@name"] == t["coordinates"]:
+                    params["range"] = np.array(c["range"].split(), dtype=float)
+                    break
 
             if t["@name"].startswith('rotation'):
                 params["type"] = "hinge"
@@ -419,20 +441,41 @@ class Body:
                                 ["inertia_xx", "inertia_yy", "inertia_zz",
                                  "inertia_xy", "inertia_xz", "inertia_yz"]], dtype=float)
 
-        # Get meshes
-        self.mesh_files = []
-        if "VisibleObject" in obj and obj["VisibleObject"]["GeometrySet"]["objects"] is not None:
+        # Get meshes if there are VisibleObjects
+        self.mesh = []
+        if "VisibleObject" in obj:
 
-            # Get mesh / list of meshes
-            mesh = obj["VisibleObject"]["GeometrySet"]["objects"]["DisplayGeometry"]
+            # Get scaling of VisibleObject
+            visible_object_scale = np.array(obj["VisibleObject"]["scale_factors"].split(), dtype=float)
 
-            if isinstance(mesh, list):
-                for m in mesh:
-                    self.mesh_files.append(m["geometry_file"])
-            elif isinstance(mesh, dict):
-                self.mesh_files.append(mesh["geometry_file"])
+            # There must be either "GeometrySet" or "geometry_files"
+            if "GeometrySet" in obj["VisibleObject"] \
+                    and obj["VisibleObject"]["GeometrySet"]["objects"] is not None:
+
+                # Get mesh / list of meshes
+                geometry = obj["VisibleObject"]["GeometrySet"]["objects"]["DisplayGeometry"]
+
+                if isinstance(geometry, dict):
+                    geometry = [geometry]
+
+                for g in geometry:
+                    display_geometry_scale = np.array(g["scale_factors"].split(), dtype=float)
+                    total_scale = visible_object_scale * display_geometry_scale
+                    g["scale_factors"] = np.array2string(total_scale)[1:-1]
+                    self.mesh.append(g)
+
+            elif "geometry_files" in obj["VisibleObject"] \
+                    and obj["VisibleObject"]["geometry_files"] is not None:
+
+                # Get all geometry files
+                files = obj["VisibleObject"]["geometry_files"].split()
+                for f in files:
+                    self.mesh.append(
+                        {"geometry_file": f,
+                         "scale_factors": np.array2string(visible_object_scale)[1:-1]})
+
             else:
-                raise "Unexpected type"
+                print("No geometry files for body [{}]".format(self.name))
 
     def add_sites(self, path_point):
         for point in path_point:
@@ -445,9 +488,7 @@ class Muscle:
 
         # Get important attributes
         self.name = obj["@name"]
-        self.disable = obj["isDisabled"]
-        self.tendon_slack_length = float(obj["tendon_slack_length"])
-        self.optimal_force = float(obj["optimal_force"])
+        self.disabled = False if "isDisabled" not in obj or obj["isDisabled"] == "false" else True
 
         # Get path points so we can later add them into bodies; note that we treat
         # each path point type (i.e. PathPoint, ConditionalPathPoint, MovingPathPoint)
@@ -456,17 +497,17 @@ class Muscle:
         self.sites = []
         path_point_set = obj["GeometryPath"]["PathPointSet"]["objects"]
         for pp_type in path_point_set:
-            if isinstance(path_point_set[pp_type], list):
-                for path_point in path_point_set[pp_type]:
-                    if path_point["body"] not in self.path_point_set:
-                        self.path_point_set[path_point["body"]] = []
-                    self.path_point_set[path_point["body"]].append(path_point)
-                    self.sites.append({"@site": path_point["@name"]})
-            elif isinstance(path_point_set[pp_type], dict):
-                if path_point_set[pp_type]["body"] not in self.path_point_set:
-                    self.path_point_set[path_point_set[pp_type]["body"]] = []
-                self.path_point_set[path_point_set[pp_type]["body"]].append(path_point_set[pp_type])
-                self.sites.append({"@site": path_point_set[pp_type]["@name"]})
+
+            # Put the dict into a list of it's not already
+            if isinstance(path_point_set[pp_type], dict):
+                path_point_set[pp_type] = [path_point_set[pp_type]]
+
+            # Go through all path points
+            for path_point in path_point_set[pp_type]:
+                if path_point["body"] not in self.path_point_set:
+                    self.path_point_set[path_point["body"]] = []
+                self.path_point_set[path_point["body"]].append(path_point)
+                self.sites.append({"@site": path_point["@name"]})
 
     def get_tendon(self):
         # Return MuJoCo tendon representation of this muscle
@@ -478,6 +519,9 @@ class Muscle:
         # Return MuJoCo actuator representation of this muscle
         actuator = {"@name": self.name + "_muscle", "@tendon": self.name + "_tendon"}
         return actuator
+
+    def is_disabled(self):
+        return self.disabled
 
 
 if __name__ == "__main__":
