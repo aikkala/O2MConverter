@@ -4,7 +4,8 @@ import vtk
 import admesh
 import sys
 import os
-from contextlib import contextmanager
+from scipy.interpolate import interp1d
+from pyquaternion import Quaternion
 
 
 class Converter:
@@ -103,6 +104,11 @@ class Converter:
                 self.joints[j.parent_body] = []
             self.joints[j.parent_body].append(j)
 
+            # Add position actuators if there are some
+            position_actuators = j.get_position_actuators()
+            if len(position_actuators) > 0:
+                self.actuator.extend(position_actuators)
+
     def parse_muscles_and_tendons(self, p):
 
         # Go through all muscle types (typically there are only one type of muscle)
@@ -163,7 +169,7 @@ class Converter:
                       "@specular": "0.3 0.3 0.3", "@pos": "0 0 4.0", "@dir": "0 0 -1"},
             "joint": {
                 "@name": "root", "@type": "free", "@pos": "0 0 0", "@limited": "false",
-                "@damping": "0", "@armature": "0", "@stiffness": "0"}}
+                "@damping": "5", "@armature": "0.01", "@stiffness": "10"}}
 
         # Build the kinematic chains
         worldbody["body"] = self.add_body(worldbody["body"], self.origin_body,
@@ -204,6 +210,11 @@ class Converter:
         # should have a joint to parent body
         joint_to_parent = self.find_joint_to_parent(current_body.name)
         worldbody["@pos"] = np.array2string(joint_to_parent.location_in_parent)[1:-1]
+        worldbody["@quat"] = "{} {} {} {}"\
+            .format(joint_to_parent.orientation_in_parent.w,
+                    joint_to_parent.orientation_in_parent.x,
+                    joint_to_parent.orientation_in_parent.y,
+                    joint_to_parent.orientation_in_parent.z)
 
         # Add geom
         worldbody["geom"] = self.add_geom(current_body)
@@ -218,9 +229,9 @@ class Converter:
             for j in joint_to_parent.mujoco_joints:
                 joints.append(
                     {"@name": j["name"], "@type": j["type"], "@pos": "0 0 0",
+                     "@limited": j["limited"],
                      "@axis": np.array2string(j["axis"])[1:-1],
-                     "@range": np.array2string(j["range"])[1:-1],
-                     "@damping": "0", "@stiffness": "0", "@armature": "0.02"})
+                     "@range": np.array2string(j["range"])[1:-1]})
             if len(joints) > 0:
                 worldbody["joint"] = joints
 
@@ -365,23 +376,40 @@ class Joint:
         self.parent_body = joint["parent_body"]
         self.child_body = obj["@name"]
 
+        # And other parameters
+        self.location_in_parent = np.array(joint["location_in_parent"].split(), dtype=float)
+        self.location = np.array(joint["location"].split(), dtype=float)
+        self.orientation = np.array(joint["orientation"].split(), dtype=float)
+
+        # TODO we assume orientation_in_parent is [0, 0, 0]
+        self.orientation_in_parent = np.array(joint["orientation_in_parent"].split(), dtype=float)
+        if np.sum(np.abs(self.orientation_in_parent)) > 1e-6:
+            raise "We're not doing this correctly"
+        self.orientation_in_parent = Quaternion(1, 0, 0, 0)
+
+        # We can't define joints whose positions change dynamically in the XML,
+        # but we can define position actuators that can be controlled runtime
+        # by the user if the user wants to
+        self.position_actuators = []
+
         # CustomJoint can represent any joint, we need to figure out
         # what kind of joint we're dealing with
         self.mujoco_joints = []
         if self.joint_type == "CustomJoint":
-            self.parse_custom_joint(joint)
+            T = self.parse_custom_joint(joint)
+            T_location_in_parent = np.eye(4, 4)
+            #T_location_in_parent[:3, 3] = self.location_in_parent
+            T = np.matmul(T, T_location_in_parent)
+            # TODO FIX THIS! location_in_parent should be updated but not exactly overwritten
+            self.orientation_in_parent = Quaternion(matrix=T)
+            self.location_in_parent = self.location_in_parent + T[:3, 3]
+
         elif self.joint_type == "WeldJoint":
             # Don't add anything to self.mujoco_joints, bodies are by default
             # attached rigidly to each other in MuJoCo
             pass
         else:
             print("Skipping a joint of type [{}]".format(self.joint_type))
-
-        # And other parameters
-        self.location_in_parent = np.array(joint["location_in_parent"].split(), dtype=float)
-        self.orientation_in_parent = np.array(joint["orientation_in_parent"].split(), dtype=float)
-        self.location = np.array(joint["location"].split(), dtype=float)
-        self.orientation = np.array(joint["orientation"].split(), dtype=float)
 
     def parse_custom_joint(self, joint):
         # A CustomJoint in OpenSim model can represent any type of joint.
@@ -390,30 +418,104 @@ class Joint:
         # Get transform axes
         transform_axes = joint["SpatialTransform"]["TransformAxis"]
 
-        # Go through axes; they should be ordered so first there are rotations and then translations
+        # We might need to create a homogeneous transformation matrix from
+        # location_in_parent to actual joint location
+        T = np.eye(4, 4)
+
+        # Go through axes; rotations should come first and translations after
+        order = ["rotation1", "rotation2", "rotation3", "translation1", "translation2", "translation3"]
         for t in transform_axes:
 
-            # If there's a constant value or a SimmSpline, ignore this transformation
-            if "Constant" in t["function"]:
-                continue
-            elif "MultiplierFunction" in t["function"]:
-                if "Constant" in t["function"]["MultiplierFunction"]["function"] \
-                        or "SimmSpline" in t["function"]["MultiplierFunction"]["function"]:
+            # Make sure order is correct
+            if order[0] != t["@name"]:
+                raise "Wrong order of transformations"
+            else:
+                order.pop(0)
+
+            # Collect MuJoCo joint parameters here
+            params = dict()
+            params["name"] = joint["@name"] + "_" + t["@name"]
+
+            # Handle a "Constant" transformation. We're not gonna create this joint
+            # but we need the transformation information to properly align the joint
+            if is_nested_field(t, "Constant", ["function"]) or \
+                    is_nested_field(t, "Constant", ["function", "MultiplierFunction", "function"]):
+
+                # Get the value
+                if "MultiplierFunction" in t["function"]:
+                    value = float(t["function"]["MultiplierFunction"]["function"]["Constant"]["value"])
+                else:
+                    value = float(t["function"]["Constant"]["value"])
+
+                # If the value is near zero don't bother creating this joint
+                if abs(value) < 1e-6:
                     continue
 
-            # Figure out whether this is rotation or translation
-            params = dict()
-            params["axis"] = np.array(t["axis"].split(), dtype=float)
-            params["name"] = self.parent_body + "_" + self.child_body + "_" + t["@name"]
+                # Otherwise define a limited MuJoCo joint
+                params["limited"] = "true"
+                params["range"] = np.array([value])
 
-            # Find range from CoordinateSet
-            coordinate = joint["CoordinateSet"]["objects"]["Coordinate"]
-            if isinstance(coordinate, dict):
-                coordinate = [coordinate]
-            for c in coordinate:
-                if c["@name"] == t["coordinates"]:
-                    params["range"] = np.array(c["range"].split(), dtype=float)
-                    break
+            # Handle a "SimmSpline" or "NaturalCubicSpline" transformation
+            elif is_nested_field(t, "SimmSpline", ["function", "MultiplierFunction", "function"]) or \
+                    is_nested_field(t, "NaturalCubicSpline", ["function", "MultiplierFunction", "function"]) or \
+                    is_nested_field(t, "SimmSpline", ["function"]) or \
+                    is_nested_field(t, "NaturalCubicSpline", ["function"]):
+
+                # We can't create a joint position that changes dynamically as a function
+                # of another transformation value in this XML model specification, so the
+                # best we can do is define these joints as limited and define some actuators
+                # that the user can use runtime to control the joint values as he wants
+                params["limited"] = "true"
+
+                # Get spline values
+                if is_nested_field(t, "SimmSpline", ["function"]):
+                    x_values = t["function"]["SimmSpline"]["x"]
+                    y_values = t["function"]["SimmSpline"]["y"]
+                elif is_nested_field(t, "NaturalCubicSpline", ["function"]):
+                    x_values = t["function"]["NaturalCubicSpline"]["x"]
+                    y_values = t["function"]["NaturalCubicSpline"]["y"]
+                elif is_nested_field(t, "SimmSpline", ["function", "MultiplierFunction", "function"]):
+                    x_values = t["function"]["MultiplierFunction"]["function"]["SimmSpline"]["x"]
+                    y_values = t["function"]["MultiplierFunction"]["function"]["SimmSpline"]["y"]
+                else:
+                    x_values = t["function"]["MultiplierFunction"]["function"]["NaturalCubicSpline"]["x"]
+                    y_values = t["function"]["MultiplierFunction"]["function"]["NaturalCubicSpline"]["y"]
+
+                # Need to figure out the joint value; we'll just use the value
+                # that corresponds to the value of zero of the independent transform value
+                f = interp1d(np.array(x_values.split(), dtype=float),
+                             np.array(y_values.split(), dtype=float), kind="cubic")
+                params["range"] = np.array([f(0)])
+
+                # Now add the actuators that can be used to control this joint
+                #self.position_actuators.append(
+                #    {"@name": params["name"] + "_position_actuator",
+                #     "@joint": params["name"]})
+
+            elif is_nested_field(t, "LinearFunction", ["function"]):
+
+                # Find range from CoordinateSet (if it exists) and default value
+                if is_nested_field(joint, "Coordinate", ["CoordinateSet", "objects"]):
+                    coordinate = joint["CoordinateSet"]["objects"]["Coordinate"]
+                    if isinstance(coordinate, dict):
+                        coordinate = [coordinate]
+                    for c in coordinate:
+                        if c["@name"] == t["coordinates"]:
+                            if c["clamped"]:
+                                params["limited"] = "true"
+                            else:
+                                params["limited"] = "false"
+                            params["range"] = np.array(c["range"].split(), dtype=float)
+                            params["ref"] = float(c["default_value"])
+                            break
+
+            # Other functions are not defined yet
+            else:
+                print("Skipping transformation:")
+                print(t)
+
+            # Figure out whether this is rotation or translation
+            params["axis"] = np.array(t["axis"].split(), dtype=float)
 
             if t["@name"].startswith('rotation'):
                 params["type"] = "hinge"
@@ -422,8 +524,23 @@ class Joint:
             else:
                 raise "Unidentified transformation {}".format(t["@name"])
 
-            # Add to set of joints
-            self.mujoco_joints.append(params)
+            # If params["range"] has only one element this is a constant
+            # transformation, and we need to apply it to T
+            if len(params["range"]) == 1:
+                T_t = np.eye(4, 4)
+                if params["type"] == "hinge":
+                    T_t[0:3, 0:3] = create_rotation_matrix(params["axis"], params["range"][0])
+                else:
+                    T_t[0:3, 3] = create_translation_vector(params["axis"], params["range"][0])
+                T = np.matmul(T, T_t)
+            else:
+                # Add to set of joints
+                self.mujoco_joints.append(params)
+
+        return T
+
+    def get_position_actuators(self):
+        return self.position_actuators
 
 
 class Body:
@@ -522,6 +639,56 @@ class Muscle:
 
     def is_disabled(self):
         return self.disabled
+
+
+def is_nested_field(d, field, nested_fields):
+    # Check if field is in the given dictionary after nested fields
+    if len(nested_fields) > 0:
+        if nested_fields[0] in d:
+            return is_nested_field(d[nested_fields[0]], field, nested_fields[1:])
+        else:
+            return False
+    else:
+        if field in d:
+            return True
+        else:
+            return False
+
+
+def create_rotation_matrix(axis, rad):
+    # Make sure axis is a unit vector
+    axis = axis / np.linalg.norm(axis)
+
+    l = axis[0]
+    m = axis[1]
+    n = axis[2]
+
+    # Create the rotation matrix
+    R = np.zeros(shape=(3, 3))
+    R[0, 0] = l*l*(1-np.cos(rad)) + np.cos(rad)
+    R[0, 1] = m*l*(1-np.cos(rad)) - n*np.sin(rad)
+    R[0, 2] = n*l*(1-np.cos(rad)) + m*np.sin(rad)
+    R[1, 0] = l*m*(1-np.cos(rad)) + n*np.sin(rad)
+    R[1, 1] = m*m*(1-np.cos(rad)) + np.cos(rad)
+    R[1, 2] = n*m*(1-np.cos(rad)) - l*np.sin(rad)
+    R[2, 0] = l*n*(1-np.cos(rad)) - m*np.sin(rad)
+    R[2, 1] = m*n*(1-np.cos(rad)) + l*np.sin(rad)
+    R[2, 2] = n*n*(1-np.cos(rad)) + np.cos(rad)
+
+    return R
+
+
+def create_translation_vector(axis, l):
+    t = np.zeros(shape=(3,))
+    if axis[0] == 1 and axis[1] == 0 and axis[2] == 0:
+        t[0] = l
+    elif axis[0] == 0 and axis[1] == 1 and axis[2] == 0:
+        t[1] = l
+    elif axis[0] == 0 and axis[1] == 0 and axis[2] == 1:
+        t[2] = l
+    else:
+        raise "Was not expecting this axis"
+    return t
 
 
 if __name__ == "__main__":
