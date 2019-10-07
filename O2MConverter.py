@@ -6,6 +6,7 @@ import sys
 import os
 from scipy.interpolate import interp1d
 from pyquaternion import Quaternion
+import math
 
 
 class Converter:
@@ -140,10 +141,10 @@ class Converter:
         model = {"mujoco": {"@model": model_name}}
 
         # Set defaults
-        model["mujoco"]["compiler"] = {"@inertiafromgeom": "true", "@angle": "radian"}
+        model["mujoco"]["compiler"] = {"@inertiafromgeom": "auto", "@angle": "radian"}
         model["mujoco"]["default"] = {
-            "joint": {"@limited": "true", "@damping": "1", "@armature": "0.01"},
-            "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "1", "@rgba": "0.8 0.6 .4 1",
+            "joint": {"@limited": "true", "@damping": "1", "@armature": "0.01", "@stiffness": "5"},
+            "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "3", "@rgba": "0.8 0.6 .4 1",
                      "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
             "site": {"@size": "0.01"}}
         model["mujoco"]["option"] = {"@timestep": "0.002", "@iterations": "50", "@solver": "PGS",
@@ -159,6 +160,10 @@ class Converter:
 
         # We should probably find the "origin" body, where the kinematic chain begins
         self.origin_body, self.origin_joint = self.find_origin()
+
+        # Rotate self.origin_joint.orientation_in_parent so the model is upright
+        self.origin_joint.orientation_in_parent = self.origin_joint.orientation_in_parent.rotate(
+            Quaternion(axis=[1, 0, 0], angle=math.pi/2))
 
         # Add sites to worldbody / "ground" in OpenSim
         worldbody["site"] = self.bodies[self.origin_joint.parent_body].sites
@@ -215,6 +220,13 @@ class Converter:
                     joint_to_parent.orientation_in_parent.x,
                     joint_to_parent.orientation_in_parent.y,
                     joint_to_parent.orientation_in_parent.z)
+
+        # Add inertial properties -- only if mass is greater than zero (if "inertial" is missing MuJoCo
+        # will infer the inertial properties from geom)
+        if current_body.mass > 0:
+            worldbody["inertial"] = {"@pos": np.array2string(current_body.mass_center)[1:-1],
+                                     "@mass": str(current_body.mass),
+                                     "@fullineartia": np.array2string(current_body.inertia)[1:-1]}
 
         # Add geom
         worldbody["geom"] = self.add_geom(current_body)
@@ -501,7 +513,7 @@ class Joint:
                         coordinate = [coordinate]
                     for c in coordinate:
                         if c["@name"] == t["coordinates"]:
-                            if c["clamped"]:
+                            if c["clamped"] == "true":
                                 params["limited"] = "true"
                             else:
                                 params["limited"] = "false"
@@ -606,6 +618,7 @@ class Muscle:
         # Get important attributes
         self.name = obj["@name"]
         self.disabled = False if "isDisabled" not in obj or obj["isDisabled"] == "false" else True
+        self.timeconst = np.asarray([obj["activation_time_constant"], obj["deactivation_time_constant"]], dtype=float)
 
         # Get path points so we can later add them into bodies; note that we treat
         # each path point type (i.e. PathPoint, ConditionalPathPoint, MovingPathPoint)
@@ -634,7 +647,8 @@ class Muscle:
 
     def get_actuator(self):
         # Return MuJoCo actuator representation of this muscle
-        actuator = {"@name": self.name + "_muscle", "@tendon": self.name + "_tendon"}
+        actuator = {"@name": self.name + "_muscle", "@tendon": self.name + "_tendon",
+                    "@timeconst": np.array2string(self.timeconst)[1:-1]}
         return actuator
 
     def is_disabled(self):
