@@ -632,10 +632,17 @@ class Joint:
                     # Update motion type to dependent for posterity
                     params["motion_type"] = "dependent"
 
+                # These joint equality constraints don't seem to work properly. Is it because they're soft constraints?
+                # E.g. the translations between femur and tibia should be strictly defined by knee angle, but it seems
+                # like they're affected by gravity as well (tibia drops to translation range limit value when
+                # leg6dof9musc is hanging from air)
+                params["add_to_mujoco_joints"] = False
+
                 # Add the equality constraint
-                self.equality_constraints.append({"@name": params["name"] + "_constraint", "@active": "true",
-                                                  "@joint1": params["name"], "@joint2": independent_joint,
-                                                  "@polycoef": np.array2string(polycoef, suppress_small=True)[1:-1]})
+                if params["add_to_mujoco_joints"]:
+                    self.equality_constraints.append({"@name": params["name"] + "_constraint", "@active": "true",
+                                                      "@joint1": params["name"], "@joint2": independent_joint,
+                                                      "@polycoef": np.array2string(polycoef, suppress_small=True)[1:-1]})
 
             elif Utils.is_nested_field(t, "LinearFunction", ["function"]):
 
@@ -751,6 +758,8 @@ class Muscle:
         path_point_set = obj["GeometryPath"]["PathPointSet"]["objects"]
         for pp_type in path_point_set:
 
+            # TODO We're defining MovingPathPoints as fixed PathPoints and ignoring ConditionalPathPoints
+
             # Put the dict into a list of it's not already
             if isinstance(path_point_set[pp_type], dict):
                 path_point_set[pp_type] = [path_point_set[pp_type]]
@@ -759,8 +768,70 @@ class Muscle:
             for path_point in path_point_set[pp_type]:
                 if path_point["body"] not in self.path_point_set:
                     self.path_point_set[path_point["body"]] = []
-                self.path_point_set[path_point["body"]].append(path_point)
-                self.sites.append({"@site": path_point["@name"]})
+
+                if pp_type == "PathPoint":
+
+                    # A normal PathPoint, easy to define
+                    self.path_point_set[path_point["body"]].append(path_point)
+                    self.sites.append({"@site": path_point["@name"]})
+
+                elif pp_type == "ConditionalPathPoint":
+
+                    # We treat this as a fixed PathPoint, not really kosher
+                    #self.path_point_set[path_point["body"]].append(path_point)
+                    #self.sites.append({"@site": path_point["@name"]})
+                    continue
+
+                elif pp_type == "MovingPathPoint":
+
+                    # We treat this as a fixed PathPoint, definitely not kosher
+
+                    # Get path point location
+                    location = np.array(path_point["location"].split(), dtype=float)
+
+                    # Transform x,y, and z values (if they are defined) to values they assume when their independent
+                    # variable is zero
+                    location[0] = self.update_moving_path_point_location("x_location", path_point)
+                    location[1] = self.update_moving_path_point_location("y_location", path_point)
+                    location[2] = self.update_moving_path_point_location("z_location", path_point)
+
+                    # Save the new location and the path point
+                    path_point["location"] = np.array2string(location, suppress_small=True)[1:-1]
+                    self.path_point_set[path_point["body"]].append(path_point)
+
+                    self.sites.append({"@site": path_point["@name"]})
+
+                else:
+                    raise "Undefined path point type"
+
+        # Finally, we need to sort the sites so that they are in correct order. Unfortunately we have to rely
+        # on the site names since xmltodict decomposes the list into dictionaries. There's a pull request in
+        # xmltodict for ordering children that might be helpful, but it has not been merged yet
+
+        # Check that the site name prefixes are similar, and only the number is changing
+        site_names = [d["@site"] for d in self.sites]
+        prefix = os.path.commonprefix(site_names)
+        try:
+            numbers = [int(name[len(prefix):]) for name in site_names]
+        except ValueError:
+            raise "Check these site names, they might not be sorted correctly"
+
+        self.sites = sorted(self.sites, key=lambda k: k["@site"])
+
+    def update_moving_path_point_location(self, coordinate_name, path_point):
+        if coordinate_name in path_point:
+            # Parse x and y values
+            x_values = np.array(path_point[coordinate_name]["MultiplierFunction"]["function"]["SimmSpline"]["x"].split(), dtype=float)
+            y_values = np.array(path_point[coordinate_name]["MultiplierFunction"]["function"]["SimmSpline"]["y"].split(), dtype=float)
+
+            # Fit a cubic spline (if more than 2 values)
+            if len(x_values) == 2:
+                mdl = interp1d(x_values, y_values, kind="linear")
+            else:
+                mdl = interp1d(x_values, y_values, kind="cubic")
+
+            # Return the value this coordinate assumes when independent variable is zero
+            return mdl(0)
 
     def get_tendon(self):
         # Return MuJoCo tendon representation of this muscle
