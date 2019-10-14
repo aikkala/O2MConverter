@@ -1,26 +1,31 @@
 name: O2MConverter
 channels:
+  - conda-forge
   - anaconda
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
   - blas=1.0=mkl
   - bzip2=1.0.8=h7b6447c_0
-  - ca-certificates=2019.8.28=0
+  - ca-certificates=2019.9.11=hecc5488_0
   - certifi=2019.9.11=py37_0
+  - cffi=1.12.3=py37h8022711_0
   - curl=7.65.3=hbc83047_0
   - cycler=0.10.0=py37_0
+  - cython=0.29.13=py37he6710b0_0
   - dbus=1.13.6=h746ee38_0
   - expat=2.2.6=he6710b0_0
   - fontconfig=2.13.0=h9420a91_0
   - freetype=2.9.1=h8a8886c_1
   - future=0.17.1=py37_0
+  - glfw=3.3=h516909a_1
   - glib=2.56.2=hd408876_0
   - gst-plugins-base=1.14.0=hbbd80ab_1
   - gstreamer=1.14.0=hb453b48_1
   - hdf4=4.2.13=h3ca952b_2
   - hdf5=1.10.4=hb1b8bf9_0
   - icu=58.2=h9c2bf20_1
+  - imageio=2.6.1=py37_0
   - intel-openmp=2019.4=243
   - jpeg=9b=h024ee3a_2
   - jsoncpp=1.8.4=hfd86e86_0
@@ -42,6 +47,7 @@ dependencies:
   - libvorbis=1.3.6=h7b6447c_0
   - libxcb=1.13=h1bed415_1
   - libxml2=2.9.9=hea5a465_1
+  - lockfile=0.12.2=py_1
   - lz4-c=1.8.1.2=h14c3975_0
   - matplotlib=3.1.1=py37h5429711_0
   - mkl=2019.4=243
@@ -49,12 +55,16 @@ dependencies:
   - mkl_fft=1.0.14=py37ha843d7b_0
   - mkl_random=1.1.0=py37hd6b4f25_0
   - ncurses=6.1=he6710b0_1
+  - numpy=1.17.2=py37haad9e8e_0
   - numpy-base=1.17.2=py37hde5b4d6_0
-  - openssl=1.1.1d=h7b6447c_2
+  - olefile=0.46=py_0
+  - openssl=1.1.1c=h516909a_0
   - pandas=0.25.1=py37he6710b0_0
   - patchelf=0.9=he6710b0_3
   - pcre=8.43=he6710b0_0
+  - pillow=6.2.0=py37h34e0f95_0
   - pip=19.2.3=py37_0
+  - pycparser=2.19=py37_1
   - pyparsing=2.4.2=py_0
   - pyqt=5.9.2=py37h05f1152_2
   - python=3.7.4=h265db76_1
@@ -73,19 +83,23 @@ dependencies:
   - vtk=8.2.0=py37haa4764d_200
   - wheel=0.33.6=py37_0
   - xmltodict=0.12.0=py_0
+  - xorg-fixesproto=5.0=h14c3975_1002
+  - xorg-kbproto=1.0.7=h14c3975_1002
+  - xorg-libx11=1.6.9=h516909a_0
+  - xorg-libxcursor=1.2.0=h516909a_0
+  - xorg-libxext=1.3.4=h516909a_0
+  - xorg-libxfixes=5.0.3=h516909a_1004
+  - xorg-libxinerama=1.1.4=hf484d3e_1000
+  - xorg-libxrandr=1.5.2=h516909a_1
+  - xorg-libxrender=0.9.10=h516909a_1002
+  - xorg-randrproto=1.5.0=h14c3975_1001
+  - xorg-renderproto=0.11.1=h14c3975_1002
+  - xorg-xextproto=7.3.0=h14c3975_1002
+  - xorg-xproto=7.0.31=h14c3975_1007
   - xz=5.2.4=h14c3975_4
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.3.7=h0b5b093_0
   - pip:
     - admesh==0.98.9
-    - cffi==1.12.3
-    - cython==0.29.13
-    - glfw==1.8.3
-    - imageio==2.5.0
-    - lockfile==0.12.2
     - mujoco-py==2.0.2.5
-    - numpy==1.17.2
-    - pillow==6.2.0
-    - pycparser==2.19
     - pyquaternion==0.9.5
-
