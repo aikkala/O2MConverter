@@ -11,3 +11,8 @@ Install (for Ubuntu 18.04)
 1. Install mujoco-py requirements that might cause problems if they're missing `sudo apt install libosmesa6-dev libgl1-mesa-glx libglfw3`
 1. I had a problem with OpenGL (conda environment creation failed when pip was trying to install mujoco-py, error message: "cannot find -lGL", i.e. libGL.so was missing). This was resolved with `sudo apt install libgl1-mesa-dev`. Another fix for this issue, according to mujoco-py troubleshooting, is that you create the missing symbolic link directly: `sudo ln -s /usr/lib/x86_64-linux-gnu/libGL.so.1 /usr/lib/x86_64-linux-gnu/libGL.so` 
 1. Create a conda environment from the environment file O2MConverter.yml `conda env create --name O2MConverter --file=O2MConverter.yml`
+
+Troubleshooting
+---
+1. mujoco-py viewer crashed with **GLEW initialization error: Missing GL version**
+    - Install libglew-dev `sudo apt install libglew-dev` and set environment variable `LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLEW.so`
