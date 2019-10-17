@@ -15,4 +15,4 @@ Install (for Ubuntu 18.04)
 Troubleshooting
 ---
 1. mujoco-py viewer crashed with **GLEW initialization error: Missing GL version**
-    - Install libglew-dev `sudo apt install libglew-dev` and set environment variable `LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLEW.so`
+    - Install libglew-dev `sudo apt install libglew-dev` and set environment variable `export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLEW.so`
