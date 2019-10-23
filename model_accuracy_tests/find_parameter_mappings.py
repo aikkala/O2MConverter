@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import math
 from pyquaternion import Quaternion
-from scipy.interpolate import interp1d
+import skvideo.io
 import cma
 
 import Utils
@@ -48,7 +48,7 @@ def parse_sto_file(sto_file):
         return values, header
 
 
-def run_simulation(sim, model, kinematics_values, control_values, visualise=False):
+def run_simulation(sim, model, kinematics_values, control_values, visualise=False, record=False):
 
     # Set initial joint positions
     for joint_name in model.joint_names:
@@ -62,11 +62,14 @@ def run_simulation(sim, model, kinematics_values, control_values, visualise=Fals
     # We might need to call forward to make sure everything is set properly after setting qpos (not sure if required)
     sim.forward()
 
-    if visualise:
+    if visualise or record:
         viewer = mujoco_py.MjViewer(sim)
+    if record:
+        imgs = []
+
     timesteps = control_values.index.values
     qpos = np.empty((timesteps.shape[0], len(model.joint_names)))
-    for t, timestep in zip(range(len(timesteps)), timesteps):
+    for t, timestep in enumerate(timesteps):
 
         # Set muscle activations
         for muscle_name in model._actuator_name2id:
@@ -76,6 +79,20 @@ def run_simulation(sim, model, kinematics_values, control_values, visualise=Fals
         qpos[t, :] = sim.data.qpos
         if visualise:
             viewer.render()
+        if record:
+            imgs.append(np.flipud(sim.render(width=1600, height=1200, depth=False, camera_name="main")))
+
+    if record:
+        # Write the video
+        writer = skvideo.io.FFmpegWriter("outputvideo.mp4", inputdict={"-s": "1600x1200", "-r": str(1/model.opt.timestep)})
+        for img in imgs:
+            writer.writeFrame(img)
+
+        # Add some images so the video won't end abruptly
+        for _ in range(50):
+            writer.writeFrame(imgs[-1])
+
+        writer.close()
 
     return {"qpos": pd.DataFrame(qpos, index=control_values.index, columns=model.joint_names)}
 
@@ -204,14 +221,20 @@ def reindex_dataframe(df, timestep):
     return new_df
 
 
-def estimate_joint_error(reference, simulated):
+def estimate_joint_error(reference, simulated, plot=False):
     # Get joint names
     joint_names = simulated.columns.tolist()
 
+    if plot:
+        _, axes = plt.subplots(len(joint_names), 1)
+
     # Get abs sum of difference between reference joint and simulated joint
     errors = np.empty((len(joint_names),))
-    for joint_name, idx in zip(joint_names, range(len(joint_names))):
-        errors[idx] = (reference[joint_name] - simulated[joint_name]).abs().sum()
+    for idx, joint_name in enumerate(joint_names):
+        e = reference[joint_name] - simulated[joint_name]
+        errors[idx] = e.abs().sum()
+        if plot:
+            axes[idx].plot(simulated.index.values, e)
 
     return errors
 
@@ -269,7 +292,7 @@ def main():
 
     # Get initial values for params
     params = [1000]*9
-    es = cma.CMAEvolutionStrategy(params, 20, {"transformation": [lambda x: abs(x), None]})
+    es = cma.CMAEvolutionStrategy(params, 200, {"transformation": [lambda x: x**2, None], "tolfun": 1e-4})
 
     while not es.stop():
         solutions = es.ask()
@@ -280,12 +303,12 @@ def main():
             #model.dof_armature[3:] = solution[1]
             #model.jnt_stiffness[3:] = solution[2]
             for muscle_idx in range(model.actuator_gainprm.shape[0]):
-                model.actuator_gainprm[muscle_idx][3] = solution[muscle_idx]
+                model.actuator_gainprm[muscle_idx][3] = np.sqrt(solution[muscle_idx])
 
             sim.reset()
 
-            output = run_simulation(sim, model, kinematics_values, control_values)
-            f = np.sum(estimate_joint_error(kinematics_values, output["qpos"])) + 0.00001*np.sum(np.square(solution))
+            output = run_simulation(sim, model, kinematics_values, control_values, visualise=False)
+            f = np.sum(estimate_joint_error(kinematics_values, output["qpos"]))# + 0.0000001*np.sum(solution)
             fitness.append(f)
 
         es.tell(solutions, fitness)
@@ -293,11 +316,14 @@ def main():
         es.disp()
 
     for muscle_idx in range(model.actuator_gainprm.shape[0]):
-        model.actuator_gainprm[muscle_idx][3] = es.result.xbest[muscle_idx]
+        model.actuator_gainprm[muscle_idx][3] = np.sqrt(es.result.xbest[muscle_idx])
     sim.reset()
-    run_simulation(sim, model, kinematics_values, control_values, visualise=True)
+    output = run_simulation(sim, model, kinematics_values, control_values, visualise=False, record=True)
 
-    print(es.result_pretty())
+    # Compare joint values
+    estimate_joint_error(kinematics_values, output["qpos"], plot=True)
+
+    print(np.sqrt(es.result.xbest))
     es.plot()
 
 main()
