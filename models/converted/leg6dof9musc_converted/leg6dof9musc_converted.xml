@@ -16,7 +16,7 @@
 	</visual>
 	<worldbody>
 		<geom name="floor" pos="0 0 0" size="10 10 0.125" type="plane" material="MatPlane" condim="3"></geom>
-		<body name="pelvis" pos="0.  0.  1.7" quat="0.7071067811865475 0.7070383384048632 0.0 0.009838090551012701">
+		<body name="pelvis" pos="0.593075 0.       0.317089" quat="0.7071067811865475 0.7070383384048632 0.0 0.009838090551012701">
 			<light mode="trackcom" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1"></light>
 			<inertial pos="-0.0739512  0.         0.       " mass="10.75379227" fullinertia="0.1027003  0.08701554 0.05784385 0.         0.         0.        "></inertial>
 			<geom name="sacrum" type="mesh" mesh="sacrum"></geom>
@@ -57,7 +57,7 @@
 					<site name="tib_ant_r-P1" pos="0.0201147 -0.182493 0.0129229"></site>
 					<site name="tib_ant_r-P2" pos="0.0369707 -0.443985 -0.01989"></site>
 					<joint name="knee_angle_r" type="hinge" pos="0 0 0" limited="true" axis="0. 0. 1." range="-2.0943951   0.17453293"></joint>
-					<body name="patella_r" pos=" 0.05533956 -0.02602723  0.        " quat="0.9999867936546127 0.0 0.0 -0.005139310884455099">
+					<body name="patella_r" pos=" 0.05533956 -0.02602723  0.        " quat="0.9999867936546127 0.0 0.0 -0.005139310884454988">
 						<inertial pos="0. 0. 0." mass="0.09191376" fullinertia="0.00110296 0.00110296 0.00110296 0.         0.         0.        "></inertial>
 						<geom name="pat" type="mesh" mesh="pat"></geom>
 					</body>
@@ -79,6 +79,8 @@
 				</body>
 			</body>
 		</body>
+		<camera name="main" pos=" 0.593075 -1.75      0.817089" euler="1.57 0 0"></camera>
+		<camera name="origin_body" mode="targetbody" target="pelvis"></camera>
 	</worldbody>
 	<asset>
 		<mesh name="sacrum" file="Geometry/sacrum.stl" scale="1.04599 1.04599 1.04599"></mesh>
@@ -154,6 +156,6 @@
 		<muscle name="tib_ant_r" tendon="tib_ant_r_tendon" timeconst="0.01 0.04"></muscle>
 	</actuator>
 	<equality>
-		<weld name="origin_to_worldbody" body1="pelvis" active="true"></weld>
+		<weld name="origin_to_worldbody" body1="pelvis" active="false"></weld>
 	</equality>
 </mujoco>
