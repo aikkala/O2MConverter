@@ -5,7 +5,6 @@ import os
 from scipy.interpolate import interp1d
 import math
 import copy
-
 import xmltodict
 import admesh
 from pyquaternion import Quaternion
@@ -39,6 +38,7 @@ class Converter:
         self.actuator = []
         self.equality = {"joint": []}
 
+        # Use mesh files if they are given
         self.geometry_folder = None
         self.output_geometry_folder = "Geometry/"
         self.vtk_reader = vtk.vtkXMLPolyDataReader()
@@ -48,6 +48,7 @@ class Converter:
         self.stl_writer.SetInputConnection(self.vtk_reader.GetOutputPort())
         self.stl_writer.SetFileTypeToBinary()
 
+        # The root of the kinematic tree
         self.origin_body = None
         self.origin_joint = None
 
@@ -130,12 +131,16 @@ class Converter:
                 print("Skipping a force: {}".format(muscle_type))
                 continue
 
+            # Make sure we're dealing with a list
             if isinstance(p[muscle_type], dict):
                 p[muscle_type] = [p[muscle_type]]
 
+            # Go through all muscles
             for muscle in p[muscle_type]:
                 m = Muscle(muscle)
                 self.muscles.append(m)
+
+                # Check if the muscle is disabled
                 if m.is_disabled():
                     continue
                 else:
@@ -175,8 +180,8 @@ class Converter:
         self.origin_joint.orientation_in_parent = self.origin_joint.orientation_in_parent.rotate(
             Quaternion(axis=[1, 0, 0], angle=math.pi/2))
 
-        # Increase z-coordinate also to make sure the whole thing is above floor
-        self.origin_joint.location_in_parent[2] = self.origin_joint.location_in_parent[2] + 1.5
+        # Increase z-coordinate a little bit to make sure the whole thing is above floor
+        self.origin_joint.location_in_parent[2] = self.origin_joint.location_in_parent[2] + 0.3
 
         # Add sites to worldbody / "ground" in OpenSim
         worldbody["site"] = self.bodies[self.origin_joint.parent_body].sites
@@ -185,6 +190,13 @@ class Converter:
         worldbody["body"] = {
             "light": {"@mode": "trackcom", "@directional": "false", "@diffuse": ".8 .8 .8",
                       "@specular": "0.3 0.3 0.3", "@pos": "0 0 4.0", "@dir": "0 0 -1"}}
+
+        # Add cameras
+        main_camera_pos = copy.deepcopy(self.origin_joint.location_in_parent)
+        main_camera_pos[1] = main_camera_pos[1] - 1.75
+        main_camera_pos[2] = main_camera_pos[2] + 0.5
+        worldbody["camera"] = [{"@name": "main", "@pos": np.array2string(main_camera_pos)[1:-1], "@euler": "1.57 0 0"},
+                               {"@name": "origin_body", "@mode": "targetbody", "@target": self.origin_joint.child_body}]
 
         # Build the kinematic chains
         worldbody["body"] = self.add_body(worldbody["body"], self.origin_body,
@@ -239,7 +251,6 @@ class Converter:
                     joint_to_parent.orientation_in_parent.y,
                     joint_to_parent.orientation_in_parent.z)
 
-
         # Add inertial properties -- only if mass is greater than zero and eigenvalues are positive
         # (if "inertial" is missing MuJoCo will infer the inertial properties from geom)
         if current_body.mass > 0:
@@ -272,9 +283,6 @@ class Converter:
 
             # Add to joints
             worldbody["joint"].append(j)
-
-        #if len(joints) > 0:
-        #    worldbody["joint"] = joints
 
         # And we're done if there are no joints
         if current_joints is None:
@@ -314,8 +322,7 @@ class Converter:
                 vtk_file = self.geometry_folder + "/" + m["geometry_file"]
 
                 # Check the file exists
-                if not os.path.exists(vtk_file) or not os.path.isfile(vtk_file):
-                    raise "Mesh file doesn't exist"
+                assert os.path.exists(vtk_file) and os.path.isfile(vtk_file), "Mesh file {} doesn't exist".format(vtk_file)
 
                 # Transform the vtk file into an stl file and save it
                 mesh_name = m["geometry_file"][:-4]
@@ -344,8 +351,7 @@ class Converter:
         # the origin body (the body that represents ground)
 
         # Make sure there's at least one joint
-        if len(self.joints) == 0:
-            raise "There are no joints!"
+        assert len(self.joints) > 0, "There are no joints!"
 
         # Choose a joint, doesn't matter which one
         current_joint = next(iter(self.joints.values()))[0]
@@ -378,8 +384,7 @@ class Converter:
             if joint_to_parent is not None:
                 break
 
-        if joint_to_parent is None:
-            raise "Couldn't find joint to parent body for body " + body_name
+        assert joint_to_parent is not None, "Couldn't find joint to parent body for body {}".format(body_name)
 
         return joint_to_parent
 
@@ -404,8 +409,9 @@ class Joint:
         # 'ground' body does not have joints
         if joint is None or len(joint) == 0:
             return
-        elif len(joint) > 1:
-            raise 'Multiple joints for one body'
+
+        # I think there's just one joint per body
+        assert len(joint) == 1, 'TODO Multiple joints for one body'
 
         # We need to figure out what kind of joint this is
         self.joint_type = list(joint)[0]
@@ -424,8 +430,7 @@ class Joint:
 
         # TODO we assume orientation_in_parent is [0, 0, 0]
         self.orientation_in_parent = np.array(joint["orientation_in_parent"].split(), dtype=float)
-        if np.sum(np.abs(self.orientation_in_parent)) > 1e-6:
-            raise "We're not doing this correctly"
+        assert np.sum(np.abs(self.orientation_in_parent)) < 1e-6, "TODO We're currently just overwriting orientation_in_parent"
         self.orientation_in_parent = Quaternion(1, 0, 0, 0)
 
         # Some joint values are dependent on other joint values; we need to create equality constraints between those
@@ -472,8 +477,7 @@ class Joint:
 
             # Parse all Coordinates
             for c in coordinate:
-                if c["locked"] == "true":
-                    raise "We aren't handling this situation; means that joint is locked to the default value"
+                assert c["locked"] == "false", "TODO We aren't handling this situation; means that joint is locked to the default value"
 
                 coordinate_set[c["@name"]] = {
                     "motion_type": c["motion_type"], "name": c["@name"],
@@ -485,10 +489,8 @@ class Joint:
         for t in transform_axes:
 
             # Make sure order is correct
-            if order[0] != t["@name"]:
-                raise "Wrong order of transformations"
-            else:
-                order.pop(0)
+            assert order[0] == t["@name"], "TODO Wrong order of transformations"
+            order.pop(0)
 
             # Use the Coordinate parameters we parsed earlier; note that these do not exist for all joints (e.g
             # constant joints)
@@ -555,8 +557,7 @@ class Joint:
                 x_values = np.array(x_values.split(), dtype=float)
                 y_values = np.array(y_values.split(), dtype=float)
 
-                if len(x_values) < 1 or len(y_values) < 1:
-                    raise "Not enough points"
+                assert len(x_values) > 1 and len(y_values) > 1, "Not enough points, can't fit a spline"
 
                 # Fit the spline (I'm not sure what kind of spline SimmSpline is, but let's use a cubic spline here)
                 f_spline = interp1d(x_values, y_values, kind="cubic")
@@ -569,8 +570,7 @@ class Joint:
                 fit_quartic = f_quartic(x_values)
                 ssreg = np.sum((fit_quartic - np.mean(fit_spline)) ** 2)
                 sstot = np.sum((fit_spline - np.mean(fit_spline)) ** 2)
-                if ssreg / sstot < 0.5:
-                    raise "A bad quartic approximation of the cubic spline"
+                assert ssreg / sstot > 0.5, "A bad quartic approximation of the cubic spline"
 
                 # We need to do a transformation also (really only needed if f_quartic(0) is non-zero, but it's likely
                 # to always be non-zero), and modify the quartic function
@@ -625,8 +625,7 @@ class Joint:
                                     polycoef[0] = polycoef[0] + coeffs[1]
                                 break
 
-                    if not constraint_found:
-                        raise "Couldn't find an independent joint for a coupled joint"
+                    assert constraint_found, "Couldn't find an independent joint for a coupled joint"
 
                 else:
                     # Update motion type to dependent for posterity
@@ -649,8 +648,7 @@ class Joint:
                 # I'm not sure how to handle a LinearFunction with coefficients != [1, 0] (the first one is slope,
                 # second intercept)
                 coefficients = np.array(t["function"]["LinearFunction"]["coefficients"].split(), dtype=float)
-                if coefficients[0] != 1 or coefficients[1] != 0:
-                    raise "How do we handle this linear function?"
+                assert coefficients[0] == 1 and coefficients[1] == 0, "How do we handle this linear function?"
 
             # Other functions are not defined yet
             else:
@@ -665,7 +663,7 @@ class Joint:
             elif t["@name"].startswith('translation'):
                 params["type"] = "slide"
             else:
-                raise "Unidentified transformation {}".format(t["@name"])
+                raise TypeError("Unidentified transformation {}".format(t["@name"]))
 
             # If do_transform is True, then we need to update T
             if params["transform_value"] != 0:
@@ -802,7 +800,7 @@ class Muscle:
                     self.sites.append({"@site": path_point["@name"]})
 
                 else:
-                    raise "Undefined path point type"
+                    raise TypeError("Undefined path point type {}".format(pp_type))
 
         # Finally, we need to sort the sites so that they are in correct order. Unfortunately we have to rely
         # on the site names since xmltodict decomposes the list into dictionaries. There's a pull request in
@@ -814,7 +812,7 @@ class Muscle:
         try:
             numbers = [int(name[len(prefix):]) for name in site_names]
         except ValueError:
-            raise "Check these site names, they might not be sorted correctly"
+            raise ValueError("Check these site names, they might not be sorted correctly")
 
         self.sites = sorted(self.sites, key=lambda k: k["@site"])
 
@@ -849,10 +847,14 @@ class Muscle:
         return self.disabled
 
 
-if __name__ == "__main__":
+def main(argv):
     converter = Converter()
-    if len(sys.argv) > 3:
-        geometry_folder = sys.argv[3]
+    if len(argv) > 3:
+        geometry_folder = argv[3]
     else:
         geometry_folder = None
-    converter.convert(sys.argv[1], sys.argv[2], geometry_folder)
+    converter.convert(argv[1], argv[2], geometry_folder)
+
+
+if __name__ == "__main__":
+    main(sys.argv)
