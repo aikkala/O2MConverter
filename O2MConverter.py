@@ -93,7 +93,7 @@ class Converter:
         # Finally, save the MuJoCo model into XML file
         output_xml = self.output_folder + model_name + ".xml"
         with open(output_xml, 'w') as f:
-            f.write(xmltodict.unparse(mujoco_model, pretty=True))
+            f.write(xmltodict.unparse(mujoco_model, pretty=True, indent="  "))
 
         # We might need to fix stl files (if converted from OpenSim Geometry vtk files)
         if self.geometry_folder is not None:
