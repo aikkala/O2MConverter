@@ -6,6 +6,7 @@ import math
 from pyquaternion import Quaternion
 import skvideo.io
 import cma
+import time
 
 import Utils
 
@@ -235,6 +236,11 @@ def estimate_joint_error(reference, simulated, plot=False):
         errors[idx] = e.abs().sum()
         if plot:
             axes[idx].plot(simulated.index.values, e)
+            axes[idx].plot(np.array([simulated.index.values[0], simulated.index.values[-1]]), np.array([0, 0]), 'k--')
+            axes[idx].set_ylabel(joint_name)
+
+    if plot:
+        axes[-1].set_xlabel('Time (seconds)')
 
     return errors
 
@@ -269,6 +275,7 @@ def main():
     # Timestep might not be constant in the OpenSim reference movement (weird). We can't change timestep dynamically in
     # mujoco, at least the viewer does weird things and it could be reflecting underlying issues. Thus, we should
     # to fit a spline and interpolate the muscle control and joint kinematics with model.opt.timestep
+    #model.opt.timestep /= 2.65
     control_values = reindex_dataframe(control_values, model.opt.timestep)
     kinematics_values = reindex_dataframe(kinematics_values, model.opt.timestep)
 
@@ -322,6 +329,15 @@ def main():
 
     # Compare joint values
     estimate_joint_error(kinematics_values, output["qpos"], plot=True)
+
+    # Do a timing test as well
+    nreps = 1000
+    start = time.time()
+    for _ in range(nreps):
+        sim.reset()
+        run_simulation(sim, model, kinematics_values, control_values, visualise=False, record=False)
+    end = time.time()
+    print("Time elapsed for {} simulations: {}\nTime elapsed per simulation: {}".format(nreps, end-start, (end-start)/nreps))
 
     print(np.sqrt(es.result.xbest))
     es.plot()
