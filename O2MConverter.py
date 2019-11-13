@@ -8,6 +8,7 @@ import copy
 import xmltodict
 import admesh
 from pyquaternion import Quaternion
+from shutil import copyfile
 
 import Utils
 
@@ -225,8 +226,8 @@ class Converter:
         model["mujoco"]["asset"] = self.asset
 
         # Add tendons and actuators
-        model["mujoco"]["tendon"] = {"spatial": self.tendon}
-        model["mujoco"]["actuator"] = {"muscle": self.actuator}
+        #model["mujoco"]["tendon"] = {"spatial": self.tendon}
+        #model["mujoco"]["actuator"] = {"muscle": self.actuator}
 
         # Add equality constraints between joints
         model["mujoco"]["equality"] = self.equality
@@ -272,9 +273,11 @@ class Converter:
 
             # Define the joint
             j = {"@name": mujoco_joint["name"], "@type": mujoco_joint["type"], "@pos": "0 0 0",
-                 "@limited": "true" if mujoco_joint["limited"] else "false",
-                 "@axis": np.array2string(mujoco_joint["axis"])[1:-1],
-                 "@range": np.array2string(mujoco_joint["range"])[1:-1]}
+                 "@axis": np.array2string(mujoco_joint["axis"])[1:-1]}
+            if "limited" in mujoco_joint:
+                j["@limited"] = "true" if mujoco_joint["limited"] else "false"
+            if "range" in mujoco_joint:
+                j["@range"] = np.array2string(mujoco_joint["range"])[1:-1]
 
             # If the joint is between origin body and it's parent, which should be "ground", set
             # damping, armature, and stiffness to zero
@@ -319,17 +322,27 @@ class Converter:
             for m in body.mesh:
 
                 # Get file path
-                vtk_file = self.geometry_folder + "/" + m["geometry_file"]
+                geom_file = self.geometry_folder + "/" + m["geometry_file"]
 
                 # Check the file exists
-                assert os.path.exists(vtk_file) and os.path.isfile(vtk_file), "Mesh file {} doesn't exist".format(vtk_file)
+                assert os.path.exists(geom_file) and os.path.isfile(geom_file), "Mesh file {} doesn't exist".format(geom_file)
 
-                # Transform the vtk file into an stl file and save it
+                # Transform vtk into stl or just copy stl file
                 mesh_name = m["geometry_file"][:-4]
                 stl_file = self.output_geometry_folder + mesh_name + ".stl"
-                self.vtk_reader.SetFileName(vtk_file)
-                self.stl_writer.SetFileName(self.output_folder + stl_file)
-                self.stl_writer.Write()
+
+                # Transform a vtk file into an stl file and save it
+                if geom_file[-3:] == "vtp":
+                    self.vtk_reader.SetFileName(geom_file)
+                    self.stl_writer.SetFileName(self.output_folder + stl_file)
+                    self.stl_writer.Write()
+
+                # Just copy stl file
+                elif geom_file[-3:] == "stl":
+                    copyfile(geom_file, self.output_folder + stl_file)
+
+                else:
+                    raise NotImplementedError("Geom file is not vtk or stl!")
 
                 # Add mesh to asset
                 self.add_mesh_to_asset(mesh_name, stl_file, m)
@@ -428,10 +441,13 @@ class Joint:
         self.location = np.array(joint["location"].split(), dtype=float)
         self.orientation = np.array(joint["orientation"].split(), dtype=float)
 
-        # TODO we assume orientation_in_parent is [0, 0, 0]
-        self.orientation_in_parent = np.array(joint["orientation_in_parent"].split(), dtype=float)
-        assert np.sum(np.abs(self.orientation_in_parent)) < 1e-6, "TODO We're currently just overwriting orientation_in_parent"
-        self.orientation_in_parent = Quaternion(1, 0, 0, 0)
+        # Calculate orientation in parent; Quaternion.rotate() doesn't seem to work properly
+        # (or I don't just know how to use it) so let's rotate with rotation matrices
+        orientation_in_parent = np.array(joint["orientation_in_parent"].split(), dtype=float)
+        x = Quaternion(axis=[1, 0, 0], radians=orientation_in_parent[0]).rotation_matrix
+        y = Quaternion(axis=[0, 1, 0], radians=orientation_in_parent[1]).rotation_matrix
+        z = Quaternion(axis=[0, 0, 1], radians=orientation_in_parent[2]).rotation_matrix
+        self.orientation_in_parent = Quaternion(matrix=np.matmul(np.matmul(x, y), z))
 
         # Some joint values are dependent on other joint values; we need to create equality constraints between those
         self.equality_constraints = []
@@ -440,13 +456,12 @@ class Joint:
         # what kind of joint we're dealing with
         self.mujoco_joints = []
         if self.joint_type == "CustomJoint":
-            T = self.parse_custom_joint(joint, constraints)
-            T_location_in_parent = np.eye(4, 4)
-            #T_location_in_parent[:3, 3] = self.location_in_parent
-            T = np.matmul(T_location_in_parent, T)
-            # TODO FIX THIS! location_in_parent should be updated but not exactly overwritten
-            self.orientation_in_parent = Quaternion(matrix=T)
-            self.location_in_parent = self.location_in_parent + T[:3, 3]
+            T_joint = self.parse_custom_joint(joint, constraints)
+
+            # Update joint location and orientation
+            T = self.get_transformation_matrix()
+            T = np.matmul(T, T_joint)
+            self.set_transformation_matrix(T)
 
         elif self.joint_type == "WeldJoint":
             # Don't add anything to self.mujoco_joints, bodies are by default
@@ -454,6 +469,15 @@ class Joint:
             pass
         else:
             print("Skipping a joint of type [{}]".format(self.joint_type))
+
+    def get_transformation_matrix(self):
+        T = self.orientation_in_parent.transformation_matrix
+        T[:3, 3] = self.location_in_parent
+        return T
+
+    def set_transformation_matrix(self, T):
+        self.orientation_in_parent = Quaternion(matrix=T)
+        self.location_in_parent = T[:3, 3]
 
     def parse_custom_joint(self, joint, constraints):
         # A CustomJoint in OpenSim model can represent any type of joint.
@@ -465,6 +489,7 @@ class Joint:
         # We might need to create a homogeneous transformation matrix from
         # location_in_parent to actual joint location
         T = np.eye(4, 4)
+        #T = self.orientation_in_parent.transformation_matrix
 
         # Start by parsing the CoordinateSet
         coordinate_set = dict()
@@ -497,7 +522,7 @@ class Joint:
             if t["coordinates"] in coordinate_set:
                 params = copy.deepcopy(coordinate_set[t["coordinates"]])
             else:
-                params = {"name": "{}_{}".format(joint["@name"], t["@name"])}
+                params = {"name": "{}_{}".format(joint["@name"], t["@name"]), "limited": False}
 
             # Set default reference position/angle to zero. These probably need to be zero for joint equality
             # constraints (i.e. the quartic functions)!
@@ -524,7 +549,7 @@ class Joint:
 
                 # Otherwise define a limited MuJoCo joint (we're not really creating this (sub)joint, we just update the
                 # joint position)
-                params["limited"] = "true"
+                params["limited"] = True
                 params["range"] = np.array([value])
                 params["transform_value"] = value
                 params["add_to_mujoco_joints"] = False
@@ -559,8 +584,11 @@ class Joint:
 
                 assert len(x_values) > 1 and len(y_values) > 1, "Not enough points, can't fit a spline"
 
+                # A kind of switch statement?
+                kind = {2: "linear", 3: "quadratic"}.get(len(x_values), "cubic")
+
                 # Fit the spline (I'm not sure what kind of spline SimmSpline is, but let's use a cubic spline here)
-                f_spline = interp1d(x_values, y_values, kind="cubic")
+                f_spline = interp1d(x_values, y_values, kind=kind)
 
                 # Fit the quartic approximation
                 f_quartic = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, 4)
@@ -746,7 +774,8 @@ class Muscle:
         # Get important attributes
         self.name = obj["@name"]
         self.disabled = False if "isDisabled" not in obj or obj["isDisabled"] == "false" else True
-        self.timeconst = np.asarray([obj["activation_time_constant"], obj["deactivation_time_constant"]], dtype=float)
+        self.timeconst = np.asarray([obj.get("activation_time_constant", None),
+                                     obj.get("deactivation_time_constant", None)], dtype=float)
 
         # Get path points so we can later add them into bodies; note that we treat
         # each path point type (i.e. PathPoint, ConditionalPathPoint, MovingPathPoint)
@@ -839,8 +868,9 @@ class Muscle:
 
     def get_actuator(self):
         # Return MuJoCo actuator representation of this muscle
-        actuator = {"@name": self.name, "@tendon": self.name + "_tendon",
-                    "@timeconst": np.array2string(self.timeconst)[1:-1]}
+        actuator = {"@name": self.name, "@tendon": self.name + "_tendon"}
+        if np.all(np.isfinite(self.timeconst)):
+            actuator["@timeconst"] = np.array2string(self.timeconst)[1:-1]
         return actuator
 
     def is_disabled(self):
