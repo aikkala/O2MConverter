@@ -68,7 +68,7 @@ class Converter:
         p = xmltodict.parse(text)
 
         # Set output folder
-        model_name = p["OpenSimDocument"]["Model"]["@name"] + "_converted"
+        model_name = os.path.split(input_xml)[1][:-5] + "_converted"
         self.output_folder = output_folder + "/" + model_name + "/"
 
         # Create the output folder
@@ -89,7 +89,7 @@ class Converter:
         # Now we need to re-assemble them in MuJoCo format
         # (or actually a dict version of the model so we can use
         # xmltodict to save the model into a XML file)
-        mujoco_model = self.build_mujoco_model(model_name)
+        mujoco_model = self.build_mujoco_model(p["OpenSimDocument"]["Model"]["@name"])
 
         # Finally, save the MuJoCo model into XML file
         output_xml = self.output_folder + model_name + ".xml"
