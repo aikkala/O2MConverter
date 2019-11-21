@@ -48,7 +48,7 @@ def create_translation_vector(axis, l):
     elif axis[0] == 0 and axis[1] == 0 and axis[2] == 1:
         t[2] = l
     else:
-        raise "Was not expecting this axis"
+        raise NotImplementedError
     return t
 
 
@@ -58,6 +58,7 @@ def create_translation_matrix(axis, l):
     T[0:3, 3] = t
     return T
 
+
 def create_symmetric_matrix(vec):
     # Assume vec is a vector of upper triangle values for matrix of size 3x3 (xx,yy,zz,xy,xz,yz)
     matrix = np.diag(vec[0:3])
@@ -65,3 +66,7 @@ def create_symmetric_matrix(vec):
     matrix[0, 2] = vec[4]
     matrix[1, 2] = vec[5]
     return matrix + matrix.T - np.diag(matrix.diagonal())
+
+
+def array_to_string(array):
+    return ' '.join(['%8g' % num for num in array])
