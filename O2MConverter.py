@@ -37,7 +37,7 @@ class Converter:
         self.asset = dict()
         self.tendon = []
         self.actuator = []
-        self.equality = {"joint": []}
+        self.equality = {"joint": [], "weld": []}
 
         # Use mesh files if they are given
         self.geometry_folder = None
@@ -115,7 +115,8 @@ class Converter:
                 continue
 
             # Add joint equality constraints
-            self.equality["joint"].extend(j.get_equality_constraints())
+            self.equality["joint"].extend(j.get_equality_constraints("joint"))
+            self.equality["weld"].extend(j.get_equality_constraints("weld"))
 
             # There might be multiple joints per body
             if j.parent_body not in self.joints:
@@ -162,7 +163,8 @@ class Converter:
             "joint": {"@limited": "true", "@damping": "1", "@armature": "0.01", "@stiffness": "5"},
             "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "3", "@rgba": "0.8 0.6 .4 1",
                      "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
-            "site": {"@size": "0.01"}}
+            "site": {"@size": "0.001"},
+            "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"}}
         model["mujoco"]["option"] = {"@timestep": "0.002", "@iterations": "50", "@solver": "PGS",
                                      "flag": {"@energy": "enable"}}
         model["mujoco"]["size"] = {"@nconmax": "400"}
@@ -179,10 +181,10 @@ class Converter:
 
         # Rotate self.origin_joint.orientation_in_parent so the model is upright
         self.origin_joint.orientation_in_parent = self.origin_joint.orientation_in_parent.rotate(
-            Quaternion(axis=[1, 0, 0], angle=math.pi/2))
+            Quaternion(axis=[0, 0, 1], angle=-math.pi/2))
 
         # Increase z-coordinate a little bit to make sure the whole thing is above floor
-        self.origin_joint.location_in_parent[2] = self.origin_joint.location_in_parent[2] + 0.3
+        self.origin_joint.location_in_parent[2] = self.origin_joint.location_in_parent[2] + 1.0
 
         # Add sites to worldbody / "ground" in OpenSim
         worldbody["site"] = self.bodies[self.origin_joint.parent_body].sites
@@ -196,7 +198,7 @@ class Converter:
         main_camera_pos = copy.deepcopy(self.origin_joint.location_in_parent)
         main_camera_pos[1] = main_camera_pos[1] - 1.75
         main_camera_pos[2] = main_camera_pos[2] + 0.5
-        worldbody["camera"] = [{"@name": "main", "@pos": np.array2string(main_camera_pos)[1:-1], "@euler": "1.57 0 0"},
+        worldbody["camera"] = [{"@name": "main", "@pos": Utils.array_to_string(main_camera_pos), "@euler": "1.57 0 0"},
                                {"@name": "origin_body", "@mode": "targetbody", "@target": self.origin_joint.child_body}]
 
         # Build the kinematic chains
@@ -207,7 +209,8 @@ class Converter:
         model["mujoco"]["worldbody"] = worldbody
 
         # We might want to use a weld constraint to fix the origin body to worldbody for experiments
-        self.equality["weld"] = {"@name": "origin_to_worldbody", "@body1": self.origin_body.name, "@active": "false"}
+        self.equality["weld"].append({"@name": "origin_to_worldbody",
+                                      "@body1": self.origin_body.name, "@active": "false"})
 
         # Set some asset defaults
         self.asset["texture"] = [
@@ -226,8 +229,8 @@ class Converter:
         model["mujoco"]["asset"] = self.asset
 
         # Add tendons and actuators
-        #model["mujoco"]["tendon"] = {"spatial": self.tendon}
-        #model["mujoco"]["actuator"] = {"muscle": self.actuator}
+        model["mujoco"]["tendon"] = {"spatial": self.tendon}
+        model["mujoco"]["actuator"] = {"muscle": self.actuator}
 
         # Add equality constraints between joints
         model["mujoco"]["equality"] = self.equality
@@ -245,7 +248,7 @@ class Converter:
         joint_to_parent = self.find_joint_to_parent(current_body.name)
 
         # Define position and orientation
-        worldbody["@pos"] = np.array2string(joint_to_parent.location_in_parent)[1:-1]
+        worldbody["@pos"] = Utils.array_to_string(joint_to_parent.location_in_parent)
         worldbody["@quat"] = "{} {} {} {}"\
             .format(joint_to_parent.orientation_in_parent.w,
                     joint_to_parent.orientation_in_parent.x,
@@ -257,9 +260,9 @@ class Converter:
         if current_body.mass > 0:
             values, vectors = np.linalg.eig(Utils.create_symmetric_matrix(current_body.inertia))
             if np.all(values > 0):
-                worldbody["inertial"] = {"@pos": np.array2string(current_body.mass_center)[1:-1],
+                worldbody["inertial"] = {"@pos": Utils.array_to_string(current_body.mass_center),
                                          "@mass": str(current_body.mass),
-                                         "@fullinertia": np.array2string(current_body.inertia)[1:-1]}
+                                         "@fullinertia": Utils.array_to_string(current_body.inertia)}
 
         # Add geom
         worldbody["geom"] = self.add_geom(current_body)
@@ -273,11 +276,11 @@ class Converter:
 
             # Define the joint
             j = {"@name": mujoco_joint["name"], "@type": mujoco_joint["type"], "@pos": "0 0 0",
-                 "@axis": np.array2string(mujoco_joint["axis"])[1:-1]}
+                 "@axis": Utils.array_to_string(mujoco_joint["axis"])}
             if "limited" in mujoco_joint:
                 j["@limited"] = "true" if mujoco_joint["limited"] else "false"
             if "range" in mujoco_joint:
-                j["@range"] = np.array2string(mujoco_joint["range"])[1:-1]
+                j["@range"] = Utils.array_to_string(mujoco_joint["range"])
 
             # If the joint is between origin body and it's parent, which should be "ground", set
             # damping, armature, and stiffness to zero
@@ -311,7 +314,7 @@ class Converter:
             # Try to figure out capsule size by mass or something
             size = np.array([0.01, 0.01])*np.sqrt(body.mass)
             geom.append({"@name": body.name, "@type": "capsule",
-                         "@size": np.array2string(size)[1:-1]})
+                         "@size": Utils.array_to_string(size)})
 
         else:
 
@@ -450,7 +453,8 @@ class Joint:
         self.orientation_in_parent = Quaternion(matrix=np.matmul(np.matmul(x, y), z))
 
         # Some joint values are dependent on other joint values; we need to create equality constraints between those
-        self.equality_constraints = []
+        # Also we might need to use weld constraints on locked joints
+        self.equality_constraints = {"joint": [], "weld": []}
 
         # CustomJoint can represent any joint, we need to figure out
         # what kind of joint we're dealing with
@@ -502,12 +506,12 @@ class Joint:
 
             # Parse all Coordinates
             for c in coordinate:
-                assert c["locked"] == "false", "TODO We aren't handling this situation; means that joint is locked to the default value"
-
                 coordinate_set[c["@name"]] = {
                     "motion_type": c["motion_type"], "name": c["@name"],
                     "range": np.array(c["range"].split(), dtype=float),
-                    "limited": True if c["clamped"] == "true" else False}
+                    "limited": True if c["clamped"] == "true" else False,
+                    "locked": True if c["locked"] == "true" else False,
+                    "transform_value": float(c["default_value"]) if "default_value" in c else None}
 
         # Go through axes; rotations should come first and translations after
         order = ["rotation1", "rotation2", "rotation3", "translation1", "translation2", "translation3"]
@@ -519,17 +523,17 @@ class Joint:
 
             # Use the Coordinate parameters we parsed earlier; note that these do not exist for all joints (e.g
             # constant joints)
-            if t["coordinates"] in coordinate_set:
+            if t.get("coordinates", None) in coordinate_set:
                 params = copy.deepcopy(coordinate_set[t["coordinates"]])
             else:
-                params = {"name": "{}_{}".format(joint["@name"], t["@name"]), "limited": False}
+                params = {"name": "{}_{}".format(joint["@name"], t["@name"]), "limited": False,
+                          "transform_value": 0}
 
             # Set default reference position/angle to zero. These probably need to be zero for joint equality
             # constraints (i.e. the quartic functions)!
             params["ref"] = 0
 
-            # By default don't treat this joint as a fixed joint (or update the joint location)
-            params["transform_value"] = 0
+            # By default add this joint to MuJoCo model
             params["add_to_mujoco_joints"] = True
 
             # Handle a "Constant" transformation. We're not gonna create this joint
@@ -540,8 +544,10 @@ class Joint:
                 # Get the value
                 if "MultiplierFunction" in t["function"]:
                     value = float(t["function"]["MultiplierFunction"]["function"]["Constant"]["value"])
-                else:
+                elif "Constant" in t["function"]:
                     value = float(t["function"]["Constant"]["value"])
+                else:
+                    raise NotImplementedError
 
                 # If the value is near zero don't bother creating this joint
                 if abs(value) < 1e-6:
@@ -667,9 +673,10 @@ class Joint:
 
                 # Add the equality constraint
                 if params["add_to_mujoco_joints"]:
-                    self.equality_constraints.append({"@name": params["name"] + "_constraint", "@active": "true",
-                                                      "@joint1": params["name"], "@joint2": independent_joint,
-                                                      "@polycoef": np.array2string(polycoef, suppress_small=True)[1:-1]})
+                    self.equality_constraints["joint"].append({"@name": params["name"] + "_constraint",
+                                                               "@active": "true", "@joint1": params["name"],
+                                                               "@joint2": independent_joint,
+                                                               "@polycoef": Utils.array_to_string(polycoef)})
 
             elif Utils.is_nested_field(t, "LinearFunction", ["function"]):
 
@@ -693,7 +700,7 @@ class Joint:
             else:
                 raise TypeError("Unidentified transformation {}".format(t["@name"]))
 
-            # If do_transform is True, then we need to update T
+            # If we add this joint then need to update T
             if params["transform_value"] != 0:
                 if params["type"] == "hinge":
                     T_t = Utils.create_rotation_matrix(params["axis"], params["transform_value"])
@@ -705,10 +712,29 @@ class Joint:
             if params["add_to_mujoco_joints"]:
                 self.mujoco_joints.append(params)
 
+            # We need to add an equality constraint for locked joints
+            if params["locked"]:
+
+                # Get relative pose
+                T_t_inv = np.linalg.inv(T_t)
+                relpose = np.concatenate((T_t_inv[:3, 3], Quaternion(matrix=T_t_inv).elements))
+
+                # Create the constraint
+                constraint = {"@name": params["name"] + "_constraint", "@active": "true", "@body1": self.child_body}
+
+                # Add parent body only if it's not ground/worldbody
+                # TODO how to check what is the name of origin_body here?
+                # The problem is that we parse joints first and then find origin_body
+                if self.parent_body != "ground":
+                    constraint["@body2"] = self.parent_body
+
+                # Add to equality constraints
+                self.equality_constraints["weld"].append(constraint)
+
         return T
 
-    def get_equality_constraints(self):
-        return self.equality_constraints
+    def get_equality_constraints(self, constraint_type):
+        return self.equality_constraints[constraint_type]
 
 
 class Body:
@@ -746,7 +772,7 @@ class Body:
                 for g in geometry:
                     display_geometry_scale = np.array(g["scale_factors"].split(), dtype=float)
                     total_scale = visible_object_scale * display_geometry_scale
-                    g["scale_factors"] = np.array2string(total_scale)[1:-1]
+                    g["scale_factors"] = Utils.array_to_string(total_scale)
                     self.mesh.append(g)
 
             elif "geometry_files" in obj["VisibleObject"] \
@@ -757,7 +783,7 @@ class Body:
                 for f in files:
                     self.mesh.append(
                         {"geometry_file": f,
-                         "scale_factors": np.array2string(visible_object_scale)[1:-1]})
+                         "scale_factors": Utils.array_to_string(visible_object_scale)})
 
             else:
                 print("No geometry files for body [{}]".format(self.name))
@@ -814,7 +840,10 @@ class Muscle:
                     # We treat this as a fixed PathPoint, definitely not kosher
 
                     # Get path point location
-                    location = np.array(path_point["location"].split(), dtype=float)
+                    if "location" not in path_point:
+                        location = np.array([0, 0, 0], dtype=float)
+                    else:
+                        location = np.array(path_point["location"].split(), dtype=float)
 
                     # Transform x,y, and z values (if they are defined) to values they assume when their independent
                     # variable is zero
@@ -823,7 +852,7 @@ class Muscle:
                     location[2] = self.update_moving_path_point_location("z_location", path_point)
 
                     # Save the new location and the path point
-                    path_point["location"] = np.array2string(location, suppress_small=True)[1:-1]
+                    path_point["location"] = Utils.array_to_string(location)
                     self.path_point_set[path_point["body"]].append(path_point)
 
                     self.sites.append({"@site": path_point["@name"]})
@@ -848,8 +877,12 @@ class Muscle:
     def update_moving_path_point_location(self, coordinate_name, path_point):
         if coordinate_name in path_point:
             # Parse x and y values
-            x_values = np.array(path_point[coordinate_name]["MultiplierFunction"]["function"]["SimmSpline"]["x"].split(), dtype=float)
-            y_values = np.array(path_point[coordinate_name]["MultiplierFunction"]["function"]["SimmSpline"]["y"].split(), dtype=float)
+            if "SimmSpline" in path_point[coordinate_name]:
+                x_values = np.array(path_point[coordinate_name]["SimmSpline"]["x"].split(), dtype=float)
+                y_values = np.array(path_point[coordinate_name]["SimmSpline"]["y"].split(), dtype=float)
+            else:
+                x_values = np.array(path_point[coordinate_name]["MultiplierFunction"]["function"]["SimmSpline"]["x"].split(), dtype=float)
+                y_values = np.array(path_point[coordinate_name]["MultiplierFunction"]["function"]["SimmSpline"]["y"].split(), dtype=float)
 
             # Fit a cubic spline (if more than 2 values)
             if len(x_values) == 2:
@@ -862,15 +895,14 @@ class Muscle:
 
     def get_tendon(self):
         # Return MuJoCo tendon representation of this muscle
-        tendon = {"@name": self.name + "_tendon", "@width": "0.004",
-                  "@rgba": ".95 .3 .3 1", "@limited": "false", "site": self.sites}
+        tendon = {"@name": self.name + "_tendon", "site": self.sites}
         return tendon
 
     def get_actuator(self):
         # Return MuJoCo actuator representation of this muscle
         actuator = {"@name": self.name, "@tendon": self.name + "_tendon"}
         if np.all(np.isfinite(self.timeconst)):
-            actuator["@timeconst"] = np.array2string(self.timeconst)[1:-1]
+            actuator["@timeconst"] = Utils.array_to_string(self.timeconst)
         return actuator
 
     def is_disabled(self):
