@@ -98,10 +98,9 @@ def run_simulation(sim, model, kinematics_values, control_values, visualise=Fals
     return {"qpos": pd.DataFrame(qpos, index=control_values.index, columns=model.joint_names)}
 
 
-def get_control(model):
+def get_control(model, control_file):
 
     # Import muscle control values (force or control?) of reference movement
-    control_file = "/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/CMC/leg6dof9musc_controls.sto"
     control_values, control_header = parse_sto_file(control_file)
 
     # Make sure actuators match
@@ -114,10 +113,9 @@ def get_control(model):
     return control_values, control_header
 
 
-def get_kinematics(model):
+def get_kinematics(model, kinematics_file):
 
     # Import joint positions during reference movement
-    kinematics_file = "/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/CMC/leg6dof9musc_Kinematics_q.sto"
     kinematics_values, kinematics_header = parse_sto_file(kinematics_file)
 
     # TODO Make sure joints match
@@ -258,12 +256,14 @@ def main():
     model = mujoco_py.load_model_from_path(model_xml_path)
 
     # Get muscle control values
-    control_values, control_header = get_control(model)
+    control_file = "/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/CMC/leg6dof9musc_controls.sto"
+    control_values, control_header = get_control(model, control_file)
     if control_values is None:
         return
 
     # Get joint kinematics values
-    kinematics_values, kinematics_header = get_kinematics(model)
+    kinematics_file = "/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/CMC/leg6dof9musc_Kinematics_q.sto"
+    kinematics_values, kinematics_header = get_kinematics(model, kinematics_file)
     if kinematics_values is None:
         return
 
@@ -274,7 +274,7 @@ def main():
 
     # Timestep might not be constant in the OpenSim reference movement (weird). We can't change timestep dynamically in
     # mujoco, at least the viewer does weird things and it could be reflecting underlying issues. Thus, we should
-    # to fit a spline and interpolate the muscle control and joint kinematics with model.opt.timestep
+    # interpolate the muscle control and joint kinematics with model.opt.timestep
     #model.opt.timestep /= 2.65
     control_values = reindex_dataframe(control_values, model.opt.timestep)
     kinematics_values = reindex_dataframe(kinematics_values, model.opt.timestep)
@@ -341,5 +341,3 @@ def main():
 
     print(np.sqrt(es.result.xbest))
     es.plot()
-
-main()
