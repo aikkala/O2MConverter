@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<mujoco model="leg6dof9musc_converted">
+<mujoco model="leg6dof9musc">
   <compiler inertiafromgeom="auto" angle="radian"></compiler>
   <default>
     <joint limited="true" damping="1" armature="0.01" stiffness="5"></joint>
@@ -28,9 +28,9 @@
       <site name="psoas_r-P1" pos="-0.0676753 0.0927789 0.030229"></site>
       <site name="psoas_r-P2" pos="-0.0248945 -0.0596212 0.0793903"></site>
       <site name="rect_fem_r-P1" pos="-0.0308566 -0.0325302 0.101251"></site>
-      <joint name="pelvis_tilt" type="hinge" pos="0 0 0" limited="false" axis="0. 0. 1." range="-1.57079633  1.57079633" armature="0" damping="0" stiffness="0"></joint>
-      <joint name="pelvis_tx" type="slide" pos="0 0 0" limited="false" axis="1. 0. 0." range="-1.  1." armature="0" damping="0" stiffness="0"></joint>
-      <joint name="pelvis_ty" type="slide" pos="0 0 0" limited="false" axis="0. 1. 0." range="-1.  3." armature="0" damping="0" stiffness="0"></joint>
+      <joint name="pelvis_tilt" type="hinge" pos="0 0 0" axis="0. 0. 1." limited="false" range="-1.57079633  1.57079633" armature="0" damping="0" stiffness="0"></joint>
+      <joint name="pelvis_tx" type="slide" pos="0 0 0" axis="1. 0. 0." limited="false" range="-1.  1." armature="0" damping="0" stiffness="0"></joint>
+      <joint name="pelvis_ty" type="slide" pos="0 0 0" axis="0. 1. 0." limited="false" range="-1.  3." armature="0" damping="0" stiffness="0"></joint>
       <body name="femur_r" pos="-0.0739512 -0.0691397  0.0873398" quat="0.9992742038021659 -0.00777274134338932 -0.037290293290919894 0.00029005832760076926">
         <inertial pos=" 0.       -0.199543  0.      " mass="8.54926632" fullinertia="0.16956431 0.0444489  0.17880867 0.         0.         0.        "></inertial>
         <geom name="femur_r" type="mesh" mesh="femur_r"></geom>
@@ -42,7 +42,7 @@
         <site name="vas_int_r-P1" pos="0.0340396 -0.225835 0.0363872"></site>
         <site name="vas_int_r-P2" pos="0.0393216 -0.244616 0.0334527"></site>
         <site name="med_gas_r-P1" pos="-0.0223018 -0.461178 -0.0275838"></site>
-        <joint name="hip_flexion_r" type="hinge" pos="0 0 0" limited="true" axis="0. 0. 1." range="-2.0943951  2.0943951"></joint>
+        <joint name="hip_flexion_r" type="hinge" pos="0 0 0" axis="0. 0. 1." limited="true" range="-2.0943951  2.0943951"></joint>
         <body name="tibia_r" pos="-0.00427167 -0.46448049  0.        " quat="1.0 0.0 0.0 0.0">
           <inertial pos=" 0.     -0.2098  0.    " mass="4.67404243" fullinertia="0.08023514 0.00811903 0.08134951 0.         0.         0.        "></inertial>
           <geom name="tibia_r" type="mesh" mesh="tibia_r"></geom>
@@ -56,7 +56,7 @@
           <site name="soleus_r-P1" pos="-0.00269695 -0.172268 0.00797847"></site>
           <site name="tib_ant_r-P1" pos="0.0201147 -0.182493 0.0129229"></site>
           <site name="tib_ant_r-P2" pos="0.0369707 -0.443985 -0.01989"></site>
-          <joint name="knee_angle_r" type="hinge" pos="0 0 0" limited="true" axis="0. 0. 1." range="-2.0943951   0.17453293"></joint>
+          <joint name="knee_angle_r" type="hinge" pos="0 0 0" axis="0. 0. 1." limited="true" range="-2.0943951   0.17453293"></joint>
           <body name="patella_r" pos=" 0.05533956 -0.02602723  0.        " quat="0.9999867936546127 0.0 0.0 -0.005139310884454988">
             <inertial pos="0. 0. 0." mass="0.09191376" fullinertia="0.00110296 0.00110296 0.00110296 0.         0.         0.        "></inertial>
             <geom name="pat" type="mesh" mesh="pat"></geom>
@@ -64,7 +64,7 @@
           <body name="talus_r" pos=" 0.       -0.483203  0.      " quat="1.0 0.0 0.0 0.0">
             <inertial pos="0. 0. 0." mass="0.12606858" fullinertia="0.00202166 0.00202166 0.00202166 0.         0.         0.        "></inertial>
             <geom name="talus" type="mesh" mesh="talus"></geom>
-            <joint name="ankle_angle_r" type="hinge" pos="0 0 0" limited="false" axis="-0.105 -0.174  0.979" range="-1.57079633  1.57079633"></joint>
+            <joint name="ankle_angle_r" type="hinge" pos="0 0 0" axis="-0.105 -0.174  0.979" limited="false" range="-1.57079633  1.57079633"></joint>
             <body name="calcn_r" pos="-0.0620508 -0.0531864  0.0101307" quat="1.0 0.0 0.0 0.0">
               <inertial pos="0.102693  0.0308079 0.       " mass="1.07224816" fullinertia="0.00090462 0.00361848 0.00361848 0.         0.         0.        "></inertial>
               <geom name="foot" type="mesh" mesh="foot"></geom>
