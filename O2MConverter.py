@@ -713,7 +713,7 @@ class Joint:
                 self.mujoco_joints.append(params)
 
             # We need to add an equality constraint for locked joints
-            if params["locked"]:
+            if "locked" in params and params["locked"]:
 
                 # Get relative pose
                 T_t_inv = np.linalg.inv(T_t)
