@@ -9,6 +9,7 @@ import xmltodict
 import admesh
 from pyquaternion import Quaternion
 from shutil import copyfile
+from natsort import natsorted, ns
 
 import Utils
 
@@ -872,7 +873,7 @@ class Muscle:
         except ValueError:
             raise ValueError("Check these site names, they might not be sorted correctly")
 
-        self.sites = sorted(self.sites, key=lambda k: k["@site"])
+        self.sites = natsorted(self.sites, alg=ns.IGNORECASE)
 
     def update_moving_path_point_location(self, coordinate_name, path_point):
         if coordinate_name in path_point:
