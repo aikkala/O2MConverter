@@ -10,6 +10,7 @@ import admesh
 from pyquaternion import Quaternion
 from shutil import copyfile
 from natsort import natsorted, ns
+from operator import itemgetter
 
 import Utils
 
@@ -873,7 +874,7 @@ class Muscle:
         except ValueError:
             raise ValueError("Check these site names, they might not be sorted correctly")
 
-        self.sites = natsorted(self.sites, alg=ns.IGNORECASE)
+        self.sites = natsorted(self.sites, key=itemgetter(*['@site']), alg=ns.IGNORECASE)
 
     def update_moving_path_point_location(self, coordinate_name, path_point):
         if coordinate_name in path_point:
