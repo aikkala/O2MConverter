@@ -11,6 +11,7 @@ from pyquaternion import Quaternion
 from shutil import copyfile
 from natsort import natsorted, ns
 from operator import itemgetter
+from sklearn.metrics import r2_score
 
 import Utils
 
@@ -76,9 +77,9 @@ class Converter:
         # Create the output folder
         os.makedirs(self.output_folder, exist_ok=True)
 
-        # Get constraints
+        # Find and parse constraints
         if "ConstraintSet" in p["OpenSimDocument"]["Model"]:
-            self.constraints = p["OpenSimDocument"]["Model"]["ConstraintSet"]["objects"]
+            self.parse_constraints(p["OpenSimDocument"]["Model"]["ConstraintSet"]["objects"])
 
         # Find and parse bodies and joints
         if "BodySet" in p["OpenSimDocument"]["Model"]:
@@ -102,12 +103,74 @@ class Converter:
         if self.geometry_folder is not None:
             self.fix_stl_files()
 
+    def parse_constraints(self, p):
+
+        # Go through all (possibly different kinds of) constraints
+        for constraint_type in p:
+
+            # Make sure we're dealing with a list
+            if isinstance(p[constraint_type], dict):
+                p[constraint_type] = [p[constraint_type]]
+
+            # Go through all constraints
+            for constraint in p[constraint_type]:
+
+                if "SimmSpline" in constraint["coupled_coordinates_function"]:
+
+                    x_values = constraint["coupled_coordinates_function"]["SimmSpline"]["x"]
+                    y_values = constraint["coupled_coordinates_function"]["SimmSpline"]["y"]
+
+                    # Convert into numpy arrays
+                    x_values = np.array(x_values.split(), dtype=float)
+                    y_values = np.array(y_values.split(), dtype=float)
+
+                    assert len(x_values) > 1 and len(y_values) > 1, "Not enough points, can't fit a spline"
+
+                    # Fit a linear / quadratic / cubic function
+                    fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values)-1))
+
+                    # A simple check to see if the fit is alright
+                    y_fit = fit(x_values)
+                    assert r2_score(y_values, y_fit) > 0.5, "A bad approximation of the SimmSpline"
+
+                    # We need to do a transformation also (really only needed if fit(0) is non-zero, but it's likely
+                    # to always be non-zero), and modify the fitted function
+                    #y_values = y_values - fit(0)
+
+                    # Get the fit
+                    #fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values)-1))
+
+                    # Get the weights
+                    polycoef = np.zeros((5,))
+                    polycoef[:fit.coef.shape[0]] = fit.coef
+
+                elif "LinearFunction" in constraint["coupled_coordinates_function"]:
+
+                    # Get coefficients of the linear function
+                    coefs = np.array(constraint["coupled_coordinates_function"]["LinearFunction"]["coefficients"].split(), dtype=float)
+
+                    # Make a quartic representation of the linear function
+                    polycoef = np.zeros((5,))
+                    polycoef[0] = coefs[1]
+                    polycoef[1] = coefs[0]
+
+                else:
+                    raise NotImplementedError
+
+                # Create a constraint
+                self.equality["joint"].append({
+                    "@name": constraint["@name"],
+                    "@joint1": constraint["dependent_coordinate_name"],
+                    "@joint2": constraint["independent_coordinate_names"],
+                    "@active": "true" if constraint["isDisabled"] == "false" else "false",
+                    "@polycoef": Utils.array_to_string(polycoef)})
+
     def parse_bodies_and_joints(self, p):
 
         # Go through all bodies and their joints
         for obj in p["Body"]:
             b = Body(obj)
-            j = Joint(obj, self.constraints)
+            j = Joint(obj, self.equality)
 
             # Add b to bodies
             self.bodies[b.name] = b
@@ -166,7 +229,8 @@ class Converter:
             "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "3", "@rgba": "0.8 0.6 .4 1",
                      "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
             "site": {"@size": "0.001"},
-            "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"}}
+            "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"},
+            "muscle": {"@scale": "1000"}}
         model["mujoco"]["option"] = {"@timestep": "0.002", "@iterations": "50", "@solver": "PGS",
                                      "flag": {"@energy": "enable"}}
         model["mujoco"]["size"] = {"@nconmax": "400"}
@@ -183,7 +247,7 @@ class Converter:
 
         # Rotate self.origin_joint.orientation_in_parent so the model is upright
         self.origin_joint.orientation_in_parent = self.origin_joint.orientation_in_parent.rotate(
-            Quaternion(axis=[0, 0, 1], angle=-math.pi/2))
+            Quaternion(axis=[1, 0, 0], angle=math.pi / 2))
 
         # Increase z-coordinate a little bit to make sure the whole thing is above floor
         self.origin_joint.location_in_parent[2] = self.origin_joint.location_in_parent[2] + 1.0
@@ -234,7 +298,15 @@ class Converter:
         model["mujoco"]["tendon"] = {"spatial": self.tendon}
         model["mujoco"]["actuator"] = {"muscle": self.actuator}
 
-        # Add equality constraints between joints
+        # Add equality constraints between joints; note that we may need to remove some equality constraints
+        # that were set in ConstraintSet but then overwritten or not used
+        for constraint in self.equality["joint"]:
+            for parent_body in self.joints:
+                for joint in self.joints[parent_body]:
+                    for mujoco_joint in joint.mujoco_joints:
+                        if mujoco_joint["name"] == constraint["@joint1"]:
+                            break
+            self.equality["joint"].remove(constraint)
         model["mujoco"]["equality"] = self.equality
 
         return model
@@ -516,12 +588,12 @@ class Joint:
                     "transform_value": float(c["default_value"]) if "default_value" in c else None}
 
         # Go through axes; rotations should come first and translations after
-        order = ["rotation1", "rotation2", "rotation3", "translation1", "translation2", "translation3"]
-        for t in transform_axes:
+        #order = ["rotation1", "rotation2", "rotation3", "translation1", "translation2", "translation3"]
+        for t in transform_axes[::-1]:
 
             # Make sure order is correct
-            assert order[0] == t["@name"], "TODO Wrong order of transformations"
-            order.pop(0)
+            #assert order[0] == t["@name"], "TODO Wrong order of transformations"
+            #order.pop(0)
 
             # Use the Coordinate parameters we parsed earlier; note that these do not exist for all joints (e.g
             # constant joints)
@@ -592,32 +664,31 @@ class Joint:
 
                 assert len(x_values) > 1 and len(y_values) > 1, "Not enough points, can't fit a spline"
 
-                # A kind of switch statement?
-                kind = {2: "linear", 3: "quadratic"}.get(len(x_values), "cubic")
+                # Fit a linear / quadratic / cubic function
+                fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values) - 1))
 
-                # Fit the spline (I'm not sure what kind of spline SimmSpline is, but let's use a cubic spline here)
-                f_spline = interp1d(x_values, y_values, kind=kind)
+                # A simple check to see if the fit is alright
+                y_fit = fit(x_values)
+                assert r2_score(y_values, y_fit) > 0.5, "A bad approximation of the SimmSpline"
 
-                # Fit the quartic approximation
-                f_quartic = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, 4)
+                # We need to do a transformation also (really only needed if fit(0) is non-zero, but it's likely
+                # to always be non-zero), and modify the fitted function
+                #y_values = y_values - fit(0)
 
-                # Estimate error between these fits with an Rsquared
-                fit_spline = f_spline(x_values)
-                fit_quartic = f_quartic(x_values)
-                ssreg = np.sum((fit_quartic - np.mean(fit_spline)) ** 2)
-                sstot = np.sum((fit_spline - np.mean(fit_spline)) ** 2)
-                assert ssreg / sstot > 0.5, "A bad quartic approximation of the cubic spline"
+                # Get the fit
+                #fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values) - 1))
 
-                # We need to do a transformation also (really only needed if f_quartic(0) is non-zero, but it's likely
+                polycoef = fit.coef
+
                 # to always be non-zero), and modify the quartic function
-                params["transform_value"] = f_quartic(0)
+                params["transform_value"] = fit(0)
                 y_values = y_values - params["transform_value"]
 
                 # Get the new quartic function
-                f_quartic = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, 4)
+                fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, 4)
 
                 # Get the weights
-                polycoef = f_quartic.coef
+                polycoef = fit.coef
 
                 # Update name; since this is a dependent joint variable the independent joint variable might already
                 # have this name
@@ -627,8 +698,8 @@ class Joint:
                 params["limited"] = True
 
                 # Get min and max values
-                fit_quartic = f_quartic(x_values)
-                params["range"] = np.array([min(fit_quartic), max(fit_quartic)])
+                y_fit = fit(x_values)
+                params["range"] = np.array([min(y_fit), max(y_fit)])
 
                 # Add a joint constraint between this joint and the independent joint, which we assume to be named
                 # t["coordinates"]
@@ -640,26 +711,23 @@ class Joint:
 
                     # Find the constraint that pertains to this joint
                     constraint_found = False
-                    if constraints is not None and "CoordinateCouplerConstraint" in constraints:
-                        # Make sure CoordinateCouplerConstraint is a list
-                        if isinstance(constraints["CoordinateCouplerConstraint"], dict):
-                            constraints["CoordinateCouplerConstraint"] = [constraints["CoordinateCouplerConstraint"]]
 
-                        # Go through all CoordinateCouplerConstraints
-                        for c in constraints["CoordinateCouplerConstraint"]:
-                            if c["isDisabled"] == "true" or c["dependent_coordinate_name"] != t["coordinates"]:
-                                continue
-                            else:
-                                constraint_found = True
-                                # Change the name of the independent joint
-                                independent_joint = c["independent_coordinate_names"]
-                                if Utils.is_nested_field(c, "coefficients", ["coupled_coordinates_function", "LinearFunction"]):
-                                    # Update params["polycoef"]
-                                    coeffs = np.array(c["coupled_coordinates_function"]["LinearFunction"]["coefficients"].split(),
-                                                       dtype=float)
-                                    polycoef = coeffs[0]*polycoef
-                                    polycoef[0] = polycoef[0] + coeffs[1]
-                                break
+                    # Go through all joint equality constraints
+                    for c in constraints["joint"]:
+                        if c["@joint1"] != t["coordinates"]:
+                            continue
+                        else:
+                            constraint_found = True
+
+                            # Change the name of the independent joint
+                            independent_joint = c["@joint2"]
+
+                            # We're handling only an identity transformation for now
+                            coeffs = np.array(c["@polycoef"].split(), dtype=float)
+                            assert np.array_equal(coeffs, np.array([0, 1, 0, 0, 0])), \
+                                "We're handling only identity transformations for now"
+
+                        break
 
                     assert constraint_found, "Couldn't find an independent joint for a coupled joint"
 
@@ -675,10 +743,13 @@ class Joint:
 
                 # Add the equality constraint
                 if params["add_to_mujoco_joints"]:
+                    # We don't want to create a transform so set transform_value to zero
+                    #params["transform_value"] = 0
                     self.equality_constraints["joint"].append({"@name": params["name"] + "_constraint",
                                                                "@active": "true", "@joint1": params["name"],
                                                                "@joint2": independent_joint,
-                                                               "@polycoef": Utils.array_to_string(polycoef)})
+                                                               "@polycoef": Utils.array_to_string(polycoef),
+                                                               "@solimp": "0.9999 0.9999 0.001 0.5 2"})
 
             elif Utils.is_nested_field(t, "LinearFunction", ["function"]):
 
@@ -686,6 +757,9 @@ class Joint:
                 # second intercept)
                 coefficients = np.array(t["function"]["LinearFunction"]["coefficients"].split(), dtype=float)
                 assert coefficients[0] == 1 and coefficients[1] == 0, "How do we handle this linear function?"
+
+                # Don't use transform_value here; we just want to use this joint as a mujoco joint
+                params["transform_value"] = 0
 
             # Other functions are not defined yet
             else:
@@ -718,8 +792,8 @@ class Joint:
             if "locked" in params and params["locked"]:
 
                 # Get relative pose
-                T_t_inv = np.linalg.inv(T_t)
-                relpose = np.concatenate((T_t_inv[:3, 3], Quaternion(matrix=T_t_inv).elements))
+                #T_t_inv = np.linalg.inv(T_t)
+                #relpose = np.concatenate((T_t_inv[:3, 3], Quaternion(matrix=T_t_inv).elements))
 
                 # Create the constraint
                 constraint = {"@name": params["name"] + "_constraint", "@active": "true", "@body1": self.child_body}
