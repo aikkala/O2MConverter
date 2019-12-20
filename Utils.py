@@ -1,4 +1,6 @@
 import numpy as np
+from pyquaternion import Quaternion
+import math
 
 
 def is_nested_field(d, field, nested_fields):
@@ -15,7 +17,7 @@ def is_nested_field(d, field, nested_fields):
             return False
 
 
-def create_rotation_matrix(axis, rad):
+def create_rotation_matrix(axis, rad=None, deg=None):
     R = np.eye(4, 4)
 
     # Make sure axis is a unit vector
@@ -24,6 +26,12 @@ def create_rotation_matrix(axis, rad):
     l = axis[0]
     m = axis[1]
     n = axis[2]
+
+    # Convert deg to rad if needed
+    if rad is None:
+        if deg is None:
+            raise ValueError("Either rad or deg must be given")
+        rad = (math.pi / 180) * deg
 
     # Create the rotation matrix
     R[0, 0] = l*l*(1-np.cos(rad)) + np.cos(rad)
@@ -70,3 +78,17 @@ def create_symmetric_matrix(vec):
 
 def array_to_string(array):
     return ' '.join(['%8g' % num for num in array])
+
+
+def create_transformation_matrix(pos=None, quat=None, R=None):
+    T = np.eye(4)
+
+    if pos is not None:
+        T[:3, 3] = pos
+
+    if quat is not None:
+        T[:3, :3] = Quaternion(quat).rotation_matrix
+    elif R is not None:
+        T[:3, :3] = R
+
+    return T
