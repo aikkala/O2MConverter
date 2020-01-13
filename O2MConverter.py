@@ -230,7 +230,7 @@ class Converter:
                      "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
             "site": {"@size": "0.001"},
             "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"},
-            "muscle": {"@scale": "1000"}}
+            "muscle": {"@scale": "200"}}
         model["mujoco"]["option"] = {"@timestep": "0.002", "@iterations": "50", "@solver": "PGS",
                                      "flag": {"@energy": "enable"}}
         model["mujoco"]["size"] = {"@nconmax": "400"}
