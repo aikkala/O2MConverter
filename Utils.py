@@ -1,6 +1,7 @@
 import numpy as np
 from pyquaternion import Quaternion
 import math
+import pandas as pd
 
 
 def is_nested_field(d, field, nested_fields):
@@ -92,3 +93,77 @@ def create_transformation_matrix(pos=None, quat=None, R=None):
         T[:3, :3] = R
 
     return T
+
+
+def get_control(model, control_file):
+
+    # Import muscle control values (force or control?) of reference movement
+    control_values, control_header = parse_sto_file(control_file)
+
+    # Make sure actuators match
+    column_names = list(control_values)
+    for muscle_name in model._actuator_name2id:
+        if muscle_name not in column_names:
+            print("Activations for muscle {} were not found from control file {}".format(muscle_name, control_file))
+            return None
+
+    return control_values, control_header
+
+
+def parse_sto_file(sto_file):
+
+    with open(sto_file) as file:
+
+        # Go through header and parse it
+        header_found = False
+        header = dict()
+        for row in file:
+
+            # Get rid of newline
+            row = row.rstrip()
+
+            # Check if there's an assignment
+            if "=" in row:
+                assignment = row.split("=")
+                header[assignment[0]] = assignment[1]
+
+            # Else ignore the header row
+            else:
+                columns = row.split("\n")
+                if len(columns) == 1 and columns[0] == "endheader":
+                    header_found = True
+                    break
+
+        if not header_found:
+            print("Couldn't parse the header!")
+            return pd.DataFrame.empty
+
+        # Create a pandas dataframe from the actual data
+        values = pd.read_csv(file, sep="\t", skipinitialspace=True, dtype=float)
+
+        # Set time as index
+        values = pd.DataFrame.set_index(values, "time")
+
+        # Return the dataframe
+        return values, header
+
+
+def reindex_dataframe(df, timestep):
+    # Reindex / interpolate dataframe with new timestep
+
+    # Make time start from zero
+    index_name = df.index.name
+    df.index = df.index.values - df.index.values[0]
+
+    # Get new index
+    new_index = np.arange(0, df.index.values[-1], timestep)
+
+    # Create a new dataframe
+    new_df = pd.DataFrame(index=new_index)
+    new_df.index.name = index_name
+
+    # Copy and interpolate values
+    for colname, col in df.iteritems():
+        new_df[colname] = np.interp(new_index, df.index, col)
+
+    return new_df
