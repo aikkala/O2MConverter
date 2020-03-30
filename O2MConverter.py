@@ -36,6 +36,10 @@ class Converter:
         self.joints = dict()
         self.muscles = []
 
+        # We need to keep track of coordinates in joints' CoordinateSet, we might need to use them for setting up
+        # equality constraints
+        self.coordinates = dict()
+
         # These dictionaries (or list of dicts) are in MuJoCo style (when converted to XML)
         self.asset = dict()
         self.tendon = []
@@ -132,8 +136,8 @@ class Converter:
 
                     assert len(x_values) > 1 and len(y_values) > 1, "Not enough points, can't fit a spline"
 
-                    # Fit a linear / quadratic / cubic function
-                    fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values)-1)) # why is this returning incorrect coefficients??
+                    # Fit a linear / quadratic / cubic / quartic function
+                    fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values)-1))
 
                     # A simple check to see if the fit is alright
                     y_fit = fit(x_values)
@@ -181,6 +185,9 @@ class Converter:
 
             # Add b to bodies
             self.bodies[b.name] = b
+
+            # Get coordinates, we might need them for setting up equality constraints
+            self.coordinates = {**self.coordinates, **j.get_coordinates()}
 
             # Ignore joint if it is None
             if j.parent_body is None:
@@ -512,6 +519,7 @@ class Joint:
 
         joint = obj["Joint"]
         self.parent_body = None
+        self.coordinates = dict()
 
         # 'ground' body does not have joints
         if joint is None or len(joint) == 0:
@@ -563,7 +571,7 @@ class Joint:
             # attached rigidly to each other in MuJoCo
             pass
         else:
-            print("Skipping a joint of type [{}]".format(self.joint_type))
+            raise NotImplementedError
 
     def get_transformation_matrix(self):
         T = self.orientation_in_parent.transformation_matrix
@@ -604,6 +612,13 @@ class Joint:
                     "locked": True if c["locked"] == "true" else False,
                     "transform_value": float(c["default_value"]) if "default_value" in c else None}
 
+        # NOTE! Coordinates in CoordinateSet parameterize this joint. In theory all six DoFs could be dependent
+        # on one Coordinate. Here we assume that only one DoF is equivalent to a Coordinate, that is, there exists an
+        # identity mapping between a Coordinate and a DoF, which is different to OpenSim where there might be no
+        # identity mappings. In OpenSim a Coordinate is just a value and all DoFs might have some kind of mapping with
+        # it, see e.g. "flexion" Coordinate in MoBL_ARMS_module6_7_CMC.osim model. MuJoCo doesn't have such abstract
+        # notion of a "Coordinate", and thus there cannot be a non-identity mapping from a joint to itself
+
         # Go through axes; rotations should come first and translations after
         for t in transform_axes[::-1]:
 
@@ -613,7 +628,7 @@ class Joint:
                 params = copy.deepcopy(coordinate_set[t["coordinates"]])
             else:
                 params = {"name": "{}_{}".format(joint["@name"], t["@name"]), "limited": False,
-                          "transform_value": 0}
+                          "transform_value": 0, "coordinates": "unspecified"}
 
             # Set default reference position/angle to zero. These probably need to be zero for joint equality
             # constraints (i.e. the quartic functions)!
@@ -621,6 +636,30 @@ class Joint:
 
             # By default add this joint to MuJoCo model
             params["add_to_mujoco_joints"] = True
+
+            # See the comment before this loop. We have to designate one DoF per Coordinate as an independent variable,
+            # i.e. make its dependence linear
+            if t["coordinates"] == params["name"] and t["@name"].startswith(params["motion_type"][:8]):
+
+                # Check if we need to modify limits, TODO not sure if this is correct or needed
+                if Utils.is_nested_field(t, "SimmSpline", ["function"]):
+
+                    # Fit a line/spline and check limit values within that fit
+                    x_values = np.array(t["function"]["SimmSpline"]["x"].split(), dtype=float)
+                    y_values = np.array(t["function"]["SimmSpline"]["y"].split(), dtype=float)
+                    assert len(x_values) > 1 and len(y_values) > 1, "Not enough points, can't fit a spline"
+                    fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values) - 1))
+                    assert r2_score(y_values, fit(x_values)) > 0.5, "A bad approximation of the SimmSpline"
+                    params["range"] = fit(params["range"])
+
+                elif Utils.is_nested_field(t, "LinearFunction", ["function"]):
+                    pass
+
+                else:
+                    raise NotImplementedError
+
+                # Make this into an identity mapping
+                t["function"] = dict({"LinearFunction": {"coefficients": '1 0'}})
 
             # Handle a "Constant" transformation. We're not gonna create this joint
             # but we need the transformation information to properly align the joint
@@ -675,7 +714,7 @@ class Joint:
 
                 assert len(x_values) > 1 and len(y_values) > 1, "Not enough points, can't fit a spline"
 
-                # Fit a linear / quadratic / cubic function
+                # Fit a linear / quadratic / cubic / quartic function
                 fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values) - 1))
 
                 # A simple check to see if the fit is alright
@@ -691,7 +730,8 @@ class Joint:
                 #fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, 4)
 
                 # Get the weights
-                polycoef = fit.convert().coef
+                polycoef = np.zeros((5,))
+                polycoef[:fit.coef.shape[0]] = fit.convert().coef
 
                 # Update name; since this is a dependent joint variable the independent joint variable might already
                 # have this name
@@ -708,6 +748,8 @@ class Joint:
 
                 # Some dependent joint values may be coupled to another joint values. We need to find the name of
                 # the independent joint
+                # TODO We could do this after the model has been built since we just swap joint names,
+                # then we wouldn't need to pass constraints into body/joint parser
                 if "motion_type" in params and params["motion_type"] == "coupled":
 
                     # Find the constraint that pertains to this joint
@@ -792,6 +834,9 @@ class Joint:
             if params["add_to_mujoco_joints"]:
                 self.mujoco_joints.append(params)
 
+                # We might need this coordinate later for setting equality constraints between joints
+                self.coordinates[t["coordinates"]] = params
+
             # We need to add an equality constraint for locked joints
             if "locked" in params and params["locked"]:
 
@@ -821,6 +866,9 @@ class Joint:
 
     def get_equality_constraints(self, constraint_type):
         return self.equality_constraints[constraint_type]
+
+    def get_coordinates(self):
+        return self.coordinates
 
 
 class Body:
@@ -904,7 +952,6 @@ class Muscle:
             time_scale = np.array(obj["time_scale"].split(), dtype=float)
             self.timeconst *= time_scale
 
-
         # TODO We're adding length ranges here because MuJoCo's automatic computation fails. Not sure how they should
         # be calculated though, these values are most likely incorrect
         self.length_range = np.array([0, 2])
@@ -947,7 +994,7 @@ class Muscle:
 
                 elif pp_type == "ConditionalPathPoint":
 
-                    # We treat this as a fixed PathPoint, not really kosher
+                    # We're ignoring ConditionalPathPoints for now
                     #self.path_point_set[path_point["body"]].append(path_point)
                     #self.sites.append({"@site": path_point["@name"]})
                     continue
@@ -962,8 +1009,7 @@ class Muscle:
                     else:
                         location = np.array(path_point["location"].split(), dtype=float)
 
-                    # Transform x,y, and z values (if they are defined) to values they assume when their independent
-                    # variable is zero
+                    # Transform x,y, and z values (if they are defined) to their mean values to minimise error
                     location[0] = self.update_moving_path_point_location("x_location", path_point)
                     location[1] = self.update_moving_path_point_location("y_location", path_point)
                     location[2] = self.update_moving_path_point_location("z_location", path_point)
@@ -1019,8 +1065,9 @@ class Muscle:
             else:
                 mdl = interp1d(x_values, y_values, kind="linear", fill_value="extrapolate")
 
-            # Return the value this coordinate assumes when independent variable is zero
-            return mdl(0)
+            # Return the mean of fit inside given range
+            x = np.linspace(x_values[0], x_values[-1], 1000)
+            return np.mean(mdl(x))
 
     def get_tendon(self):
         # Return MuJoCo tendon representation of this muscle
