@@ -2,6 +2,7 @@ import numpy as np
 from pyquaternion import Quaternion
 import math
 import pandas as pd
+import matplotlib.pyplot as pp
 
 
 def is_nested_field(d, field, nested_fields):
@@ -148,7 +149,7 @@ def parse_sto_file(sto_file):
         return values, header
 
 
-def reindex_dataframe(df, timestep):
+def reindex_dataframe(df, timestep, last_timestamp=None):
     # Reindex / interpolate dataframe with new timestep
 
     # Make time start from zero
@@ -156,7 +157,9 @@ def reindex_dataframe(df, timestep):
     df.index = df.index.values - df.index.values[0]
 
     # Get new index
-    new_index = np.arange(0, df.index.values[-1], timestep)
+    if last_timestamp is None:
+        last_timestamp = df.index.values[-1]
+    new_index = np.arange(0, last_timestamp+timestep, timestep)
 
     # Create a new dataframe
     new_df = pd.DataFrame(index=new_index)
@@ -167,3 +170,35 @@ def reindex_dataframe(df, timestep):
         new_df[colname] = np.interp(new_index, df.index, col)
 
     return new_df
+
+
+def estimate_joint_error(reference, simulated, joint_names=None, timesteps=None, plot=False):
+
+    # Reference and simulated need to be same shape
+    if reference.shape != simulated.shape:
+        print("Shapes of reference and simulated must be equal")
+        return np.nan
+
+    # Collect errors per joint
+    errors = np.empty((reference.shape[1],))
+
+    if plot:
+        _, axes = pp.subplots(reference.shape[1], 1)
+        if timesteps is None:
+            axes[-1].set_xlabel('Time (indices)')
+        else:
+            axes[-1].set_xlabel('Time (seconds)')
+
+    # Get abs sum of difference between reference joint and simulated joint
+    for idx in range(reference.shape[1]):
+        e = reference[:, idx] - simulated[:, idx]
+        errors[idx] = np.sum(np.abs(e))
+        if plot:
+            if timesteps is None:
+                timesteps = np.arange(0, reference.shape[0])
+            axes[idx].plot(timesteps, e)
+            axes[idx].plot(np.array([timesteps[0], timesteps[-1]]), np.array([0, 0]), 'k--')
+            if joint_names is not None:
+                axes[idx].set_ylabel(joint_names[idx])
+
+    return errors
