@@ -60,7 +60,7 @@ class Converter:
         self.origin_body = None
         self.origin_joint = None
 
-    def convert(self, input_xml, output_folder, geometry_folder=None):
+    def convert(self, input_xml, output_folder, geometry_folder=None, for_testing=False):
         """Convert given OpenSim XML model to MuJoCo XML model"""
 
         # Save input and output XML files in case we need them somewhere
@@ -96,7 +96,7 @@ class Converter:
         # Now we need to re-assemble them in MuJoCo format
         # (or actually a dict version of the model so we can use
         # xmltodict to save the model into a XML file)
-        mujoco_model = self.build_mujoco_model(p["OpenSimDocument"]["Model"]["@name"])
+        mujoco_model = self.build_mujoco_model(p["OpenSimDocument"]["Model"]["@name"], for_testing)
 
         # Finally, save the MuJoCo model into XML file
         output_xml = self.output_folder + model_name + ".xml"
@@ -232,7 +232,7 @@ class Converter:
                     for body_name in m.path_point_set:
                         self.bodies[body_name].add_sites(m.path_point_set[body_name])
 
-    def build_mujoco_model(self, model_name):
+    def build_mujoco_model(self, model_name, for_testing=False):
         # Initialise model
         model = {"mujoco": {"@model": model_name}}
 
@@ -253,6 +253,10 @@ class Converter:
         model["mujoco"]["visual"] = {
             "map": {"@fogstart": "3", "@fogend": "5", "@force": "0.1"},
             "quality": {"@shadowsize": "2048"}}
+
+        # If we're building this model for testing we need to disable collisions
+        if for_testing:
+            model["mujoco"]["option"]["@collision"] = "predefined"
 
         # Start building the worldbody
         worldbody = {"geom": {"@name": "floor", "@pos": "0 0 0", "@size": "10 10 0.125",
@@ -840,14 +844,15 @@ class Joint:
             # We need to add an equality constraint for locked joints
             if "locked" in params and params["locked"]:
 
+                relpose = np.array([0, 1, 0, 0, 0, 0, 0])
                 if params["default_value_for_locked"] != 0:
                     if params["type"] == "hinge":
                         T_t = Utils.create_rotation_matrix(params["axis"], params["default_value_for_locked"])
                     else:
                         T_t = Utils.create_translation_matrix(params["axis"], params["default_value_for_locked"])
 
-                T_t_inv = np.linalg.inv(T_t)
-                relpose = np.concatenate((T_t_inv[:3, 3], Quaternion(matrix=T_t_inv).elements))
+                    T_t_inv = np.linalg.inv(T_t)
+                    relpose = np.concatenate((T_t_inv[:3, 3], Quaternion(matrix=T_t_inv).elements))
 
                 # Create the constraint
                 constraint = {"@name": params["name"] + "_constraint", "@active": "true", "@body1": self.child_body,
@@ -1095,11 +1100,13 @@ class Muscle:
 
 def main(argv):
     converter = Converter()
+    geometry_folder = None
+    for_testing = False
     if len(argv) > 3:
         geometry_folder = argv[3]
-    else:
-        geometry_folder = None
-    converter.convert(argv[1], argv[2], geometry_folder)
+    if len(argv) > 4:
+        for_testing = True if argv[4].lower() == "true" else False
+    converter.convert(argv[1], argv[2], geometry_folder, for_testing)
 
 
 if __name__ == "__main__":
