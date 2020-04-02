@@ -4,6 +4,7 @@ import numpy as np
 import math
 import csv
 import os
+from datetime import datetime
 
 
 def generate_controls(t, nactuators):
@@ -18,7 +19,7 @@ def generate_controls(t, nactuators):
 
     # Generate a sine wave for each actuator
     for i in range(nactuators):
-        if np.random.rand() > 0.3:
+        if np.random.rand() > (1/3):
             continue
         freq = np.random.rand() * max_frequency
         amp = min_amplitude + np.random.rand() * (max_amplitude - min_amplitude)
@@ -31,10 +32,13 @@ def generate_controls(t, nactuators):
     return controls
 
 
-def write_output(filepath, t, controls, actuators):
+def write_output(output_folder, filename, t, controls, actuators):
+
+    # Make sure output folder exists
+    os.makedirs(output_folder, exist_ok=True)
 
     # Open file
-    with open(filepath, 'w') as file:
+    with open(os.path.join(output_folder, filename), 'w') as file:
         writer = csv.writer(file, delimiter='\t')
 
         # Write header first
@@ -52,6 +56,10 @@ def write_output(filepath, t, controls, actuators):
         np.savetxt(file, np.concatenate((t.reshape([-1, 1]), controls), axis=1), delimiter='\t', fmt='%12.8f')
 
 
+def get_epochtime_ms():
+    return round(datetime.utcnow().timestamp() * 1000)
+
+
 def main(model_xml_path, N, output_folder="."):
     """Generate a set of controls (for both OpenSim and MuJoCo) for given MuJoCo model"""
 
@@ -63,18 +71,18 @@ def main(model_xml_path, N, output_folder="."):
     model = mujoco_py.load_model_from_path(model_xml_path)
     actuators = list(model.actuator_names)
 
-    # Make sure output folder exists
-    os.makedirs(output_folder, exist_ok=True)
-
     # Then we have to generate a set of random controls for each actuator and write them to a OpenSim control file
     for i in range(N):
 
         # Generate controls
         controls = generate_controls(t, len(actuators))
 
-        # Write to a file
-        write_output(os.path.join(output_folder, "generated_controls_{}.sto".format(i)), t, controls, actuators)
+        # Create a folder and write to a file
+        sub_folder = os.path.join(output_folder, "run_{}".format(get_epochtime_ms()))
+        write_output(sub_folder, "controls.sto", t, controls, actuators)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], int(sys.argv[2]), sys.argv[3])
+    #main(sys.argv[1], int(sys.argv[2]), sys.argv[3])
+    main("/home/aleksi/Workspace/O2MConverter/models/converted/MoBL_ARMS_module6_7_CMC_converted/MoBL_ARMS_module6_7_CMC_converted.xml",
+         50, "/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/forward_dynamics")
