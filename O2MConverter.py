@@ -266,11 +266,12 @@ class Converter:
         self.origin_body, self.origin_joint = self.find_origin()
 
         # Rotate self.origin_joint.orientation_in_parent so the model is upright
-        self.origin_joint.orientation_in_parent = self.origin_joint.orientation_in_parent.rotate(
-            Quaternion(axis=[1, 0, 0], angle=math.pi / 2))
-
-        # Increase z-coordinate a little bit to make sure the whole thing is above floor
-        self.origin_joint.location_in_parent[2] = self.origin_joint.location_in_parent[2] + 1.0
+        # Rotation is done along an axis that goes through (0,0,0) coordinate
+        T_origin_joint = Utils.create_transformation_matrix(
+            self.origin_joint.location_in_parent,
+            quat=self.origin_joint.orientation_in_parent)
+        T_rotation = Utils.create_rotation_matrix(axis=[1, 0, 0], rad=math.pi/2)
+        self.origin_joint.set_transformation_matrix(np.matmul(T_rotation, T_origin_joint))
 
         # Add sites to worldbody / "ground" in OpenSim
         worldbody["site"] = self.bodies[self.origin_joint.parent_body].sites
@@ -281,11 +282,8 @@ class Converter:
                       "@specular": "0.3 0.3 0.3", "@pos": "0 0 4.0", "@dir": "0 0 -1"}}
 
         # Add cameras
-        main_camera_pos = copy.deepcopy(self.origin_joint.location_in_parent)
-        main_camera_pos[1] = main_camera_pos[1] - 1.75
-        main_camera_pos[2] = main_camera_pos[2] + 0.5
-        worldbody["camera"] = [{"@name": "main", "@pos": Utils.array_to_string(main_camera_pos), "@euler": "1.57 0 0"},
-                               {"@name": "origin_body", "@mode": "targetbody", "@target": self.origin_joint.child_body}]
+        if for_testing:
+            worldbody["camera"] = {"@name": "for_testing", "@pos": "0 0 0", "@euler": "0 0 0"}
 
         # Build the kinematic chains
         worldbody["body"] = self.add_body(worldbody["body"], self.origin_body,
@@ -363,12 +361,6 @@ class Converter:
                 worldbody["inertial"] = {"@pos": Utils.array_to_string(current_body.mass_center),
                                          "@mass": str(current_body.mass),
                                          "@fullinertia": Utils.array_to_string(current_body.inertia)}
-
-        # MuJoCo doesn't like moving bodies with zero mass and no inertial. If this body doesn't have a geom,
-        # then we need to put something into mass and inertial
-        # NOTE: compiler's boundmass and boundinertia should take care of these
-        #elif len(worldbody["geom"]) == 0:
-        #    worldbody["inertial"] = {"@pos": "0 0 0", "@mass": 0.001, "@diaginertia": "1 1 1"}
 
         # Add sites
         worldbody["site"] = current_body.sites
@@ -623,8 +615,17 @@ class Joint:
         # it, see e.g. "flexion" Coordinate in MoBL_ARMS_module6_7_CMC.osim model. MuJoCo doesn't have such abstract
         # notion of a "Coordinate", and thus there cannot be a non-identity mapping from a joint to itself
 
-        # Go through axes; rotations should come first and translations after
-        for t in transform_axes[::-1]:
+        # Go through axes; there's something wrong with the order of transformations, this is the order
+        # that works for leg6dof9musc.osim and MoBL_ARMS_module6_7_CMC.osim models, but it's so weird
+        # it's likely to be incorrect
+        transforms = ["rotation1", "rotation2", "rotation3", "translation1", "translation2", "translation3"]
+        order = [5, 4, 3, 0, 1, 2]
+        #for t_idx, t in enumerate(transform_axes):
+        for idx in order:
+
+            t = transform_axes[idx]
+            if t["@name"] != transforms[idx]:
+                raise IndexError("Joints are parsed in incorrect order")
 
             # Use the Coordinate parameters we parsed earlier; note that these do not exist for all joints (e.g
             # constant joints)
@@ -643,7 +644,7 @@ class Joint:
 
             # See the comment before this loop. We have to designate one DoF per Coordinate as an independent variable,
             # i.e. make its dependence linear
-            if t["coordinates"] == params["name"] and t["@name"].startswith(params["motion_type"][:8]):
+            if "coordinates" in t and t["coordinates"] == params["name"] and t["@name"].startswith(params["motion_type"][:8]):
 
                 # Check if we need to modify limits, TODO not sure if this is correct or needed
                 if Utils.is_nested_field(t, "SimmSpline", ["function"]):
@@ -766,6 +767,10 @@ class Joint:
                         else:
                             constraint_found = True
 
+                            # Check if this constraint is active
+                            if c["@active"] != "true":
+                                break
+
                             # Change the name of the independent joint
                             independent_joint = c["@joint2"]
 
@@ -774,7 +779,7 @@ class Joint:
                             assert np.array_equal(coeffs, np.array([0, 1, 0, 0, 0])), \
                                 "We're handling only identity transformations for now"
 
-                        break
+                            break
 
                     assert constraint_found, "Couldn't find an independent joint for a coupled joint"
 
