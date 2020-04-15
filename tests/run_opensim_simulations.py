@@ -43,12 +43,16 @@ def main(model_name):
         run_folder = os.path.join(env.forward_dynamics_folder, run)
         if os.path.isfile(os.path.join(run_folder, "output")):
             continue
+        #    pass
 
         # Edit model file, control file, output folder, and initial states
-        setup["OpenSimDocument"]["ForwardTool"]["model_file"] = "../../ModelFiles/MoBL_ARMS_model.osim"
+        setup["OpenSimDocument"]["ForwardTool"]["model_file"] = env.opensim_model_file
         setup["OpenSimDocument"]["ForwardTool"]["ControllerSet"]["objects"]["ControlSetController"]["controls_file"] = "controls.sto"
         setup["OpenSimDocument"]["ForwardTool"]["results_directory"] = "."
-        setup["OpenSimDocument"]["ForwardTool"]["states_file"] = "../../initial_states.sto"
+        setup["OpenSimDocument"]["ForwardTool"]["states_file"] = env.initial_states_file
+        setup["OpenSimDocument"]["ForwardTool"]["minimum_integrator_step_size"] = 0.002
+        setup["OpenSimDocument"]["ForwardTool"]["maximum_integrator_step_size"] = 0.002
+        setup["OpenSimDocument"]["ForwardTool"]['solve_for_equilibrium_for_auxiliary_states'] = 'false'
 
         # Save the modified setup file
         modified_setup_xml = os.path.join(run_folder, "modified_setup_fd.xml")
@@ -61,7 +65,7 @@ def main(model_name):
         p.start()
 
         # Wait for 10 minutes, if the process is still running, kill it
-        p.join(10*60)
+        p.join(5*60)
         if p.is_alive():
             p.terminate()
 
