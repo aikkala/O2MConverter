@@ -89,9 +89,11 @@ class Converter:
         if "BodySet" in p["OpenSimDocument"]["Model"]:
             self.parse_bodies_and_joints(p["OpenSimDocument"]["Model"]["BodySet"]["objects"])
 
-        # Find and parse muscles
+        # Find and parse muscles, and CoordinateLimitForces
         if "ForceSet" in p["OpenSimDocument"]["Model"]:
             self.parse_muscles_and_tendons(p["OpenSimDocument"]["Model"]["ForceSet"]["objects"])
+            if "CoordinateLimitForce" in p["OpenSimDocument"]["Model"]["ForceSet"]["objects"]:
+                self.parse_coordinate_limit_forces(p["OpenSimDocument"]["Model"]["ForceSet"]["objects"]["CoordinateLimitForce"])
 
         # Now we need to re-assemble them in MuJoCo format
         # (or actually a dict version of the model so we can use
@@ -208,7 +210,10 @@ class Converter:
         for muscle_type in p:
 
             # Skip some forces
-            if muscle_type in ["HuntCrossleyForce", "CoordinateLimitForce"]:
+            if muscle_type == "CoordinateLimitForce":
+                # We'll handle these later
+                continue
+            elif muscle_type in ["HuntCrossleyForce"]:
                 print("Skipping a force: {}".format(muscle_type))
                 continue
 
@@ -232,6 +237,58 @@ class Converter:
                     for body_name in m.path_point_set:
                         self.bodies[body_name].add_sites(m.path_point_set[body_name])
 
+    def parse_coordinate_limit_forces(self, forces):
+
+        # These parameters might be incorrect, but we'll optimize them later
+
+        # Go through each force and set corresponding joint parameters
+        for force in forces:
+
+            if force["isDisabled"].lower() == "true":
+                continue
+
+            # Get joint name
+            joint_name = force["coordinate"]
+
+            # We need to search for this joint
+            target = None
+            for body in self.joints:
+                for joint in self.joints[body]:
+                    for mujoco_joint in joint.mujoco_joints:
+                        if mujoco_joint["name"] == joint_name:
+                            target = mujoco_joint
+
+            # Check if joint was found
+            assert target is not None, "Cannot set CoordinateLimitForce params, couldn't find the joint"
+
+            # Similarly take the average of stiffness / damping
+            stiffness = 0.5*(float(force["upper_stiffness"]) + float(force["lower_stiffness"]))
+
+            # Stiffness / damping may be defined in two separate forces; we assume that we're dealing with damping
+            # if average stiffness is close to zero
+            if stiffness < 1e-4:
+
+                # Check if rotational stiffness
+                damping = float(force["damping"])
+                if target["motion_type"] == "rotational":
+                    damping *= math.pi/180
+
+                # Set damping
+                target["damping"] = damping
+
+            else:
+
+                # We can't use two limits like in OpenSim, so just take the average of those limits
+                ref = 0.5 * (float(force["upper_limit"]) + float(force["lower_limit"]))
+
+                # Check if rotational stiffness
+                if target["motion_type"] == "rotational":
+                    stiffness *= math.pi/180
+
+                # Set ref and stiffness
+                target["springref"] = ref * math.pi/180
+                target["stiffness"] = stiffness
+
     def build_mujoco_model(self, model_name, for_testing=False):
         # Initialise model
         model = {"mujoco": {"@model": model_name}}
@@ -242,12 +299,12 @@ class Converter:
         model["mujoco"]["compiler"] = {"@inertiafromgeom": "auto", "@angle": "radian", "@balanceinertia": "true",
                                        "@boundmass": "0.001", "@boundinertia": "0.001"}
         model["mujoco"]["default"] = {
-            "joint": {"@limited": "true", "@damping": "1", "@armature": "0.01", "@stiffness": "5"},
+            "joint": {"@limited": "true", "@damping": "0", "@armature": "0.01", "@stiffness": "0"},
             "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "3", "@rgba": "0.8 0.6 .4 1",
                      "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
             "site": {"@size": "0.001"},
             "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"},
-            "muscle": {"@scale": "200"}}
+            "muscle": {"@scale": "400"}}
         model["mujoco"]["option"] = {"@timestep": "0.002", "flag": {"@energy": "enable"}}
         model["mujoco"]["size"] = {"@nconmax": "400"}
         model["mujoco"]["visual"] = {
@@ -376,6 +433,14 @@ class Converter:
                 j["@limited"] = "true" if mujoco_joint["limited"] else "false"
             if "range" in mujoco_joint:
                 j["@range"] = Utils.array_to_string(mujoco_joint["range"])
+            if "ref" in mujoco_joint:
+                j["@ref"] = str(mujoco_joint["ref"])
+            if "springref" in mujoco_joint:
+                j["@springref"] = str(mujoco_joint["springref"])
+            if "stiffness" in mujoco_joint:
+                j["@stiffness"] = str(mujoco_joint["stiffness"])
+            if "damping" in mujoco_joint:
+                j["@damping"] = str(mujoco_joint["damping"])
 
             # If the joint is between origin body and it's parent, which should be "ground", set
             # damping, armature, and stiffness to zero
@@ -620,7 +685,6 @@ class Joint:
         # it's likely to be incorrect
         transforms = ["rotation1", "rotation2", "rotation3", "translation1", "translation2", "translation3"]
         order = [5, 4, 3, 0, 1, 2]
-        #for t_idx, t in enumerate(transform_axes):
         for idx in order:
 
             t = transform_axes[idx]
@@ -635,8 +699,8 @@ class Joint:
                 params = {"name": "{}_{}".format(joint["@name"], t["@name"]), "limited": False,
                           "transform_value": 0, "coordinates": "unspecified"}
 
-            # Set default reference position/angle to zero. These probably need to be zero for joint equality
-            # constraints (i.e. the quartic functions)!
+            # Set default reference position/angle to zero. If this value is not zero, then you need
+            # more care while calculating quartic functions for equality constraints
             params["ref"] = 0
 
             # By default add this joint to MuJoCo model
@@ -725,14 +789,6 @@ class Joint:
                 # A simple check to see if the fit is alright
                 y_fit = fit(x_values)
                 assert r2_score(y_values, y_fit) > 0.5, "A bad approximation of the SimmSpline"
-
-                # We need to do a transformation also (really only needed if fit(0) is non-zero, but it's likely
-                # to always be non-zero), and modify the quartic function
-                #params["transform_value"] = fit(0)
-                #y_values = y_values - params["transform_value"]
-
-                # Get the new quartic function
-                #fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, 4)
 
                 # Get the weights
                 polycoef = np.zeros((5,))
@@ -849,28 +905,14 @@ class Joint:
             # We need to add an equality constraint for locked joints
             if "locked" in params and params["locked"]:
 
-                relpose = np.array([0, 1, 0, 0, 0, 0, 0])
-                if params["default_value_for_locked"] != 0:
-                    if params["type"] == "hinge":
-                        T_t = Utils.create_rotation_matrix(params["axis"], params["default_value_for_locked"])
-                    else:
-                        T_t = Utils.create_translation_matrix(params["axis"], params["default_value_for_locked"])
-
-                    T_t_inv = np.linalg.inv(T_t)
-                    relpose = np.concatenate((T_t_inv[:3, 3], Quaternion(matrix=T_t_inv).elements))
-
                 # Create the constraint
-                constraint = {"@name": params["name"] + "_constraint", "@active": "true", "@body1": self.child_body,
-                              "@relpose": Utils.array_to_string(relpose)}
-
-                # Add parent body only if it's not ground/worldbody
-                # TODO how to check what is the name of origin_body here?
-                # The problem is that we parse joints first and then find origin_body
-                if self.parent_body != "ground":
-                    constraint["@body2"] = self.parent_body
+                polycoef = np.array([params["default_value_for_locked"], 0, 0, 0, 0])
+                constraint = {"@name": params["name"] + "_constraint", "@active": "true",
+                              "@joint1": params["name"],
+                              "@polycoef": Utils.array_to_string(polycoef)}
 
                 # Add to equality constraints
-                self.equality_constraints["weld"].append(constraint)
+                self.equality_constraints["joint"].append(constraint)
 
         return T
 
@@ -966,8 +1008,14 @@ class Muscle:
         # be calculated though, these values are most likely incorrect
         self.length_range = np.array([0, 2])
         if "tendon_slack_length" in obj:
-            slack_length = float(obj["tendon_slack_length"])
-            self.length_range = np.array([0.025*slack_length, 40*slack_length])
+            self.tendon_slack_length = obj["tendon_slack_length"]
+            self.length_range = np.array([0.025*float(self.tendon_slack_length), 40*float(self.tendon_slack_length)])
+
+        # Get damping for tendon -- not sure what the unit in OpenSim is, or how it relates to MuJoCo damping parameter
+        self.tendon_damping = obj.get("damping", None)
+
+        # Let's use max isometric force as an approximation for muscle scale parameter in MuJoCo
+        self.scale = obj.get("max_isometric_force", None)
 
         # Parse control limits
         self.limit = np.ones((2, 1))
@@ -1082,6 +1130,10 @@ class Muscle:
     def get_tendon(self):
         # Return MuJoCo tendon representation of this muscle
         tendon = {"@name": self.name + "_tendon", "site": self.sites}
+        if self.tendon_slack_length is not None:
+            tendon["@springlength"] = self.tendon_slack_length
+        if self.tendon_damping is not None:
+            tendon["@damping"] = self.tendon_damping
         return tendon
 
     def get_actuator(self):
@@ -1096,6 +1148,10 @@ class Muscle:
         if np.all(np.isfinite(self.limit)):
             actuator["@ctrllimited"] = "true"
             actuator["@ctrlrange"] = Utils.array_to_string(self.limit)
+
+        # Set scale
+        #if self.scale is not None:
+        #    actuator["@scale"] = str(self.scale)
 
         return actuator
 
