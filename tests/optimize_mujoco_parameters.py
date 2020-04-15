@@ -8,13 +8,15 @@ import math
 import numpy as np
 import cma
 import skvideo
+import pickle
+import matplotlib.pyplot as pp
 
 
-def is_successful_run(run_folder):
+def get_run_info(run_folder):
     output_file = os.path.join(run_folder, "output")
     if os.path.isfile(output_file):
-        run_info = pd.read_csv(output_file, delimiter=",", header=0)
-    return run_info["success"][0]
+        run_info = pd.read_csv(output_file, delimiter=", ", header=0, engine="python")
+    return run_info
 
 
 def is_unique(values):
@@ -30,117 +32,89 @@ def collect_data_from_runs(env):
     data = []
     for run in runs:
 
-        # Check if this run was successful
-        run_folder = os.path.join(env.forward_dynamics_folder, run)
-        if not is_successful_run(run_folder):
-            continue
-
-        # Get states
-        states, state_hdr = Utils.parse_sto_file(os.path.join(run_folder, "FDS_states.sto"))
-
         # Get controls
+        run_folder = os.path.join(env.forward_dynamics_folder, run)
         controls, ctrl_hdr = Utils.parse_sto_file(os.path.join(run_folder, "controls.sto"))
 
-        # Make sure OpenSim simulation was long enough (should be if it didn't fail, just double-checking)
-        if states.index[-1] < controls.index[-2]:
-            print("Did this run fail?\n  {}".format(run_folder))
-            continue
-
-        # We're interested only in a subset of states
-        state_names = list(states)
-
-        # Parse state names
-        parsed_state_names = []
-        for state_name in state_names:
-            p = state_name.split("/")
-            if p[-1] != "value":
-                parsed_state_names.append(state_name)
-            else:
-                parsed_state_names.append(p[1])
-
-        # Rename, filter, and reorder
-        states.columns = parsed_state_names
-        states = states.filter(items=env.target_states)
-        states = states[env.target_states]
-
-        # Reindex states with the same timestep control file uses
+        # Check timesteps
         timesteps = np.diff(controls.index.values)
         if not is_unique(timesteps):
-            print("Check timesteps in the control file of run {}".format(run_folder))
-            continue
+            raise ValueError("Check timesteps in the control file of run {}".format(run_folder))
         if timesteps[0] > 0.01:
-            print("This timestep might be too big")
-            continue
+            raise ValueError("This timestep might be too big")
+        timestep = timesteps[0]
 
-        states = Utils.reindex_dataframe(states, timesteps[0], last_timestamp=controls.index.values[-1])
+        # Check if this run was successful
+        run_info = get_run_info(run_folder)
 
-        data.append({"states": states.values, "controls": controls.values,
-                     "state_names": list(states), "muscle_names": list(controls),
-                     "timestep": timesteps[0]})
+        # Don't process states if run was unsuccessful
+        if not run_info["success"][0]:
+            success = 0
+
+        else:
+
+            # Get states
+            states, state_hdr = Utils.parse_sto_file(os.path.join(run_folder, "FDS_states.sto"))
+
+            # Make sure OpenSim simulation was long enough (should be if it didn't fail, just double-checking)
+            if states.index[-1] < controls.index[-2]:
+                raise ValueError("Did this run fail?\n  {}".format(run_folder))
+
+            # We're interested only in a subset of states
+            state_names = list(states)
+
+            # Parse state names
+            parsed_state_names = []
+            for state_name in state_names:
+                p = state_name.split("/")
+                if p[-1] != "value":
+                    parsed_state_names.append(state_name)
+                else:
+                    parsed_state_names.append(p[1])
+
+            # Rename states
+            states.columns = parsed_state_names
+
+            # Check that initial states are correct (OpenSim forward tool seems to ignore initial states
+            # of locked joints); if initial states do not match, then trajectories in mujoco will start
+            # from incorrect states
+            if env.initial_states is not None and "joints" in env.initial_states:
+                for state_name in env.initial_states["joints"]:
+                    if abs(states[state_name][0] - env.initial_states["joints"][state_name]["qpos"]) > 1e-5:
+                        raise ValueError('Initial states do not match')
+
+            # Filter and reorder states
+            states = states.filter(items=env.target_states)
+            states = states[env.target_states]
+
+            # Get number of evaluations (forward steps)
+            num_evals = len(states)
+
+            # Reindex states
+            states = Utils.reindex_dataframe(states, np.arange(timestep, controls.index.values[-1]+2*timestep, timestep))
+
+            # Get state values and state names
+            state_values = states.values
+            state_names = list(states)
+
+            # Last check if there are any nan states
+            if np.any(np.isnan(state_values)):
+                success = 0
+            else:
+                success = 1
+
+        if not success:
+            # Run was unsuccessful, state values cannot be trusted
+            state_values = []
+            state_names = []
+            num_evals = 0
+
+        data.append({"states": state_values, "controls": controls.values,
+                     "state_names": state_names, "muscle_names": list(controls),
+                     "timestep": timestep, "success": success,
+                     "run_time": run_info["run_time"][0], "run": run, "num_evals": num_evals})
 
     return data
-
-
-def run_simulation(sim, model, controls, visualise=False, record=False):
-
-    if visualise or record:
-        viewer = mujoco_py.MjViewer(sim)
-    if record:
-        imgs = []
-
-    qpos = np.empty((len(controls), len(model.joint_names)))
-
-    # We assume there's one set of controls for each timestep
-    for t in range(len(controls)):
-
-        # Set muscle activations
-        sim.data.ctrl[:] = controls[t, :]
-
-        # Forward the simulation
-        sim.step()
-
-        # Get joint positions
-        qpos[t, :] = sim.data.qpos
-
-        if visualise:
-            viewer.render()
-        if record:
-            imgs.append(np.flipud(sim.render(width=1600, height=1200, depth=False, camera_name="main")))
-
-    if record:
-        # Write the video
-        writer = skvideo.io.FFmpegWriter("outputvideo.mp4", inputdict={"-s": "1600x1200", "-r": str(1/model.opt.timestep)})
-        for img in imgs:
-            writer.writeFrame(img)
-
-        # Add some images so the video won't end abruptly
-        for _ in range(50):
-            writer.writeFrame(imgs[-1])
-
-        writer.close()
-
-    return qpos
-
-
-def initialise_simulation(sim, model, timestep, initial_states=None):
-
-    # Set timestep
-    model.opt.timestep = timestep
-
-    # Reset sim
-    sim.reset()
-
-    # Set initial states
-    if initial_states is not None:
-        if "qpos" in initial_states:
-            sim.data.qpos[:] = initial_states["qpos"]
-        if "qvel" in initial_states:
-            sim.data.qvel[:] = initial_states["qvel"]
-        if "ctrl" in initial_states:
-            sim.data.ctrl[:] = initial_states["ctrl"]
-
-        # We might need to call forward to make sure everything is set properly after setting qpos (not sure if required)
-        sim.forward()
 
 
 def do_optimization(env, data):
@@ -148,99 +122,121 @@ def do_optimization(env, data):
     # Initialise MuJoCo with the converted model
     model = mujoco_py.load_model_from_path(env.mujoco_model_file)
 
-    # We need to set the location and orientation of the equality constraint to match the starting position of the
-    # reference motion.
-    #update_equality_constraint(model, kinematics_values)
-
     # Initialise simulation
     sim = mujoco_py.MjSim(model)
 
-    # Make sure muscles are in the same order
-    for run_idx in range(len(data)):
-        if data[run_idx]["muscle_names"] != list(model.actuator_names):
-            print("Muscles are in incorrect order, fix this")
-            raise NotImplementedError
+    # Check muscle order
+    Utils.check_muscle_order(model, data)
 
     # Get indices of target states
-    target_state_indices = np.empty(len(env.target_states,), dtype=int)
-    for idx, target_state in enumerate(env.target_states):
-        target_state_indices[idx] = model.joint_names.index(target_state)
+    target_state_indices = Utils.get_target_state_indices(model, env)
 
-    # If there are initial states, reorder them according to model joints
-    if env.initial_states is not None:
-        qpos = np.zeros(len(model.joint_names),)
-        qvel = np.zeros(len(model.joint_names),)
-        ctrl = np.zeros(len(model.actuator_names),)
+    # Get initial states
+    initial_states = Utils.get_initial_states(model, env)
 
-        if "joints" in env.initial_states:
-            for state in env.initial_states["joints"]:
-                idx = model.joint_names.index(state)
-                if "qpos" in env.initial_states["joints"][state]:
-                    qpos[idx] = env.initial_states["joints"][state]["qpos"]
-                if "qvel" in env.initial_states["joints"][state]:
-                    qvel[idx] = env.initial_states["joints"][state]["qvel"]
+    #viewer = mujoco_py.MjViewer(sim)
+    #controls = data[0]["controls"]
+    #controls *= 0
+    #timestep = data[0]["timestep"]
+    #Utils.initialise_simulation(sim, timestep, initial_states)
+    #Utils.run_simulation(sim, controls, viewer=viewer)
 
-        if "actuators" in env.initial_states:
-            for actuator in env.initial_states["actuators"]:
-                idx = model.actuator_names.index(actuator)
-                ctrl[idx] = env.initial_states["actuators"][actuator]
+    # Go through training data once to calculate error with default parameters
+    default_error = np.zeros((len(data),))
+    for run_idx in range(len(data)):
+        states = data[run_idx]["states"]
+        controls = data[run_idx]["controls"]
+        timestep = data[run_idx]["timestep"]
 
-        initial_states = {"qpos": qpos, "qvel": qvel, "ctrl": ctrl}
+        # Initialise sim
+        Utils.initialise_simulation(sim, timestep, initial_states)
+
+        # Run simulation
+        qpos = Utils.run_simulation(sim, controls)
+
+        # Calculate joint errors
+        default_error[run_idx] += np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
 
     # Get initial values for params
-    sigma = 100
-    niter = 100
-    params = [500] * len(model.actuator_names)
-    opts = {"popsize": 8, "transformation": [lambda x: x ** 2, None], "tolfun": 1e-4,
-            "CMA_diagonal": True, "maxiter": niter}
+    sigma = 1
+    niter = 500
+    nmuscles = len(model.actuator_names)
+    joint_idxs = list(set(range(len(model.joint_names))) - set(model.eq_obj1id[np.asarray(model.eq_active, dtype=bool)]))
+    njoints = len(joint_idxs)
+    params = [5] * nmuscles + [2] * (2*nmuscles + 2*njoints)
+
+    # Initialise optimizer
+    opts = {"popsize": 16, "maxiter": niter, "CMA_diagonal": True}
     optimizer = cma.CMAEvolutionStrategy(params, sigma, opts)
+
+    # Keep track of errors
+    history = np.empty((niter,))
+    history.fill(np.nan)
+
+    # Initialise plots
+    pp.ion()
+    fig1 = pp.figure(1, figsize=(10, 5))
+    fig1.gca().plot([0, len(data)], [1, 1], 'k--')
+    bars = fig1.gca().bar(np.arange(len(data)), [0]*len(data))
+    fig1.gca().axis([0, len(data), 0, 1.2])
+
+    fig2 = pp.figure(2, figsize=(10, 5))
+    fig2.gca().plot([0, niter], [default_error.sum(), default_error.sum()], 'k--')
+    line, = fig2.gca().plot(np.arange(niter), [0]*niter)
+    fig2.gca().axis([0, niter, 0, 1.1*default_error.sum()])
 
     while not optimizer.stop():
         solutions = optimizer.ask()
 
-        fitness = []
-        for solution in solutions:
+        # Test solutions on a batch of runs
+        nbatch = len(data)
+        batch_idxs = random.sample(list(np.arange(len(data))), nbatch)
 
-            # Set proposed solutions to muscle scales
-            for muscle in model.actuator_names:
-                muscle_idx = model._actuator_name2id[muscle]
-                model.actuator_gainprm[muscle_idx][3] = np.sqrt(solution[muscle_idx])
+        errors = np.zeros((len(batch_idxs), len(solutions)))
+        for solution_idx, solution in enumerate(solutions):
 
-            # Test solution on all runs
-            f = 0
-            for run_idx in range(len(data)):
+            # Set parameters
+            Utils.set_parameters(model, np.exp(solution), np.arange(nmuscles), joint_idxs)
+
+            # Go through all simulations in batch
+            for run_idx in batch_idxs:
                 states = data[run_idx]["states"]
                 controls = data[run_idx]["controls"]
                 timestep = data[run_idx]["timestep"]
 
                 # Initialise sim
-                initialise_simulation(sim, model, timestep, initial_states)
+                Utils.initialise_simulation(sim, timestep, initial_states)
 
                 # Run simulation
-                qpos = run_simulation(sim, model, controls, visualise=False)
+                qpos = Utils.run_simulation(sim, controls)
 
                 # Calculate joint errors
-                f += np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices])) + 0.001*np.sum(solution)
+                errors[run_idx, solution_idx] = np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
 
-            fitness.append(f)
+        # Use sum of errors over runs as fitness, and calculate mean error for each run
+        fitness = errors.sum(axis=0)
+        avg_run_error = errors.mean(axis=1)
+
+        # Plot mean error per run as a percentage of default error
+        prc = avg_run_error / default_error
+        for rect, y in zip(bars, prc):
+            rect.set_height(y)
+        fig1.canvas.draw()
+        fig1.canvas.flush_events()
+
+        # Plot history of mean fitness
+        history[optimizer.countiter] = fitness.mean()
+        line.set_ydata(history)
+        fig2.canvas.draw()
+        fig2.canvas.flush_events()
 
         optimizer.tell(solutions, fitness)
         optimizer.logger.add()
         optimizer.disp()
 
     # Return found solution
-    return np.sqrt(optimizer.result.xbest)
-
-#    for muscle_idx in range(model.actuator_gainprm.shape[0]):
-#        model.actuator_gainprm[muscle_idx][3] = np.sqrt(es.result.xbest[muscle_idx])
-#    sim.reset()
-#    output = run_simulation(sim, model, kinematics_values, control_values, visualise=False, record=True)
-
-    # Compare joint values
-#    estimate_joint_error(kinematics_values, output["qpos"], plot=True)
-
-#    print(np.sqrt(es.result.xbest))
-#    es.plot()
+    return {"parameters": np.exp(optimizer.result.xfavorite),
+            "joint_idxs": joint_idxs, "muscle_idxs": np.arange(len(model.actuator_names))}
 
 
 def main(model_name):
@@ -251,19 +247,30 @@ def main(model_name):
     # Collect states and controls from successful runs
     data = collect_data_from_runs(env)
 
-    # Shuffle the data and use first 80% of elements for training
-    random.shuffle(data)
-    cutoff_idx = math.ceil(0.8*len(data))
-    train_set = data[:cutoff_idx]
-    test_set = data[cutoff_idx:]
+    # Divide successful runs into training and testing sets
+    success_idxs = []
+    for run_idx in range(len(data)):
+        if data[run_idx]["success"]:
+            success_idxs.append(run_idx)
+
+    # Use 80% of runs for training
+    k = math.ceil(0.8*len(success_idxs))
+    train_idxs = random.sample(success_idxs, k)
+    test_idxs = list(set(success_idxs) - set(train_idxs))
+
+    # Get training data
+    #train_idxs = [0]
+    train_set = [data[idx] for idx in train_idxs]
 
     # Do optimization with CMA-ES
     parameters = do_optimization(env, train_set)
-    print(parameters)
 
-    # Save parameters
+    # Save parameters, data, and indices
+    with open(env.data_file, 'wb') as f:
+        pickle.dump([parameters, data, train_idxs, test_idxs], f)
 
 
 if __name__ == "__main__":
     #main(sys.argv[1])
     main("mobl_arms")
+    #main('leg6dof9musc')
