@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as pp
 import mujoco_py
 import skvideo.io
+import os
 
 
 def is_nested_field(d, field, nested_fields):
@@ -151,17 +152,11 @@ def parse_sto_file(sto_file):
         return values, header
 
 
-def reindex_dataframe(df, timestep, last_timestamp=None):
+def reindex_dataframe(df, new_index):
     # Reindex / interpolate dataframe with new timestep
 
-    # Make time start from zero
+    # Use same index name
     index_name = df.index.name
-    df.index = df.index.values - df.index.values[0]
-
-    # Get new index
-    if last_timestamp is None:
-        last_timestamp = df.index.values[-1]
-    new_index = np.arange(0, last_timestamp+timestep, timestep)
 
     # Create a new dataframe
     new_df = pd.DataFrame(index=new_index)
@@ -271,6 +266,8 @@ def initialise_simulation(sim, timestep, initial_states=None):
 
     # Set initial states
     if initial_states is not None:
+
+        # Set given joint position and velocity values, and control values
         if "qpos" in initial_states:
             sim.data.qpos[:] = initial_states["qpos"]
         if "qvel" in initial_states:
@@ -278,7 +275,51 @@ def initialise_simulation(sim, timestep, initial_states=None):
         if "ctrl" in initial_states:
             sim.data.ctrl[:] = initial_states["ctrl"]
 
-        # We might need to call forward to make sure everything is set properly after setting qpos (not sure if required)
+        # Go through equality constraints and
+        #   1) Update those constraints where given initial state is different from the one defined in model
+        #   2) Update joint values that depend on other joints (even if they were given in initial_states)
+        # if qpos was given
+        if "qpos" in initial_states:
+
+            # Get joint equality constraint ids
+            eq_ids = np.where(sim.model.eq_type==2)[0]
+
+            # Go through these constraints
+            for eq_id in eq_ids:
+
+                # Skip if this constraint is inactive
+                if not sim.model.eq_active[eq_id]:
+                    continue
+
+                # Check if this is case 1) or case 2)
+                if sim.model.eq_obj2id[eq_id] == -1:
+                    # Case 1)
+
+                    # Get joint id
+                    joint_id = sim.model.eq_obj1id[eq_id]
+
+                    # Get joint value
+                    value = initial_states["qpos"][joint_id]
+
+                    # Update constraint
+                    sim.model.eq_data[eq_id, 0] = value
+
+                else:
+                    # Case 2)
+
+                    # Get independent and dependent joint ids
+                    x_joint_id = sim.model.eq_obj2id[eq_id]
+                    y_joint_id = sim.model.eq_obj1id[eq_id]
+
+                    # Get the quartic function and value of independent joint
+                    quartic_fn = np.polynomial.polynomial.Polynomial(sim.model.eq_data[eq_id, :5])
+                    x = initial_states["qpos"][x_joint_id]
+
+                    # Update qpos for this joint
+                    sim.data.qpos[y_joint_id] = quartic_fn(x)
+
+        # We might need to call forward to make sure everything is set properly after setting
+        # qpos (not sure if required)
         sim.forward()
 
 
@@ -312,6 +353,9 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None):
 
     if viewer is not None and output_video_file is not None:
 
+        # Make sure output folder exists
+        os.makedirs(os.path.dirname(output_video_file), exist_ok=True)
+
         # Get writer
         writer = skvideo.io.FFmpegWriter(output_video_file,
                                          inputdict={"-s": "{}x{}".format(width, height),
@@ -324,3 +368,21 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None):
         writer.close()
 
     return qpos
+
+
+def set_parameters(model, parameters, muscle_idxs, joint_idxs):
+
+    # First parameters are muscle scales, then tendon stiffness and damping, and finally joint stiffness and damping
+    nmuscles = len(muscle_idxs)
+    njoints = len(joint_idxs)
+
+    # Set muscle scales, and tendon stiffness and damping
+    for muscle_idx in muscle_idxs:
+        model.actuator_gainprm[muscle_idx][3] = parameters[muscle_idx]
+        model.tendon_stiffness[muscle_idx] = parameters[nmuscles+muscle_idx]
+        model.tendon_damping[muscle_idx] = parameters[2*nmuscles+muscle_idx]
+
+    # Set joint stiffness and damping
+    for idx, joint_idx in enumerate(joint_idxs):
+        model.jnt_stiffness[joint_idx] = parameters[3*nmuscles+idx]
+        model.dof_damping[joint_idx] = parameters[3*nmuscles+njoints+idx]
