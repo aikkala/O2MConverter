@@ -5,6 +5,7 @@ import math
 import csv
 import os
 from datetime import datetime
+from tests.envs import EnvFactory
 
 
 def generate_controls(t, nactuators):
@@ -60,15 +61,18 @@ def get_epochtime_ms():
     return round(datetime.utcnow().timestamp() * 1000)
 
 
-def main(model_xml_path, N, output_folder="."):
+def main(model_name, N):
     """Generate a set of controls (for both OpenSim and MuJoCo) for given MuJoCo model"""
+
+    # Get env
+    env = EnvFactory.get(model_name)
 
     duration = 1
     timestep = 0.002
     t = np.arange(0, duration, timestep)
 
     # First we need to read the MuJoCo model file and get actuator names
-    model = mujoco_py.load_model_from_path(model_xml_path)
+    model = mujoco_py.load_model_from_path(env.mujoco_model_file)
     actuators = list(model.actuator_names)
 
     # Then we have to generate a set of random controls for each actuator and write them to a OpenSim control file
@@ -78,11 +82,12 @@ def main(model_xml_path, N, output_folder="."):
         controls = generate_controls(t, len(actuators))
 
         # Create a folder and write to a file
-        sub_folder = os.path.join(output_folder, "run_{}".format(get_epochtime_ms()))
+        sub_folder = os.path.join(env.forward_dynamics_folder, "run_{}".format(get_epochtime_ms()))
         write_output(sub_folder, "controls.sto", t, controls, actuators)
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1], int(sys.argv[2]), sys.argv[3])
-    main("/home/aleksi/Workspace/O2MConverter/models/converted/MoBL_ARMS_module6_7_CMC_converted/MoBL_ARMS_module6_7_CMC_converted.xml",
-         50, "/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/forward_dynamics")
+    #main(sys.argv[1], int(sys.argv[2]))
+    main("mobl_arms", 100)
+#    main("/home/aleksi/Workspace/O2MConverter/models/converted/leg6dof9musc_for_testing_converted/leg6dof9musc_for_testing_converted.xml",
+#         50, "/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/forward_dynamics")
