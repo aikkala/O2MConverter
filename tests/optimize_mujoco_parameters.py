@@ -37,82 +37,78 @@ def collect_data_from_runs(env):
         controls, ctrl_hdr = Utils.parse_sto_file(os.path.join(run_folder, "controls.sto"))
 
         # Check timesteps
-        timesteps = np.diff(controls.index.values)
-        if not is_unique(timesteps):
-            raise ValueError("Check timesteps in the control file of run {}".format(run_folder))
-        if timesteps[0] > 0.01:
-            raise ValueError("This timestep might be too big")
-        timestep = timesteps[0]
+        #timesteps = np.diff(controls.index.values)
+        #if not is_unique(timesteps):
+        #    raise ValueError("Check timesteps in the control file of run {}".format(run_folder))
+        #if timesteps[0] > 0.01:
+        #    raise ValueError("This timestep might be too big")
+        #timestep = timesteps[0]
 
         # Check if this run was successful
-        run_info = get_run_info(run_folder)
+        #run_info = get_run_info(run_folder)
 
         # Don't process states if run was unsuccessful
-        if not run_info["success"][0]:
-            success = 0
+        #if not run_info["success"][0]:
+        #    success = 0
 
-        else:
+        #else:
 
-            # Get states
-            states, state_hdr = Utils.parse_sto_file(os.path.join(run_folder, "FDS_states.sto"))
+        # Get states
+        states, state_hdr = Utils.parse_sto_file(os.path.join(run_folder, "FDS_states.sto"))
 
-            # Make sure OpenSim simulation was long enough (should be if it didn't fail, just double-checking)
-            if states.index[-1] < controls.index[-2]:
-                raise ValueError("Did this run fail?\n  {}".format(run_folder))
+        # Make sure OpenSim simulation was long enough (should be if it didn't fail, just double-checking)
+        #if states.index[-1] < controls.index[-2]:
+        #    raise ValueError("Did this run fail?\n  {}".format(run_folder))
 
-            # We're interested only in a subset of states
-            state_names = list(states)
+        # We're interested only in a subset of states
+        state_names = list(states)
 
-            # Parse state names
-            parsed_state_names = []
-            for state_name in state_names:
-                p = state_name.split("/")
-                if p[-1] != "value":
-                    parsed_state_names.append(state_name)
-                else:
-                    parsed_state_names.append(p[1])
-
-            # Rename states
-            states.columns = parsed_state_names
-
-            # Check that initial states are correct (OpenSim forward tool seems to ignore initial states
-            # of locked joints); if initial states do not match, then trajectories in mujoco will start
-            # from incorrect states
-            if env.initial_states is not None and "joints" in env.initial_states:
-                for state_name in env.initial_states["joints"]:
-                    if abs(states[state_name][0] - env.initial_states["joints"][state_name]["qpos"]) > 1e-5:
-                        raise ValueError('Initial states do not match')
-
-            # Filter and reorder states
-            states = states.filter(items=env.target_states)
-            states = states[env.target_states]
-
-            # Get number of evaluations (forward steps)
-            num_evals = len(states)
-
-            # Reindex states
-            states = Utils.reindex_dataframe(states, np.arange(timestep, controls.index.values[-1]+2*timestep, timestep))
-
-            # Get state values and state names
-            state_values = states.values
-            state_names = list(states)
-
-            # Last check if there are any nan states
-            if np.any(np.isnan(state_values)):
-                success = 0
+        # Parse state names
+        parsed_state_names = []
+        for state_name in state_names:
+            p = state_name.split("/")
+            if p[-1] != "value":
+                parsed_state_names.append(state_name)
             else:
-                success = 1
+                parsed_state_names.append(p[1])
 
-        if not success:
-            # Run was unsuccessful, state values cannot be trusted
+        # Rename states
+        states.columns = parsed_state_names
+
+        # Check that initial states are correct (OpenSim forward tool seems to ignore initial states
+        # of locked joints); if initial states do not match, then trajectories in mujoco will start
+        # from incorrect states
+        if env.initial_states is not None and "joints" in env.initial_states:
+            for state_name in env.initial_states["joints"]:
+                if abs(states[state_name][0] - env.initial_states["joints"][state_name]["qpos"]) > 1e-5:
+                    raise ValueError('Initial states do not match')
+
+        # Filter and reorder states
+        states = states.filter(items=env.target_states)
+        states = states[env.target_states]
+
+        # Get number of evaluations (forward steps); note that the last timestep isn't simulated
+        num_evals = len(states) - 1
+
+        # Reindex states
+        states = Utils.reindex_dataframe(states, np.arange(env.timestep, controls.index.values[-1]+2*env.timestep, env.timestep))
+
+        # Get state values and state names
+        state_values = states.values
+        state_names = list(states)
+
+        # Don't use this data if there were nan states
+        if np.any(np.isnan(state_values)):
+            success = 0
             state_values = []
             state_names = []
             num_evals = 0
+        else:
+            success = 1
 
         data.append({"states": state_values, "controls": controls.values,
                      "state_names": state_names, "muscle_names": list(controls),
-                     "timestep": timestep, "success": success,
-                     "run_time": run_info["run_time"][0], "run": run, "num_evals": num_evals})
+                     "timestep": env.timestep, "success": success, "run": run, "num_evals": num_evals})
 
     return data
 
@@ -168,6 +164,7 @@ def do_optimization(env, data):
     # Initialise optimizer
     opts = {"popsize": 16, "maxiter": niter, "CMA_diagonal": True}
     optimizer = cma.CMAEvolutionStrategy(params, sigma, opts)
+    nbatch = len(data)
 
     # Keep track of errors
     history = np.empty((niter,))
@@ -178,7 +175,7 @@ def do_optimization(env, data):
     fig1 = pp.figure(1, figsize=(10, 5))
     fig1.gca().plot([0, len(data)], [1, 1], 'k--')
     bars = fig1.gca().bar(np.arange(len(data)), [0]*len(data))
-    fig1.gca().axis([0, len(data), 0, 1.2])
+    fig1.gca().axis([0, nbatch, 0, 1.2])
 
     fig2 = pp.figure(2, figsize=(10, 5))
     fig2.gca().plot([0, niter], [default_error.sum(), default_error.sum()], 'k--')
@@ -189,46 +186,57 @@ def do_optimization(env, data):
         solutions = optimizer.ask()
 
         # Test solutions on a batch of runs
-        nbatch = len(data)
         batch_idxs = random.sample(list(np.arange(len(data))), nbatch)
 
         errors = np.zeros((len(batch_idxs), len(solutions)))
+        params_cost = np.zeros((len(solutions)))
         for solution_idx, solution in enumerate(solutions):
 
             # Set parameters
             Utils.set_parameters(model, np.exp(solution), np.arange(nmuscles), joint_idxs)
+            params_cost[solution_idx] = 1e-3 * np.sum(np.exp(solution))
 
             # Go through all simulations in batch
-            for run_idx in batch_idxs:
-                states = data[run_idx]["states"]
-                controls = data[run_idx]["controls"]
-                timestep = data[run_idx]["timestep"]
+            try:
+                for idx, run_idx in enumerate(batch_idxs):
+                    states = data[run_idx]["states"]
+                    controls = data[run_idx]["controls"]
+                    timestep = data[run_idx]["timestep"]
 
-                # Initialise sim
-                Utils.initialise_simulation(sim, timestep, initial_states)
+                    # Initialise sim
+                    Utils.initialise_simulation(sim, timestep, initial_states)
 
-                # Run simulation
-                qpos = Utils.run_simulation(sim, controls)
+                    # Run simulation
+                    qpos = Utils.run_simulation(sim, controls)
 
-                # Calculate joint errors
-                errors[run_idx, solution_idx] = np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
+                    # Calculate joint errors
+                    errors[idx, solution_idx] = np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
+
+            except mujoco_py.builder.MujocoException:
+                print("Failed for parameters")
+                print(np.exp(solution))
+                errors[:, solution_idx] = np.nan
 
         # Use sum of errors over runs as fitness, and calculate mean error for each run
-        fitness = errors.sum(axis=0)
-        avg_run_error = errors.mean(axis=1)
+        fitness = errors.sum(axis=0) + params_cost
+        avg_run_error = np.nanmean(errors, axis=1)
 
         # Plot mean error per run as a percentage of default error
-        prc = avg_run_error / default_error
+        prc = avg_run_error / default_error[batch_idxs]
         for rect, y in zip(bars, prc):
             rect.set_height(y)
         fig1.canvas.draw()
         fig1.canvas.flush_events()
 
         # Plot history of mean fitness
-        history[optimizer.countiter] = fitness.mean()
+        history[optimizer.countiter] = np.nanmean(fitness)
         line.set_ydata(history)
+        fig2.gca().axis([0, optimizer.countiter, 0, 1.1*max(history)])
         fig2.canvas.draw()
         fig2.canvas.flush_events()
+
+        # Ignore failed runs / solutions
+        valid_idxs = np.where(np.isfinite(fitness))[0]
 
         optimizer.tell(solutions, fitness)
         optimizer.logger.add()
@@ -236,7 +244,8 @@ def do_optimization(env, data):
 
     # Return found solution
     return {"parameters": np.exp(optimizer.result.xfavorite),
-            "joint_idxs": joint_idxs, "muscle_idxs": np.arange(len(model.actuator_names))}
+            "joint_idxs": joint_idxs, "muscle_idxs": np.arange(len(model.actuator_names)),
+            "history": history}
 
 
 def main(model_name):
