@@ -169,7 +169,8 @@ def reindex_dataframe(df, new_index):
     return new_df
 
 
-def estimate_joint_error(reference, simulated, joint_names=None, timesteps=None, plot=False, output_file=None):
+def estimate_joint_error(reference, simulated, joint_names=None, timesteps=None, plot=False, output_file=None,
+                         error="squared_sum"):
 
     # Reference and simulated need to be same shape
     if reference.shape != simulated.shape:
@@ -190,8 +191,15 @@ def estimate_joint_error(reference, simulated, joint_names=None, timesteps=None,
     # Get abs sum of difference between reference joint and simulated joint
     for idx in range(reference.shape[1]):
         e = reference[:, idx] - simulated[:, idx]
-        #errors[idx] = np.sum(np.abs(e))
-        errors[idx] = np.matmul(e, e)
+
+        # Calculate error
+        if error == "MAE":
+            errors[idx] = np.mean(np.abs(e))
+        elif error == "squared_sum":
+            errors[idx] = np.matmul(e, e)
+        else:
+            raise NotImplementedError
+
         if plot:
             axes[idx].plot(timesteps, e)
             axes[idx].plot(np.array([timesteps[0], timesteps[-1]]), np.array([0, 0]), 'k--')
