@@ -6,9 +6,10 @@ from osim.env.osim import OsimEnv
 class EnvFactory:
 
     class EnvTemplate:
-        def __init__(self, opensim_setup_file, forward_dynamics_folder, mujoco_model_file, data_file,
+        def __init__(self, timestep, opensim_setup_file, forward_dynamics_folder, mujoco_model_file, data_file,
                      output_folder, camera_pos, opensim_model_file, initial_states_file, target_states,
                      osim_mapping):
+            self.timestep = timestep
             self.opensim_setup_file = opensim_setup_file
             self.forward_dynamics_folder = forward_dynamics_folder
             self.mujoco_model_file = mujoco_model_file
@@ -39,11 +40,12 @@ class EnvFactory:
                     self.initial_states["joints"][state_name]["qpos"] = states[state_name][0]
 
     MoBL_ARMS = EnvTemplate(
+        0.002,
         '/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/setup_fd.xml',
         '/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/forward_dynamics',
         '/home/aleksi/Workspace/O2MConverter/models/converted/MoBL_ARMS_model_for_mujoco_converted/MoBL_ARMS_model_for_mujoco_converted.xml',
-        '/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/data.pckl',
-        '/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/output',
+        '/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/output/data.pckl',
+        '/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/output/simulations',
         np.array([1.8, -0.1, 0.7, 0.5, 0.5, 0.5, 0.5]),
         '/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/ModelFiles/MoBL_ARMS_model_for_opensim.osim',
         '/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/initial_states.sto',
