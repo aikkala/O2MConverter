@@ -261,7 +261,7 @@ class Converter:
             # Check if joint was found
             assert target is not None, "Cannot set CoordinateLimitForce params, couldn't find the joint"
 
-            # Similarly take the average of stiffness / damping
+            # Take the average of stiffness
             stiffness = 0.5*(float(force["upper_stiffness"]) + float(force["lower_stiffness"]))
 
             # Stiffness / damping may be defined in two separate forces; we assume that we're dealing with damping
@@ -278,16 +278,48 @@ class Converter:
 
             else:
 
-                # We can't use two limits like in OpenSim, so just take the average of those limits
-                ref = 0.5 * (float(force["upper_limit"]) + float(force["lower_limit"]))
+                # We need to create a soft joint coordinate limit, but we can't use separate limits like in OpenSim;
+                # this is something we'll need to approximate
 
-                # Check if rotational stiffness
-                if target["motion_type"] == "rotational":
-                    stiffness *= math.pi/180
+                # Limits in CoordinateLimitForce should be in degrees
+                force_coordinate_limits = np.array([float(force["lower_limit"]), float(force["upper_limit"])]) * math.pi/180
 
-                # Set ref and stiffness
-                target["springref"] = ref * math.pi/180
-                target["stiffness"] = stiffness
+                # Check if there are hard limits defined for this joint
+                if target["limited"]:
+
+                    # Range should be given if joint is limited; use range to calculate width param of solimp
+                    range = target.get("range")
+                    width = np.array([force_coordinate_limits[0] - range[0], range[1] - force_coordinate_limits[1]])
+
+                    # If either width is > 0 create a soft limit
+                    pos_idx = width > 0
+                    if np.any(pos_idx):
+
+                        # Mark this joint for optimization
+                        target["user"] = 1
+
+                        # Define the soft limit
+                        target["solimplimit"] = [0.0001, 0.99, np.mean(width[pos_idx])]
+
+                else:
+
+                    # Use force_coordinate_limits as range
+
+                    # Calculate width with the original range if it was defined
+                    width = 0.001
+                    if "range" in target:
+                        width_range = np.array([force_coordinate_limits[0] - target["range"][0],
+                                          target["range"][1] - force_coordinate_limits[1]])
+                        pos_idx = width_range > 0
+                        if np.any(pos_idx):
+                            width = np.mean(width_range[pos_idx])
+
+                    # Mark this joint for optimization
+                    target["user"] = 1
+
+                    # Define the soft limit
+                    target["limited"] = True
+                    target["solimplimit"] = [0.0001, 0.99, width, 0.5, 1]
 
     def build_mujoco_model(self, model_name, for_testing=False):
         # Initialise model
@@ -306,7 +338,7 @@ class Converter:
             "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"},
             "muscle": {"@scale": "400"}}
         model["mujoco"]["option"] = {"@timestep": "0.002", "flag": {"@energy": "enable"}}
-        model["mujoco"]["size"] = {"@nconmax": "400"}
+        model["mujoco"]["size"] = {"@nconmax": "400", "@nuser_jnt": 1}
         model["mujoco"]["visual"] = {
             "map": {"@fogstart": "3", "@fogend": "5", "@force": "0.1"},
             "quality": {"@shadowsize": "2048"}}
@@ -441,6 +473,10 @@ class Converter:
                 j["@stiffness"] = str(mujoco_joint["stiffness"])
             if "damping" in mujoco_joint:
                 j["@damping"] = str(mujoco_joint["damping"])
+            if "solimplimit" in mujoco_joint:
+                j["@solimplimit"] = Utils.array_to_string(mujoco_joint["solimplimit"])
+            if "user" in mujoco_joint:
+                j["@user"] = str(mujoco_joint["user"])
 
             # If the joint is between origin body and it's parent, which should be "ground", set
             # damping, armature, and stiffness to zero
