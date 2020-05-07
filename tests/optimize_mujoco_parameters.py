@@ -113,7 +113,7 @@ def collect_data_from_runs(env):
     return data
 
 
-def do_optimization(env, data):
+def do_optimization(env, data, initial_parameters=None):
 
     # Initialise MuJoCo with the converted model
     model = mujoco_py.load_model_from_path(env.mujoco_model_file)
@@ -131,14 +131,10 @@ def do_optimization(env, data):
     initial_states = Utils.get_initial_states(model, env)
 
     #viewer = mujoco_py.MjViewer(sim)
-    #controls = data[0]["controls"]
-    #controls *= 0
-    #timestep = data[0]["timestep"]
-    #Utils.initialise_simulation(sim, timestep, initial_states)
-    #Utils.run_simulation(sim, controls, viewer=viewer)
 
     # Go through training data once to calculate error with default parameters
     default_error = np.zeros((len(data),))
+    latest_error = np.zeros((len(data),))
     for run_idx in range(len(data)):
         states = data[run_idx]["states"]
         controls = data[run_idx]["controls"]
@@ -148,18 +144,25 @@ def do_optimization(env, data):
         Utils.initialise_simulation(sim, timestep, initial_states)
 
         # Run simulation
-        qpos = Utils.run_simulation(sim, controls)
+        qpos = Utils.run_simulation(sim, controls,)
 
         # Calculate joint errors
         default_error[run_idx] += np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
 
-    # Get initial values for params
-    sigma = 1
-    niter = 500
-    nmuscles = len(model.actuator_names)
+    # Optimize damping and solimp width for all joints that don't depend on another joint or aren't locked, regardless
+    # of whether they are limited or not (if they're not limited then solimp width can take any values)
     joint_idxs = list(set(range(len(model.joint_names))) - set(model.eq_obj1id[np.asarray(model.eq_active, dtype=bool)]))
     njoints = len(joint_idxs)
-    params = [5] * nmuscles + [2] * (2*nmuscles + 2*njoints)
+    nmuscles = len(model.actuator_names)
+
+    # Get initial values for params
+    niter = 500
+    if initial_parameters is None:
+        sigma = 1.0
+        params = [5] * nmuscles + [1] * (2 * nmuscles + 2 * njoints)
+    else:
+        sigma = initial_parameters["sd"]
+        params = np.log(initial_parameters["parameters"])
 
     # Initialise optimizer
     opts = {"popsize": 16, "maxiter": niter, "CMA_diagonal": True}
@@ -175,7 +178,7 @@ def do_optimization(env, data):
     fig1 = pp.figure(1, figsize=(10, 5))
     fig1.gca().plot([0, len(data)], [1, 1], 'k--')
     bars = fig1.gca().bar(np.arange(len(data)), [0]*len(data))
-    fig1.gca().axis([0, nbatch, 0, 1.2])
+    fig1.gca().axis([0, len(data), 0, 1.2])
 
     fig2 = pp.figure(2, figsize=(10, 5))
     fig2.gca().plot([0, niter], [default_error.sum(), default_error.sum()], 'k--')
@@ -193,54 +196,54 @@ def do_optimization(env, data):
         for solution_idx, solution in enumerate(solutions):
 
             # Set parameters
-            Utils.set_parameters(model, np.exp(solution), np.arange(nmuscles), joint_idxs)
-            params_cost[solution_idx] = 1e-3 * np.sum(np.exp(solution))
+            #params = np.concatenate((np.exp(solution[:nmuscles]), np.maximum(solution[nmuscles:], 0)))
+            params = np.exp(solution)
+            Utils.set_parameters(model, params, np.arange(nmuscles), joint_idxs)
+            params_cost[solution_idx] = 1e-3 * np.sum(np.exp(solution[-njoints:]))
 
             # Go through all simulations in batch
-            try:
-                for idx, run_idx in enumerate(batch_idxs):
-                    states = data[run_idx]["states"]
-                    controls = data[run_idx]["controls"]
-                    timestep = data[run_idx]["timestep"]
+            for idx, run_idx in enumerate(batch_idxs):
+                states = data[run_idx]["states"]
+                controls = data[run_idx]["controls"]
+                timestep = data[run_idx]["timestep"]
 
-                    # Initialise sim
-                    Utils.initialise_simulation(sim, timestep, initial_states)
+                # Initialise sim
+                Utils.initialise_simulation(sim, timestep, initial_states)
 
-                    # Run simulation
-                    qpos = Utils.run_simulation(sim, controls)
+                # Run simulation
+                qpos = Utils.run_simulation(sim, controls)
 
-                    # Calculate joint errors
-                    errors[idx, solution_idx] = np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
-
-            except mujoco_py.builder.MujocoException:
-                print("Failed for parameters")
-                print(np.exp(solution))
-                errors[:, solution_idx] = np.nan
+                # Calculate joint errors
+                errors[idx, solution_idx] = np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
 
         # Use sum of errors over runs as fitness, and calculate mean error for each run
         fitness = errors.sum(axis=0) + params_cost
-        avg_run_error = np.nanmean(errors, axis=1)
+        avg_run_error = np.mean(errors, axis=1)
 
         # Plot mean error per run as a percentage of default error
         prc = avg_run_error / default_error[batch_idxs]
-        for rect, y in zip(bars, prc):
-            rect.set_height(y)
+        for bar_idx, y in zip(batch_idxs, prc):
+            bars[bar_idx].set_height(y)
         fig1.canvas.draw()
         fig1.canvas.flush_events()
 
         # Plot history of mean fitness
-        history[optimizer.countiter] = np.nanmean(fitness)
+        history[optimizer.countiter] = np.mean(fitness)
         line.set_ydata(history)
         fig2.gca().axis([0, optimizer.countiter, 0, 1.1*max(history)])
         fig2.canvas.draw()
         fig2.canvas.flush_events()
 
         # Ignore failed runs / solutions
-        valid_idxs = np.where(np.isfinite(fitness))[0]
+        #valid_idxs = np.where(np.isfinite(fitness))[0]
 
         optimizer.tell(solutions, fitness)
         optimizer.logger.add()
         optimizer.disp()
+
+    # Keep all history
+    if initial_parameters is not None:
+        history = np.concatenate((initial_parameters["history"], history))
 
     # Return found solution
     return {"parameters": np.exp(optimizer.result.xfavorite),
@@ -248,31 +251,45 @@ def do_optimization(env, data):
             "history": history}
 
 
-def main(model_name):
+def main(model_name, data_file=None):
 
     # Get env
     env = EnvFactory.get(model_name)
 
-    # Collect states and controls from successful runs
-    data = collect_data_from_runs(env)
+    # If we're starting optimization again
+    if data_file is None:
 
-    # Divide successful runs into training and testing sets
-    success_idxs = []
-    for run_idx in range(len(data)):
-        if data[run_idx]["success"]:
-            success_idxs.append(run_idx)
+        # Collect states and controls from successful runs
+        data = collect_data_from_runs(env)
 
-    # Use 80% of runs for training
-    k = math.ceil(0.8*len(success_idxs))
-    train_idxs = random.sample(success_idxs, k)
-    test_idxs = list(set(success_idxs) - set(train_idxs))
+        # Divide successful runs into training and testing sets
+        success_idxs = []
+        for run_idx in range(len(data)):
+            if data[run_idx]["success"]:
+                success_idxs.append(run_idx)
+
+        # Use 80% of runs for training
+        k = math.ceil(0.8*len(success_idxs))
+        train_idxs = random.sample(success_idxs, k)
+        test_idxs = list(set(success_idxs) - set(train_idxs))
+        initial_parameters = None
+
+    # Else load existing dataset and continue optimization
+    else:
+        D = Utils.load_data(data_file)
+        data = D["data"]
+        train_idxs = D["train_idxs"]
+        test_idxs = D["test_idxs"]
+        initial_parameters = {"sd": 0.1, **D["params"]}
 
     # Get training data
-    #train_idxs = [0]
     train_set = [data[idx] for idx in train_idxs]
 
     # Do optimization with CMA-ES
-    parameters = do_optimization(env, train_set)
+    parameters = do_optimization(env, train_set, initial_parameters)
+
+    # Make sure output folder exists
+    os.makedirs(os.path.dirname(env.data_file), exist_ok=True)
 
     # Save parameters, data, and indices
     with open(env.data_file, 'wb') as f:
@@ -281,5 +298,5 @@ def main(model_name):
 
 if __name__ == "__main__":
     #main(sys.argv[1])
-    main("mobl_arms")
-    #main('leg6dof9musc')
+    #main("mobl_arms", "/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/output/data.pckl")
+    main('mobl_arms')
