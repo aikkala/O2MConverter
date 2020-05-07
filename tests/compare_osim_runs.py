@@ -23,7 +23,7 @@ def main():
     for run_idx in range(len(test_data)):
 
         # Check if there are osim states for this run
-        osim_file = os.path.join(env.forward_dynamics_folder, test_data[run_idx]["run"], "osim_states.sto")
+        osim_file = os.path.join(env.forward_dynamics_folder, test_data[run_idx]["run"], "FDS2_states.sto")
         if not os.path.isfile(osim_file):
             continue
 
@@ -33,6 +33,20 @@ def main():
 
         # Get osim states
         osim, _ = Utils.parse_sto_file(osim_file)
+
+        state_names = list(osim)
+
+        # Parse state names
+        parsed_state_names = []
+        for state_name in state_names:
+            p = state_name.split("/")
+            if p[-1] != "value":
+                parsed_state_names.append(state_name)
+            else:
+                parsed_state_names.append(p[1])
+
+        # Rename states
+        osim.columns = parsed_state_names
 
         # Use only env.target_states; filter and reorder columns in osim
         osim = osim.filter(items=env.target_states)
