@@ -49,7 +49,7 @@ class EnvFactory:
         np.array([1.8, -0.1, 0.7, 0.5, 0.5, 0.5, 0.5]),
         '/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/ModelFiles/MoBL_ARMS_model_for_opensim.osim',
         '/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/initial_states.sto',
-        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup"],
+        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"],
         {"r_z": ("groundthorax", 0),
          "sternoclavicular_r2": ("sternoclavicular", 0),
          "sternoclavicular_r3": ("sternoclavicular", 1),
