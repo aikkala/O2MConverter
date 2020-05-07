@@ -6,6 +6,7 @@ import matplotlib.pyplot as pp
 import mujoco_py
 import skvideo.io
 import os
+import pickle
 
 
 def is_nested_field(d, field, nested_fields):
@@ -380,7 +381,7 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None):
 
 def set_parameters(model, parameters, muscle_idxs, joint_idxs):
 
-    # First parameters are muscle scales, then tendon stiffness and damping, and finally joint stiffness and damping
+    # First parameters are muscle scales, then tendon stiffness and damping, and finally joint softness
     nmuscles = len(muscle_idxs)
     njoints = len(joint_idxs)
 
@@ -392,5 +393,24 @@ def set_parameters(model, parameters, muscle_idxs, joint_idxs):
 
     # Set joint stiffness and damping
     for idx, joint_idx in enumerate(joint_idxs):
-        model.jnt_stiffness[joint_idx] = parameters[3*nmuscles+idx]
-        model.dof_damping[joint_idx] = parameters[3*nmuscles+njoints+idx]
+        #model.jnt_stiffness[joint_idx] = parameters[3 * nmuscles + idx]
+        model.dof_damping[joint_idx] = parameters[3 * nmuscles + 0 * njoints + idx]
+        model.jnt_solimp[joint_idx, 2] = parameters[3 * nmuscles + 1 * njoints + idx]
+
+
+def load_data(data_file):
+    with open(data_file, 'rb') as f:
+        params, data, train_idxs, test_idxs = pickle.load(f)
+    return {"params": params, "data": data, "train_idxs": train_idxs, "test_idxs": test_idxs}
+
+
+def save_data(data_file, data):
+    with open(data_file, 'wb') as f:
+        pickle.dump(data, f)
+
+
+def find_outliers(data, k=1.5):
+    # Data is assumed to be a 1D vector. Do a simple IQR based outlier detection
+    quartiles = np.percentile(data, [25, 75])
+    iqr = quartiles[1] - quartiles[0]
+    return (data > quartiles[1] + k*iqr) | (data < quartiles[0] - k*iqr)
