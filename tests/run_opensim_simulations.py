@@ -33,9 +33,6 @@ def forward_tool_process(setup_file, run_folder):
 
 def run_speed_test(env, runs, N):
 
-    integrator_accuracy = 5e-5
-    equilibrate = True
-
     # Loop through runs and simulate forward dynamics
     durations = np.zeros((N, len(runs)))
     for run_idx, run in enumerate(runs):
@@ -89,7 +86,7 @@ def run_speed_test(env, runs, N):
             # for i in range(1, L):
             #    manager.integrate(i*env.timestep)
             manager.integrate(tf)
-            durations[run_idx] = timer() - start
+            durations[repeat_idx, run_idx] = timer() - start
 
     return durations
 
@@ -141,7 +138,6 @@ def run_forward_dynamics(env, runs, visualise=False):
     setup = xmltodict.parse(text)
 
     # Loop through runs and simulate forward dynamics
-    durations = np.zeros((len(runs),))
     for run_idx, run in enumerate(runs):
 
         # Get forward dynamics folder
@@ -149,8 +145,6 @@ def run_forward_dynamics(env, runs, visualise=False):
         print("Processing {}".format(run))
 
         # Edit settings
-        integrator_accuracy = 5e-5
-        equilibrate = True
         setup["OpenSimDocument"]["ForwardTool"]["@name"] = "tool"
         setup["OpenSimDocument"]["ForwardTool"]["model_file"] = env.opensim_model_file
         setup["OpenSimDocument"]["ForwardTool"]["ControllerSet"]["objects"]["ControlSetController"]["controls_file"] = os.path.join(run_folder, "controls.sto")
@@ -175,10 +169,15 @@ def run_forward_dynamics(env, runs, visualise=False):
 
         # Set some paths if we're using visualiser
         if visualise:
+
             model.setUseVisualizer(True)
             output_folder = os.path.join(env.output_folder, run)
             osim_video_folder = os.path.join(pathlib.Path().absolute(), "python3_1")
             output_video_file = os.path.join(output_folder, 'simulation.mp4')
+
+            # Skip this run if the video already exists
+            if os.path.isfile(output_video_file):
+                continue
 
             # Create the output_folder if it doesn't exist
             os.makedirs(output_folder, exist_ok=True)
@@ -279,6 +278,11 @@ def run_forward_dynamics(env, runs, visualise=False):
                                  "-r", str(frame_rate),
                                  "-i", os.path.join(osim_video_folder, "Frame%04d.png"),
                                  output_video_file])
+
+
+# Set a couple of constants
+integrator_accuracy = 5e-5
+equilibrate = True
 
 
 def main(model_name):
