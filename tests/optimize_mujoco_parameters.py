@@ -238,7 +238,6 @@ def do_optimization(env, data, initial_parameters=None):
         #valid_idxs = np.where(np.isfinite(fitness))[0]
 
         optimizer.tell(solutions, fitness)
-        optimizer.logger.add()
         optimizer.disp()
 
     # Keep all history

@@ -107,7 +107,6 @@ def main(model_name, alpha=1):
 
             # Tell optimizer
             optimizer.tell(solutions, fitness)
-            optimizer.logger.add()
             optimizer.disp()
 
         # Continue if optimization was ended prematurely
