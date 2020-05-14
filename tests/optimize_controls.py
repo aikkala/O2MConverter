@@ -9,14 +9,30 @@ import mujoco_py
 import os
 import matplotlib.pyplot as pp
 from scipy.signal import sosfiltfilt, butter
+import sys
 
 # Increase font size
 import matplotlib
 matplotlib.rcParams.update({'font.size': 22})
 
 
-def main(model_name):
+def preprocess_controls(controls):
+
+    # Low-pass filter
+    #sos = butter(4, 0.01, output='sos')
+    #controls = sosfiltfilt(sos, controls, axis=0)
+
+    # Clip to range [0, 1]
+    controls = np.clip(controls, 0, 1)
+
+    return controls
+
+
+def main(model_name, alpha=1):
     # Choose a random test run and optimize the controls to match OpenSim trajectory
+
+    # Make sure alpha is a float
+    alpha = float(alpha)
 
     # Load test data
     env = EnvFactory.get(model_name)
@@ -49,20 +65,19 @@ def main(model_name):
         run_data = data[run_idx]
 
         # Parameterize controls as splines
-        fs = 50
+        fs = 10
         T = run_data["controls"].shape[0]
         nmuscles = run_data["controls"].shape[1]
         xi = np.arange(0, T)
         xn = np.arange(T*(1/fs), T, T*(1/fs), dtype=int)
         xn = np.insert(xn, 0, 0)
         xn = np.append(xn, T-1)
-        y = run_data["controls"][xn, :].flatten()
+        y = np.zeros(run_data["controls"][xn, :].flatten().shape)
 
         # Use CMA-ES to optimize
-        sigma = 0.1
-        niter = 500
-        opts = {"popsize": 64, "maxiter": niter, "CMA_diagonal": False}
-        #optimizer = cma.CMAEvolutionStrategy(np.concatenate((0*np.repeat(xn.reshape([-1, 1]), nmuscles, axis=1).flatten(), y)), sigma, opts)
+        sigma = 0.5
+        niter = 100
+        opts = {"popsize": 32, "maxiter": niter, "CMA_diagonal": False}
         optimizer = cma.CMAEvolutionStrategy(y, sigma, opts)
 
         while not optimizer.stop():
@@ -75,19 +90,8 @@ def main(model_name):
             for solution_idx, solution in enumerate(solutions):
 
                 # Create a new set of controls
-#                controls = np.zeros((T, nmuscles))
-#                xin = xn.reshape([-1, 1]) + 20*np.reshape(solution[:(fs+1)*nmuscles], (fs+1, nmuscles))
-#                yn = np.reshape(solution[(fs+1)*nmuscles:], (fs+1, nmuscles))
-#                for muscle_idx in range(nmuscles):
-#                    f_spline = scipy.interpolate.CubicSpline(xin[:, muscle_idx], yn[:, muscle_idx])
-#                    controls[:, muscle_idx] = f_spline(xi)
                 f_spline = scipy.interpolate.CubicSpline(xn, np.reshape(solution, (fs+1, nmuscles)))
-
-                sos = butter(4, 0.01, output='sos')
-                controls = sosfiltfilt(sos, f_spline(xi), axis=0)
-
-                controls = np.clip(controls, 0, 1)
-                #controls = np.clip(controls, 0, 1)
+                controls = preprocess_controls(run_data["controls"] - f_spline(xi))
 
                 # Initialise sim
                 Utils.initialise_simulation(sim, env.timestep, initial_states)
@@ -95,11 +99,10 @@ def main(model_name):
                 # Run simulation
                 qpos = Utils.run_simulation(sim, controls)
 
-                # Calculate joint errors
-                fitness[solution_idx] = np.sum(Utils.estimate_joint_error(run_data["states"], qpos[:, target_state_indices],
-                                                                          error="squared_sum")) \
-                                        + 0.01*np.sum(controls > 0)
-                                        #+ 0.01*controls.sum()
+                # Calculate fitness as a combination of joint error and control error
+                joint_error = np.sum(Utils.estimate_joint_error(run_data["states"], qpos[:, target_state_indices], error="squared_sum"))
+                control_error = np.sum((run_data["controls"] - controls)**2)
+                fitness[solution_idx] = alpha * joint_error + (1 - alpha) * control_error
 
             # Tell optimizer
             optimizer.tell(solutions, fitness)
@@ -119,40 +122,31 @@ def main(model_name):
         model.cam_quat[cam_id, :] = env.camera_pos[3:]
 
         # Create a new set of controls
-        #controls = np.zeros((T, nmuscles))
-        #xin = xn.reshape([-1, 1]) + 20 * np.reshape(solution[:(fs + 1) * nmuscles], (fs + 1, nmuscles))
-        #yn = np.reshape(solution[(fs + 1) * nmuscles:], (fs + 1, nmuscles))
-        #for muscle_idx in range(nmuscles):
-        #    f_spline = scipy.interpolate.CubicSpline(xin[:, muscle_idx], yn[:, muscle_idx])
-        #    controls[:, muscle_idx] = f_spline(xi)
-        #controls = np.clip(controls, 0, 1)
         f_spline = scipy.interpolate.CubicSpline(xn, np.reshape(solution, (fs + 1, nmuscles)))
-
-        sos = butter(4, 0.01, output='sos')
-        controls = sosfiltfilt(sos, f_spline(xi), axis=0)
-
-        controls = np.clip(controls, 0, 1)
+        controls = preprocess_controls(run_data["controls"] - f_spline(xi))
 
         # Initialise sim
         Utils.initialise_simulation(sim, env.timestep, initial_states)
 
+        # Make sure output folder exists
+        alpha_str = f"{alpha:.3f}"[2:]
+        output_folder = os.path.join(env.output_folder, run_data["run"], "optimized_control", alpha_str)
+        os.makedirs(output_folder, exist_ok=True)
+
         # Run and record video
         qpos = Utils.run_simulation(sim, controls, viewer=viewer,
-                                    output_video_file=os.path.join(env.output_folder, run_data["run"], "controls_optimized.mp4"))
+                                    output_video_file=os.path.join(output_folder, "controls_optimized.mp4"))
 
         # Plot differences in joints
         timesteps = np.arange(env.timestep, (controls.shape[0]+1)*env.timestep, env.timestep)
         error = Utils.estimate_joint_error(run_data["states"], qpos[:, target_state_indices],
                                            plot=True, joint_names=env.target_states, timesteps=timesteps,
-                                           output_file=os.path.join(env.output_folder, run_data["run"], "controls_optimized_parameters.png"),
+                                           output_file=os.path.join(output_folder, "controls_optimized_parameters.png"),
                                            error="MAE")
 
         # Save optimized controls and the error
-        run_data["optimized_controls"] = controls
-        if "errors" not in run_data:
-            run_data["errors"] = {"optimized_control": error}
-        else:
-            run_data["errors"]["optimized_control"] = error
+        np.savetxt(os.path.join(output_folder, "controls.csv"), controls)
+        np.savetxt(os.path.join(output_folder, "error.csv"), error)
 
         # Plot original controls and optimized controls
         fig, axs = pp.subplots(2, 1, sharex=True, sharey=True, figsize=(20, 20))
@@ -161,7 +155,7 @@ def main(model_name):
         axs[1].plot(timesteps, controls)
         pp.ylabel('Muscle excitation')
         pp.xlabel('Time (seconds)')
-        fig.savefig(os.path.join(env.output_folder, run_data["run"], "controls_optimized.png"))
+        fig.savefig(os.path.join(output_folder, "controls_optimized.png"))
         pp.close(fig)
 
         # Do also a bar plot of "total muscle activation"
@@ -173,13 +167,13 @@ def main(model_name):
         fig.suptitle("Total muscle excitation during trajectory")
         pp.ylabel('Muscle excitation')
         pp.xlabel('Muscle')
-        fig.savefig(os.path.join(env.output_folder, run_data["run"], "muscle_excitations.png"))
+        fig.savefig(os.path.join(output_folder, "muscle_excitations.png"))
         pp.close(fig)
-
-    # Save data augmented with optimized control errors
-    Utils.save_data(env.data_file, [params, data, train_idxs, test_idxs])
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1])
-    main("mobl_arms")
+#    if len(sys.argv) < 3:
+#        alpha = 1
+#    else:
+#        alpha = sys.argv[2]
+    main(*sys.argv[1:])
