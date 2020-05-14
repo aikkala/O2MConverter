@@ -1,6 +1,8 @@
 import Utils
 import numpy as np
 from osim.env.osim import OsimEnv
+import pathlib
+import os
 
 
 class EnvFactory:
@@ -9,21 +11,26 @@ class EnvFactory:
         def __init__(self, timestep, opensim_setup_file, forward_dynamics_folder, mujoco_model_file, data_file,
                      output_folder, camera_pos, opensim_model_file, initial_states_file, target_states,
                      osim_mapping):
+
+            # Get project path
+            self.project_path = pathlib.Path(__file__).parent.parent.absolute()
+
+            # Set parameters
             self.timestep = timestep
-            self.opensim_setup_file = opensim_setup_file
-            self.forward_dynamics_folder = forward_dynamics_folder
-            self.mujoco_model_file = mujoco_model_file
-            self.data_file = data_file
-            self.output_folder = output_folder
+            self.opensim_setup_file = os.path.join(self.project_path, opensim_setup_file)
+            self.forward_dynamics_folder = os.path.join(self.project_path, forward_dynamics_folder)
+            self.mujoco_model_file = os.path.join(self.project_path, mujoco_model_file)
+            self.data_file = os.path.join(self.project_path, data_file)
+            self.output_folder = os.path.join(self.project_path, output_folder)
             self.camera_pos = camera_pos
-            self.opensim_model_file = opensim_model_file
+            self.opensim_model_file = os.path.join(self.project_path, opensim_model_file)
             self.target_states = target_states
             self.osim_mapping = osim_mapping
 
             # Read initial states from a file if given
-            self.initial_states_file = initial_states_file
+            self.initial_states_file = os.path.join(self.project_path, initial_states_file)
             self.initial_states = {"joints": {}, "actuators": {}}
-            states, hdr = Utils.parse_sto_file(initial_states_file)
+            states, hdr = Utils.parse_sto_file(self.initial_states_file)
             state_names = list(states)
             for state_name in state_names:
                 if state_name.endswith(".fiber_length"):
@@ -41,14 +48,14 @@ class EnvFactory:
 
     MoBL_ARMS = EnvTemplate(
         0.002,
-        '/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/setup_fd.xml',
-        '/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/forward_dynamics',
-        '/home/aleksi/Workspace/O2MConverter/models/converted/MoBL_ARMS_model_for_mujoco_converted/MoBL_ARMS_model_for_mujoco_converted.xml',
-        '/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/output/data.pckl',
-        '/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/output/simulations',
+        'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/setup_fd.xml',
+        'tests/mobl_arms/forward_dynamics',
+        'models/converted/MoBL_ARMS_model_for_mujoco_converted/MoBL_ARMS_model_for_mujoco_converted.xml',
+        'tests/mobl_arms/output/data.pckl',
+        'tests/mobl_arms/output/simulations',
         np.array([1.8, -0.1, 0.7, 0.5, 0.5, 0.5, 0.5]),
-        '/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/ModelFiles/MoBL_ARMS_model_for_opensim.osim',
-        '/home/aleksi/Workspace/O2MConverter/models/opensim/MoBL_ARMS_OpenSim_tutorial_33/initial_states.sto',
+        'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/ModelFiles/MoBL_ARMS_model_for_opensim.osim',
+        'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/initial_states.sto',
         ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"],
         {"r_z": ("groundthorax", 0),
          "sternoclavicular_r2": ("sternoclavicular", 0),
@@ -175,28 +182,7 @@ class OsimWrapper(OsimEnv):
         obs = {}
         for joint_name, mapping in self.env.osim_mapping.items():
             obs[joint_name] = states["joint_pos"][mapping[0]][mapping[1]]
-#        obs = {"r_z": states["joint_pos"]["groundthorax"][0],
-#               "sternoclavicular_r2": states["joint_pos"]["sternoclavicular"][0],
-#               "sternoclavicular_r3": states["joint_pos"]["sternoclavicular"][1],
-#               "unrotscap_r3": states["joint_pos"]["unrotscap"][0],
-#               "unrotscap_r2": states["joint_pos"]["unrotscap"][1],
-#               "acromioclavicular_r2": states["joint_pos"]["acromioclavicular"][0],
-#               "acromioclavicular_r3": states["joint_pos"]["acromioclavicular"][1],
-#               "acromioclavicular_r1": states["joint_pos"]["acromioclavicular"][2],
-#               "unrothum_r1": states["joint_pos"]["unrothum"][0],
-#               "unrothum_r3": states["joint_pos"]["unrothum"][1],
-#               "unrothum_r2": states["joint_pos"]["unrothum"][2],
-#               "elv_angle": states["joint_pos"]["shoulder0"][0],
-#               "shoulder_elv": states["joint_pos"]["shoulder1"][0],
-#               "shoulder1_r2": states["joint_pos"]["shoulder1"][1],
-#               "shoulder_rot": states["joint_pos"]["shoulder2"][0],
-#               "elbow_flexion": states["joint_pos"]["elbow"][0],
-#               "pro_sup": states["joint_pos"]["radioulnar"][0],
-#               "deviation": states["joint_pos"]["radiocarpal"][0],
-#               "flexion": states["joint_pos"]["radiocarpal"][1],
-#               "wrist_hand_r1": states["joint_pos"]["wrist_hand"][0],
-#               "wrist_hand_r3": states["joint_pos"]["wrist_hand"][1]}
-#
+
         return obs
 
     def get_observation(self):
