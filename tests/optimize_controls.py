@@ -137,16 +137,20 @@ def main(model_name, alpha=1):
         qpos = Utils.run_simulation(sim, controls, viewer=viewer,
                                     output_video_file=os.path.join(output_folder, "controls_optimized.mp4"))
 
-        # Plot differences in joints
+        # Calculate joint mean absolute error and plot differences in joints
         timesteps = np.arange(env.timestep, (controls.shape[0]+1)*env.timestep, env.timestep)
-        error = Utils.estimate_joint_error(run_data["states"], qpos[:, target_state_indices],
-                                           plot=True, joint_names=env.target_states, timesteps=timesteps,
-                                           output_file=os.path.join(output_folder, "controls_optimized_parameters.png"),
-                                           error="MAE")
+        joint_error = Utils.estimate_joint_error(run_data["states"], qpos[:, target_state_indices],
+                                                 plot=True, joint_names=env.target_states, timesteps=timesteps,
+                                                 output_file=os.path.join(output_folder, "controls_optimized_parameters.png"),
+                                                 error="MAE")
+
+        # Calculate also mean absolute error in control values
+        control_error = abs(run_data["controls"] - controls).mean(axis=0)
 
         # Save optimized controls and the error
         np.savetxt(os.path.join(output_folder, "controls.csv"), controls)
-        np.savetxt(os.path.join(output_folder, "error.csv"), error)
+        np.savetxt(os.path.join(output_folder, "joint_error.csv"), joint_error)
+        np.savetxt(os.path.join(output_folder, "control_error.csv"), control_error)
 
         # Plot original controls and optimized controls
         fig, axs = pp.subplots(2, 1, sharex=True, sharey=True, figsize=(20, 20))
