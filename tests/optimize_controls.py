@@ -58,7 +58,8 @@ def main(model_name, alpha=1):
     Utils.set_parameters(model, params["parameters"], params["muscle_idxs"], params["joint_idxs"])
 
     # Go through all test runs
-    viewer = mujoco_py.MjRenderContextOffscreen(sim, 0)
+    #viewer = mujoco_py.MjRenderContextOffscreen(sim, 0)
+    viewer = None
     for run_idx in test_idxs:
 
         # Get run data
@@ -76,7 +77,7 @@ def main(model_name, alpha=1):
 
         # Use CMA-ES to optimize
         sigma = 0.5
-        niter = 100
+        niter = 1000
         opts = {"popsize": 32, "maxiter": niter, "CMA_diagonal": False}
         optimizer = cma.CMAEvolutionStrategy(y, sigma, opts)
 
