@@ -353,13 +353,10 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None):
         # Get joint positions
         qpos[t, :] = sim.data.qpos
 
-        if viewer is not None:
-            viewer.render()
-
-        if output_video_file is not None:
-            imgs.append(np.flip(sim.render(width, height, camera_name="for_testing"), axis=0))
-            #viewer.render(width, height, sim.model._camera_name2id["for_testing"])
-            #imgs.append(np.flipud(viewer.read_pixels(width, height, depth=False)))
+        if viewer is not None and output_video_file is not None:
+            #imgs.append(np.flip(sim.render(width, height, camera_name="for_testing"), axis=0))
+            viewer.render(width, height, sim.model._camera_name2id["for_testing"])
+            imgs.append(np.flipud(viewer.read_pixels(width, height, depth=False)))
 
     if viewer is not None and output_video_file is not None:
 
