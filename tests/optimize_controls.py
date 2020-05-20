@@ -78,7 +78,7 @@ def main(model_name, alpha=1):
         # Use CMA-ES to optimize
         sigma = 0.5
         niter = 1000
-        opts = {"popsize": 32, "maxiter": niter, "CMA_diagonal": False}
+        opts = {"popsize": 32, "maxiter": niter, "CMA_diagonal": True}
         optimizer = cma.CMAEvolutionStrategy(y, sigma, opts)
 
         while not optimizer.stop():
