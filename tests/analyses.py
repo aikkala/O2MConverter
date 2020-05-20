@@ -8,6 +8,7 @@ import matplotlib.pyplot as pp
 from timeit import default_timer as timer
 import matplotlib
 import tests.run_opensim_simulations
+import pandas as pd
 
 
 # Increase font size
@@ -142,7 +143,7 @@ def analyse_errors(env, test_data, output_folder):
     axs[1].set_xticks([0])
     axs[1].set_xticklabels(["optimized params\nand controls"])
     pp.tight_layout()
-    fig1.savefig(os.path.join(output_folder, 'joint_errors_stacked_bar_plot'))
+    #fig1.savefig(os.path.join(output_folder, 'joint_errors_stacked_bar_plot'))
 
     # Do another bar plot but use separate bars for joints
     x = np.arange(len(avgs_default))
@@ -155,53 +156,72 @@ def analyse_errors(env, test_data, output_folder):
     pp.legend(["Default params", "Optimized params", "Optimized params + controls"])
     pp.tight_layout()
     pp.ylim(bottom=0)
-    fig2.savefig(os.path.join(output_folder, 'joint_errors_bar_plot'))
+    #fig2.savefig(os.path.join(output_folder, 'joint_errors_bar_plot'))
 
 
 def analyse_controls(env, test_data, output_folder):
 
     # Go through each run and calculate "control utilisation" for each muscle
-    u = []
-    u_opt = []
-    ctrl_err = []
+    u = dict()
+    u_opt = dict()
+    ctrl_err = dict()
     for run in test_data:
 
-        ctrl = run["controls"]
-        ctrl_opt = run["optimized_controls"]
+        # Go through all alpha values
+        alphas = os.listdir(os.path.join(env.output_folder, run["run"], "optimized_control"))
+        for alpha in alphas:
 
-        # Calculate utilisation for actual control and optimized control
-        u.append(ctrl.sum(axis=0)/ctrl.shape[0])
-        u_opt.append(ctrl_opt.sum(axis=0)/ctrl.shape[0])
+            ctrl = run["controls"]
+#            ctrl_opt = run["optimized_controls"]
+            ctrl_opt = pd.read_csv(os.path.join(env.output_folder, run["run"], "optimized_control", alpha, 'controls.csv'),
+                                   delimiter=' ', header=None).values
 
-        # Get absolute control error
-        ctrl_err.append(abs(ctrl - ctrl_opt))
+            # Check if this alpha is already in u, u_opt and ctrl_error
+            if alpha not in u:
+                u[alpha] = []
+                u_opt[alpha] = []
+                ctrl_err[alpha] = []
 
-    # Plot average disparity
-    u = np.stack(u, axis=0)
-    u_opt = np.stack(u_opt, axis=0)
-    muscle_names = list(env.initial_states["actuators"])
-    fig1, ax = pp.subplots(figsize=(24, 12))
-    ax.boxplot(abs(u-u_opt)*100, showfliers=False, labels=muscle_names)
-    pp.xticks(rotation=90)
-    pp.ylim(bottom=0, top=100)
-    #pp.title('Average difference in\ntotal muscle utilisation')
-    pp.ylabel("Percentage points")
-    pp.tick_params(axis='x', which='both', bottom=False, top=False)
-    pp.tight_layout()
-    fig1.savefig(os.path.join(output_folder, "difference_in_total_muscle_utilisation"))
+            # Calculate utilisation for actual control and optimized control
+            u[alpha].append(ctrl.sum(axis=0)/ctrl.shape[0])
+            u_opt[alpha].append(ctrl_opt.sum(axis=0)/ctrl.shape[0])
 
-    # Plot mean absolute control error
-    ctrl_err = np.stack(ctrl_err, axis=2)
-    err_per_run = np.mean(ctrl_err, axis=0)
-    fig2, ax = pp.subplots(figsize=(24, 12))
-    ax.boxplot(err_per_run.transpose(), showfliers=False, labels=muscle_names)
-    pp.xticks(rotation=90)
-    pp.ylim(bottom=0, top=1)
-    #pp.title("Mean absolute error\nbetween control signals")
-    pp.ylabel("Control value")
-    pp.tick_params(axis='x', which='both', bottom=False, top=False)
-    pp.tight_layout()
-    fig2.savefig(os.path.join(output_folder, "MAE_control_signals"))
+            # Get absolute control error
+            ctrl_err[alpha].append(abs(ctrl - ctrl_opt))
+
+    # Plot results for each alpha
+    os.makedirs(os.path.join(output_folder, "optimized_control"), exist_ok=True)
+    for alpha in u:
+
+        # Plot average disparity
+        u_stack = np.stack(u[alpha], axis=0)
+        u_opt_stack = np.stack(u_opt[alpha], axis=0)
+        muscle_names = list(env.initial_states["actuators"])
+        fig1, ax = pp.subplots(figsize=(24, 12))
+        ax.boxplot(abs(u_stack-u_opt_stack)*100, showfliers=False, labels=muscle_names)
+        pp.xticks(rotation=90)
+        pp.ylim(bottom=0, top=100)
+        #pp.title('Average difference in\ntotal muscle utilisation')
+        pp.ylabel("Percentage points")
+        pp.tick_params(axis='x', which='both', bottom=False, top=False)
+        pp.tight_layout()
+        fig1.savefig(os.path.join(output_folder, "optimized_control",
+                                  f"difference_in_total_muscle_utilisation_alpha_{alpha}"))
+        pp.close(fig1)
+
+        # Plot mean absolute control error
+        ctrl_err_stack = np.stack(ctrl_err[alpha], axis=2)
+        err_per_run = np.mean(ctrl_err_stack, axis=0)
+        fig2, ax = pp.subplots(figsize=(24, 12))
+        ax.boxplot(err_per_run.transpose(), showfliers=False, labels=muscle_names)
+        pp.xticks(rotation=90)
+        pp.ylim(bottom=0, top=1)
+        #pp.title("Mean absolute error\nbetween control signals")
+        pp.ylabel("Control value")
+        pp.tick_params(axis='x', which='both', bottom=False, top=False)
+        pp.tight_layout()
+        fig2.savefig(os.path.join(output_folder, "optimized_control", f"MAE_control_signals_alpha_{alpha}"))
+        pp.close(fig2)
 
 
 def main(model_name):
@@ -219,7 +239,7 @@ def main(model_name):
     test_data = [data[idx] for idx in test_idxs]
 
     # Analyse errors
-    analyse_errors(env, test_data, output_folder)
+    #analyse_errors(env, test_data, output_folder)
 
     # Analyse controls
     analyse_controls(env, test_data, output_folder)
