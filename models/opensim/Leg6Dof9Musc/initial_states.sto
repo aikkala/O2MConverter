@@ -1,0 +1,8 @@
+initial_states
+version=1
+nRows=1
+nColumns=33
+inDegrees=no
+endheader
+time	pelvis_tilt	pelvis_tilt_u	pelvis_tx	pelvis_tx_u	pelvis_ty	pelvis_ty_u	hip_flexion_r	hip_flexion_r_u	knee_angle_r	knee_angle_r_u	knee_angle_pat_r	knee_angle_pat_r_u	ankle_angle_r	ankle_angle_r_u	bifemlh_r.activation	bifemlh_r.fiber_length	bifemsh_r.activation	bifemsh_r.fiber_length	glut_max2_r.activation	glut_max2_r.fiber_length	psoas_r.activation	psoas_r.fiber_length	rect_fem_r.activation	rect_fem_r.fiber_length	vas_int_r.activation	vas_int_r.fiber_length	med_gas_r.activation	med_gas_r.fiber_length	soleus_r.activation	soleus_r.fiber_length	tib_ant_r.activation	tib_ant_r.fiber_length
+      0.00000000	      0.0200194	      0.00000000	      0.05768549	      0.00000000	      1.30100000	      0.00000000	      0.00000000	      0.00000000	     -0.95993109	      0.00000000	     -0.95993109	      0.00000000	      0.00000000	      0.00000000	      0.0000000	      0.10000000	      0.0000000	      0.10000000	      0.0000000	      0.10000000	      0.0000000	      0.10000000	      0.0000000	      0.10000000	      0.0000000	      0.10000000	      0.000000	      0.10000000	      0.0000000	      0.10000000	      0.0000000	      0.10000000

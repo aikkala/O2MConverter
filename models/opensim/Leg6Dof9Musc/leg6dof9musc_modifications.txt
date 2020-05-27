@@ -1,0 +1,3 @@
+leg6dof9musc_for_testing.osim:
+  - locked pelvis_tilt, pelvix_tx, and pelvis_ty degrees of freedom
+  - changed pelvis_ty default value from 1.06004667 to 1.3 so that the foot doesn't hit the ground
