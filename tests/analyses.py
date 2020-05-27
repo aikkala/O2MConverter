@@ -110,53 +110,74 @@ def analyse_errors(env, test_data, output_folder):
     # Get errors
     errors_default = np.stack([t["errors"]["default_parameters"] for t in test_data], axis=0)
     errors_params = np.stack([t["errors"]["optimized_parameters"] for t in test_data], axis=0)
-    errors_controls = np.stack([t["errors"]["optimized_control"] for t in test_data], axis=0)
 
-    # Do a stacked bar plot of average joint errors before and after optimization
-    fig1, axs = pp.subplots(1, 2, sharey=True, figsize=(14, 8), gridspec_kw={'width_ratios': [2, 1]})
-    avgs_default = np.mean(errors_default, axis=0)
-    std_default = np.std(errors_default, axis=0)
-    avgs_params = np.mean(errors_params, axis=0)
-    std_params = np.std(errors_params, axis=0)
-    avgs_controls = np.mean(errors_controls, axis=0)
-    std_controls = np.std(errors_controls, axis=0)
-    colors = ["tab:blue", "tab:orange", "tab:green", "tab:purple", "tab:brown", "tab:red", "tab:cyan"]
-    handles = []
-    for joint_idx in range(errors_default.shape[1]):
+    # Collect joint errors for all alpha values
+    alpha_errors = dict()
+    for run_data in test_data:
+        alphas = os.listdir(os.path.join(env.output_folder, run_data["run"], "optimized_control"))
+        for alpha in alphas:
+            if alpha not in alpha_errors:
+                alpha_errors[alpha] = []
+            alpha_errors[alpha].append(
+                pd.read_csv(
+                os.path.join(env.output_folder, run_data["run"], "optimized_control", alpha, 'joint_error.csv'),
+                delimiter='\n', header=None).values.squeeze()
+            )
 
-        # Calculate bottom values
-        bottom_default = np.sum(avgs_default[:joint_idx])
-        bottom_params = np.sum(avgs_params[:joint_idx])
-        bottom_controls = np.sum(avgs_controls[:joint_idx])
+    # Do plot separately for each alpha value
+    os.makedirs(os.path.join(output_folder, "joint_errors"), exist_ok=True)
+    for alpha in alpha_errors:
 
-        # Do bar plots
-        h = axs[0].bar(0, avgs_default[joint_idx], yerr=std_default[joint_idx], width=0.25, bottom=bottom_default, color=colors[joint_idx])
-        axs[0].bar(0.3, avgs_params[joint_idx], yerr=std_params[joint_idx], width=0.25, bottom=bottom_params, color=colors[joint_idx])
-        handles.append(h)
-        axs[1].bar(0, avgs_controls[joint_idx], yerr=std_controls[joint_idx], width=0.25, bottom=bottom_controls, color=colors[joint_idx])
+        errors_controls = np.asarray(alpha_errors[alpha])
 
-    # Set labels and such
-    axs[0].set_xticks([0, 0.3])
-    axs[0].set_xticklabels(["default params", "optimized params"])
-    axs[0].set_ylabel('Mean absolute error')
-    axs[0].legend(handles, env.target_states)
-    axs[1].set_xticks([0])
-    axs[1].set_xticklabels(["optimized params\nand controls"])
-    pp.tight_layout()
-    #fig1.savefig(os.path.join(output_folder, 'joint_errors_stacked_bar_plot'))
+        # Do a stacked bar plot of average joint errors before and after optimization
+        fig1, axs = pp.subplots(1, 2, sharey=True, figsize=(14, 8), gridspec_kw={'width_ratios': [2, 1]})
+        avgs_default = np.mean(errors_default, axis=0)
+        std_default = np.std(errors_default, axis=0)
+        avgs_params = np.mean(errors_params, axis=0)
+        std_params = np.std(errors_params, axis=0)
+        avgs_controls = np.mean(errors_controls, axis=0)
+        std_controls = np.std(errors_controls, axis=0)
+        colors = ["tab:blue", "tab:orange", "tab:green", "tab:purple", "tab:brown", "tab:red", "tab:cyan"]
+        handles = []
+        for joint_idx in range(errors_default.shape[1]):
 
-    # Do another bar plot but use separate bars for joints
-    x = np.arange(len(avgs_default))
-    fig2 = pp.figure(figsize=(20, 8))
-    pp.bar(x-0.25, avgs_default, yerr=std_default, width=0.25)
-    pp.bar(x, avgs_params, yerr=std_params, width=0.25)
-    pp.bar(x+0.25, avgs_controls, yerr=std_controls, width=0.25)
-    pp.xticks(x, env.target_states)
-    pp.ylabel('Radians')
-    pp.legend(["Default params", "Optimized params", "Optimized params + controls"])
-    pp.tight_layout()
-    pp.ylim(bottom=0)
-    #fig2.savefig(os.path.join(output_folder, 'joint_errors_bar_plot'))
+            # Calculate bottom values
+            bottom_default = np.sum(avgs_default[:joint_idx])
+            bottom_params = np.sum(avgs_params[:joint_idx])
+            bottom_controls = np.sum(avgs_controls[:joint_idx])
+
+            # Do bar plots
+            h = axs[0].bar(0, avgs_default[joint_idx], yerr=std_default[joint_idx], width=0.25, bottom=bottom_default, color=colors[joint_idx])
+            axs[0].bar(0.3, avgs_params[joint_idx], yerr=std_params[joint_idx], width=0.25, bottom=bottom_params, color=colors[joint_idx])
+            handles.append(h)
+            axs[1].bar(0, avgs_controls[joint_idx], yerr=std_controls[joint_idx], width=0.25, bottom=bottom_controls, color=colors[joint_idx])
+
+        # Set labels and such
+        axs[0].set_xticks([0, 0.3])
+        axs[0].set_xticklabels(["default params", "optimized params"])
+        axs[0].set_ylabel('Mean absolute error')
+        axs[0].legend(handles, env.target_states)
+        axs[1].set_xticks([0])
+        axs[1].set_xticklabels(["optimized params\nand controls"])
+        pp.tight_layout()
+        pp.ylim(bottom=0)
+        fig1.savefig(os.path.join(output_folder, 'joint_errors', f'joint_errors_stacked_bar_plot_{alpha}'))
+        pp.close(fig1)
+
+        # Do another bar plot but use separate bars for joints
+        x = np.arange(len(avgs_default))
+        fig2 = pp.figure(figsize=(20, 8))
+        pp.bar(x-0.25, avgs_default, yerr=std_default, width=0.25)
+        pp.bar(x, avgs_params, yerr=std_params, width=0.25)
+        pp.bar(x+0.25, avgs_controls, yerr=std_controls, width=0.25)
+        pp.xticks(x, env.target_states)
+        pp.ylabel('Radians')
+        pp.legend(["Default params", "Optimized params", "Optimized params + controls"])
+        pp.tight_layout()
+        pp.ylim(bottom=0)
+        fig2.savefig(os.path.join(output_folder, 'joint_errors', f'joint_errors_bar_plot_{alpha}'))
+        pp.close(fig2)
 
 
 def analyse_controls(env, test_data, output_folder):
@@ -172,7 +193,6 @@ def analyse_controls(env, test_data, output_folder):
         for alpha in alphas:
 
             ctrl = run["controls"]
-#            ctrl_opt = run["optimized_controls"]
             ctrl_opt = pd.read_csv(os.path.join(env.output_folder, run["run"], "optimized_control", alpha, 'controls.csv'),
                                    delimiter=' ', header=None).values
 
@@ -190,7 +210,7 @@ def analyse_controls(env, test_data, output_folder):
             ctrl_err[alpha].append(abs(ctrl - ctrl_opt))
 
     # Plot results for each alpha
-    os.makedirs(os.path.join(output_folder, "optimized_control"), exist_ok=True)
+    os.makedirs(os.path.join(output_folder, "control_errors"), exist_ok=True)
     for alpha in u:
 
         # Plot average disparity
@@ -205,8 +225,8 @@ def analyse_controls(env, test_data, output_folder):
         pp.ylabel("Percentage points")
         pp.tick_params(axis='x', which='both', bottom=False, top=False)
         pp.tight_layout()
-        fig1.savefig(os.path.join(output_folder, "optimized_control",
-                                  f"difference_in_total_muscle_utilisation_alpha_{alpha}"))
+        fig1.savefig(os.path.join(output_folder, "control_errors",
+                                  f"difference_in_total_muscle_utilisation_{alpha}"))
         pp.close(fig1)
 
         # Plot mean absolute control error
@@ -220,7 +240,7 @@ def analyse_controls(env, test_data, output_folder):
         pp.ylabel("Control value")
         pp.tick_params(axis='x', which='both', bottom=False, top=False)
         pp.tight_layout()
-        fig2.savefig(os.path.join(output_folder, "optimized_control", f"MAE_control_signals_alpha_{alpha}"))
+        fig2.savefig(os.path.join(output_folder, "control_errors", f"MAE_control_signals_{alpha}"))
         pp.close(fig2)
 
 
@@ -239,7 +259,7 @@ def main(model_name):
     test_data = [data[idx] for idx in test_idxs]
 
     # Analyse errors
-    #analyse_errors(env, test_data, output_folder)
+    analyse_errors(env, test_data, output_folder)
 
     # Analyse controls
     analyse_controls(env, test_data, output_folder)
