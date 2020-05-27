@@ -95,10 +95,20 @@ class Converter:
             if "CoordinateLimitForce" in p["OpenSimDocument"]["Model"]["ForceSet"]["objects"]:
                 self.parse_coordinate_limit_forces(p["OpenSimDocument"]["Model"]["ForceSet"]["objects"]["CoordinateLimitForce"])
 
+        # If we're building this model for testing we need to unclamp all joints
+        if for_testing:
+            self.unclamp_all_mujoco_joints()
+
         # Now we need to re-assemble them in MuJoCo format
         # (or actually a dict version of the model so we can use
         # xmltodict to save the model into a XML file)
-        mujoco_model = self.build_mujoco_model(p["OpenSimDocument"]["Model"]["@name"], for_testing)
+        mujoco_model = self.build_mujoco_model(p["OpenSimDocument"]["Model"]["@name"])
+
+        # If we're building this model for testing we need to disable collisions and add a camera for recording
+        if for_testing:
+            mujoco_model["mujoco"]["option"]["@collision"] = "predefined"
+            mujoco_model["mujoco"]["worldbody"]["camera"] = {"@name": "for_testing", "@pos": "0 0 0", "@euler": "0 0 0"}
+
 
         # Finally, save the MuJoCo model into XML file
         output_xml = self.output_folder + model_name + ".xml"
@@ -144,13 +154,6 @@ class Converter:
                     # A simple check to see if the fit is alright
                     y_fit = fit(x_values)
                     assert r2_score(y_values, y_fit) > 0.5, "A bad approximation of the SimmSpline"
-
-                    # We need to do a transformation also (really only needed if fit(0) is non-zero, but it's likely
-                    # to always be non-zero), and modify the fitted function
-                    #y_values = y_values - fit(0)
-
-                    # Get the fit
-                    #fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values)-1))
 
                     # Get the weights
                     polycoef = np.zeros((5,))
@@ -321,7 +324,7 @@ class Converter:
                     target["limited"] = True
                     target["solimplimit"] = [0.0001, 0.99, width, 0.5, 1]
 
-    def build_mujoco_model(self, model_name, for_testing=False):
+    def build_mujoco_model(self, model_name):
         # Initialise model
         model = {"mujoco": {"@model": model_name}}
 
@@ -331,7 +334,7 @@ class Converter:
         model["mujoco"]["compiler"] = {"@inertiafromgeom": "auto", "@angle": "radian", "@balanceinertia": "true",
                                        "@boundmass": "0.001", "@boundinertia": "0.001"}
         model["mujoco"]["default"] = {
-            "joint": {"@limited": "true", "@damping": "0", "@armature": "0.01", "@stiffness": "0"},
+            "joint": {"@limited": "true", "@damping": "0.5", "@armature": "0.01", "@stiffness": "0"},
             "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "3", "@rgba": "0.8 0.6 .4 1",
                      "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
             "site": {"@size": "0.001"},
@@ -342,10 +345,6 @@ class Converter:
         model["mujoco"]["visual"] = {
             "map": {"@fogstart": "3", "@fogend": "5", "@force": "0.1"},
             "quality": {"@shadowsize": "2048"}}
-
-        # If we're building this model for testing we need to disable collisions
-        if for_testing:
-            model["mujoco"]["option"]["@collision"] = "predefined"
 
         # Start building the worldbody
         worldbody = {"geom": {"@name": "floor", "@pos": "0 0 0", "@size": "10 10 0.125",
@@ -369,10 +368,6 @@ class Converter:
         worldbody["body"] = {
             "light": {"@mode": "trackcom", "@directional": "false", "@diffuse": ".8 .8 .8",
                       "@specular": "0.3 0.3 0.3", "@pos": "0 0 4.0", "@dir": "0 0 -1"}}
-
-        # Add cameras
-        if for_testing:
-            worldbody["camera"] = {"@name": "for_testing", "@pos": "0 0 0", "@euler": "0 0 0"}
 
         # Build the kinematic chains
         worldbody["body"] = self.add_body(worldbody["body"], self.origin_body,
@@ -420,6 +415,13 @@ class Converter:
         model["mujoco"]["equality"] = self.equality
 
         return model
+
+    def unclamp_all_mujoco_joints(self):
+        for joint_name in self.joints:
+            for j in self.joints[joint_name]:
+                for mujoco_joint in j.mujoco_joints:
+                    if mujoco_joint["motion_type"] not in ["dependent", "coupled"]:
+                        mujoco_joint["limited"] = False
 
     def add_body(self, worldbody, current_body, current_joints):
 
