@@ -10,6 +10,7 @@ import cma
 import skvideo
 import pickle
 import matplotlib.pyplot as pp
+import sys
 
 
 def get_run_info(run_folder):
@@ -81,7 +82,7 @@ def collect_data_from_runs(env):
         if env.initial_states is not None and "joints" in env.initial_states:
             for state_name in env.initial_states["joints"]:
                 if abs(states[state_name][0] - env.initial_states["joints"][state_name]["qpos"]) > 1e-5:
-                    raise ValueError('Initial states do not match')
+                    raise ValueError(f"Initial states do not match for state {state_name}: {states[state_name][0]} vs {env.initial_states['joints'][state_name]['qpos']}")
 
         # Filter and reorder states
         states = states.filter(items=env.target_states)
@@ -165,7 +166,7 @@ def do_optimization(env, data, initial_parameters=None):
         params = np.log(initial_parameters["parameters"])
 
     # Initialise optimizer
-    opts = {"popsize": 16, "maxiter": niter, "CMA_diagonal": True}
+    opts = {"popsize": env.param_optim_pop_size, "maxiter": niter, "CMA_diagonal": True}
     optimizer = cma.CMAEvolutionStrategy(params, sigma, opts)
     nbatch = len(data)
 
@@ -296,6 +297,6 @@ def main(model_name, data_file=None):
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1])
+    main(*sys.argv[1])
     #main("mobl_arms", "/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/output/data.pckl")
-    main('mobl_arms')
+    #main('gait2392')

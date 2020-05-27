@@ -66,6 +66,7 @@ def main(model_name, N):
 
     # Get env
     env = EnvFactory.get(model_name)
+    N = int(N)
 
     duration = 1
     timestep = 0.002
@@ -87,7 +88,6 @@ def main(model_name, N):
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1], int(sys.argv[2]))
-    main("mobl_arms", 100)
-#    main("/home/aleksi/Workspace/O2MConverter/models/converted/leg6dof9musc_for_testing_converted/leg6dof9musc_for_testing_converted.xml",
-#         50, "/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/forward_dynamics")
+    main(*sys.argv[1:])
+    #main("mobl_arms", 100)
+    #main("gait2392", 100)
