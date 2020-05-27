@@ -1,0 +1,3 @@
+gait2392_millard2012_muscle_for_testing.osim
+  - set all pelvis degrees of freedom and lumbar_extension and lumbar_bending as locked
+  - pelvis_ty default value changed from 0.95 to 1.2 so that feet don't hit the ground
