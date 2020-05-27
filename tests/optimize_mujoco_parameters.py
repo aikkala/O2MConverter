@@ -297,6 +297,4 @@ def main(model_name, data_file=None):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1])
-    #main("mobl_arms", "/home/aleksi/Workspace/O2MConverter/tests/mobl_arms/output/data.pckl")
-    #main('gait2392')
+    main(*sys.argv[1:])
