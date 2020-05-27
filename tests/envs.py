@@ -10,7 +10,7 @@ class EnvFactory:
     class EnvTemplate:
         def __init__(self, timestep, opensim_setup_file, forward_dynamics_folder, mujoco_model_file, data_file,
                      output_folder, camera_pos, opensim_model_file, initial_states_file, target_states,
-                     osim_mapping):
+                     osim_mapping, param_optim_pop_size):
 
             # Get project path
             self.project_path = pathlib.Path(__file__).parent.parent.absolute()
@@ -26,6 +26,7 @@ class EnvFactory:
             self.opensim_model_file = os.path.join(self.project_path, opensim_model_file)
             self.target_states = target_states
             self.osim_mapping = osim_mapping
+            self.param_optim_pop_size = param_optim_pop_size
 
             # Read initial states from a file if given
             self.initial_states_file = os.path.join(self.project_path, initial_states_file)
@@ -41,6 +42,17 @@ class EnvFactory:
                     self.initial_states["joints"][state_name[:-2]]["qvel"] = states[state_name][0]
                 elif state_name.endswith(".activation"):
                     self.initial_states["actuators"][state_name[:-11]] = states[state_name][0]
+                elif '/' in state_name:
+                    split = state_name.split('/')[1:]
+                    if split[0] == "jointset":
+                        if split[2] not in self.initial_states["joints"]:
+                            self.initial_states["joints"][split[2]] = {}
+                        if split[3] == "value":
+                            self.initial_states["joints"][split[2]]["qpos"] = states[state_name][0]
+                        elif split[3] == "speed":
+                            self.initial_states["joints"][split[2]]["qvel"] = states[state_name][0]
+                    elif split[0] == "forceset" and split[2] == "activation":
+                        self.initial_states["actuators"][split[1]] = states[state_name][0]
                 else:
                     if state_name not in self.initial_states["joints"]:
                         self.initial_states["joints"][state_name] = {}
@@ -77,7 +89,22 @@ class EnvFactory:
          "deviation": ("radiocarpal", 0),
          "flexion": ("radiocarpal", 1),
          "wrist_hand_r1": ("wrist_hand", 0),
-         "wrist_hand_r3": ("wrist_hand", 1)}
+         "wrist_hand_r3": ("wrist_hand", 1)}, 16
+    )
+
+    gait2392_leg_dof = ["hip_flexion_", "hip_adduction_", "hip_rotation_", "knee_angle_", "ankle_angle_", "subtalar_angle_", "mtp_angle_"]
+    gait2392 = EnvTemplate(
+        0.002,
+        'models/opensim/Gait2392_Simbody/setup_fd.xml',
+        'tests/gait2392/forward_dynamics',
+        'models/converted/gait2392_millard2012muscle_for_testing_converted/gait2392_millard2012muscle_for_testing_converted.xml',
+        'tests/gait2392/output/data.pckl',
+        'tests/gait2392/output/simulations',
+        np.array([1.8, -0.1, 0.7, 0.5, 0.5, 0.5, 0.5]),
+        'models/opensim/Gait2392_Simbody/gait2392_millard2012muscle_for_testing.osim',
+        'models/opensim/Gait2392_Simbody/initial_states.sto',
+        [dof + "r" for dof in gait2392_leg_dof] + [dof + "l" for dof in gait2392_leg_dof] + ["lumbar_extension", "lumbar_bending", "lumbar_rotation"],
+        {}, 32
     )
 
 #    leg6dof9musc = EnvTemplate(
@@ -97,6 +124,8 @@ class EnvFactory:
             return EnvFactory.MoBL_ARMS
         elif env_name.lower() == "leg6dof9musc":
             return EnvFactory.leg6dof9musc
+        elif env_name.lower() == "gait2392":
+            return EnvFactory.gait2392
         else:
             raise NotImplementedError
 
