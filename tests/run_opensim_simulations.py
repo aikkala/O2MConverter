@@ -215,6 +215,12 @@ def run_forward_dynamics(env, runs, visualise=False):
         state_names = model.getStateVariableNames()
         for i in range(model.getNumStateVariables()):
             state_idx = storage.getStateIndex(state_names.get(i))
+            if state_idx == -1:
+                state_idx = storage.getStateIndex('/jointset/' + state_names.get(i))
+            if state_idx == -1:
+                state_idx = storage.getStateIndex('/forceset/' + state_names.get(i))
+            if state_idx == -1:
+                raise IndexError
             model.setStateVariableValue(state, state_names.get(i), storage.getStateVector(0).getData().get(state_idx))
 
         # Open manager, set parameters
@@ -298,5 +304,4 @@ def main(model_name):
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1])
-    main("mobl_arms")
+    main(*sys.argv[1:])
