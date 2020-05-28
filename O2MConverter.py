@@ -669,6 +669,10 @@ class Joint:
             # Don't add anything to self.mujoco_joints, bodies are by default
             # attached rigidly to each other in MuJoCo
             pass
+
+        elif self.joint_type == "PinJoint":
+            self.parse_pin_joint(joint)
+
         else:
             raise NotImplementedError
 
@@ -694,22 +698,7 @@ class Joint:
         #T = self.orientation_in_parent.transformation_matrix
 
         # Start by parsing the CoordinateSet
-        coordinate_set = dict()
-        if Utils.is_nested_field(joint, "Coordinate", ["CoordinateSet", "objects"]):
-            coordinate = joint["CoordinateSet"]["objects"]["Coordinate"]
-
-            # Make sure coordinate is a list
-            if isinstance(coordinate, dict):
-                coordinate = [coordinate]
-
-            # Parse all Coordinates
-            for c in coordinate:
-                coordinate_set[c["@name"]] = {
-                    "motion_type": c["motion_type"], "name": c["@name"],
-                    "range": np.array(c["range"].split(), dtype=float),
-                    "limited": True if c["clamped"] == "true" else False,
-                    "locked": True if c["locked"] == "true" else False,
-                    "transform_value": float(c["default_value"]) if "default_value" in c else None}
+        coordinate_set = self.parse_coordinate_set(joint)
 
         # NOTE! Coordinates in CoordinateSet parameterize this joint. In theory all six DoFs could be dependent
         # on one Coordinate. Here we assume that only one DoF is equivalent to a Coordinate, that is, there exists an
@@ -953,6 +942,67 @@ class Joint:
                 self.equality_constraints["joint"].append(constraint)
 
         return T
+
+    @staticmethod
+    def parse_coordinate_set(joint):
+        # Parse all Coordinates defined for this joint
+
+        coordinate_set = dict()
+        if Utils.is_nested_field(joint, "Coordinate", ["CoordinateSet", "objects"]):
+            coordinate = joint["CoordinateSet"]["objects"]["Coordinate"]
+
+            # Make sure coordinate is a list
+            if isinstance(coordinate, dict):
+                coordinate = [coordinate]
+
+            # Parse all Coordinates
+            for c in coordinate:
+                coordinate_set[c["@name"]] = {
+                    "motion_type": c["motion_type"], "name": c["@name"],
+                    "range": np.array(c["range"].split(), dtype=float),
+                    "limited": True if c["clamped"] == "true" else False,
+                    "locked": True if c["locked"] == "true" else False,
+                    "transform_value": float(c["default_value"]) if "default_value" in c else None}
+
+        return coordinate_set
+
+    def parse_pin_joint(self, joint):
+
+        # Start by parsing the CoordinateSet
+        coordinate_set = self.parse_coordinate_set(joint)
+
+        # There should be one coordinate for this joint
+        assert len(coordinate_set.keys()) == 1, "There should be only one Coordinate for a PinJoint"
+        params = copy.deepcopy(coordinate_set[next(iter(coordinate_set))])
+
+        # Set default reference position/angle to zero. If this value is not zero, then you need
+        # more care while calculating quartic functions for equality constraints
+        params["ref"] = 0
+
+        # We know this is a hinge joint and axis is [0, 0, 1]
+        params["type"] = "hinge"
+        params["axis"] = np.array([0, 0, 1])
+
+        # Don't use transform_value here; we just want to use this joint as a mujoco joint
+        # NOTE! We do need the transform_value for weld constraint if this joint is locked
+        if "locked" in params and params["locked"]:
+            params["default_value_for_locked"] = params["transform_value"]
+        params["transform_value"] = 0
+
+        # Append to mujoco joints
+        self.mujoco_joints.append(params)
+
+        # We need to add an equality constraint for locked joints
+        if "locked" in params and params["locked"]:
+
+            # Create the constraint
+            polycoef = np.array([params["default_value_for_locked"], 0, 0, 0, 0])
+            constraint = {"@name": params["name"] + "_constraint", "@active": "true",
+                          "@joint1": params["name"],
+                          "@polycoef": Utils.array_to_string(polycoef)}
+
+            # Add to equality constraints
+            self.equality_constraints["joint"].append(constraint)
 
     def get_equality_constraints(self, constraint_type):
         return self.equality_constraints[constraint_type]
