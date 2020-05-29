@@ -10,7 +10,7 @@ class EnvFactory:
     class EnvTemplate:
         def __init__(self, timestep, opensim_setup_file, forward_dynamics_folder, mujoco_model_file, data_file,
                      output_folder, camera_pos, opensim_model_file, initial_states_file, target_states,
-                     osim_mapping, param_optim_pop_size):
+                     osim_mapping, param_optim_pop_size, control_optim_pop_size):
 
             # Get project path
             self.project_path = pathlib.Path(__file__).parent.parent.absolute()
@@ -27,6 +27,7 @@ class EnvFactory:
             self.target_states = target_states
             self.osim_mapping = osim_mapping
             self.param_optim_pop_size = param_optim_pop_size
+            self.control_optim_pop_size = control_optim_pop_size
 
             # Read initial states from a file if given
             self.initial_states_file = os.path.join(self.project_path, initial_states_file)
@@ -89,7 +90,7 @@ class EnvFactory:
          "deviation": ("radiocarpal", 0),
          "flexion": ("radiocarpal", 1),
          "wrist_hand_r1": ("wrist_hand", 0),
-         "wrist_hand_r3": ("wrist_hand", 1)}, 16
+         "wrist_hand_r3": ("wrist_hand", 1)}, 16, 32
     )
 
     gait2392_leg_dof = ["hip_flexion_", "hip_adduction_", "hip_rotation_", "knee_angle_", "ankle_angle_", "subtalar_angle_", "mtp_angle_"]
@@ -104,19 +105,34 @@ class EnvFactory:
         'models/opensim/Gait2392_Simbody/gait2392_millard2012muscle_for_testing.osim',
         'models/opensim/Gait2392_Simbody/initial_states.sto',
         [dof + "r" for dof in gait2392_leg_dof] + [dof + "l" for dof in gait2392_leg_dof] + ["lumbar_extension", "lumbar_bending", "lumbar_rotation"],
-        {}, 32
+        {}, 32, 64
     )
 
-#    leg6dof9musc = EnvTemplate(
-#        '/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/setup_fd.xml',
-#        '/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/forward_dynamics',
-#        '/home/aleksi/Workspace/O2MConverter/models/converted/leg6dof9musc_for_testing_converted/leg6dof9musc_for_testing_converted.xml',
- ##       '/home/aleksi/Workspace/O2MConverter/models/converted/leg6dof9musc_for_testing_converted/test_data.pckl',
- #       np.array([1.8, -0.1, 0.7, 0.5, 0.5, 0.5, 0.5]),
- #       '/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/leg6dof9musc_for_testing.osim',
- #       '/home/aleksi/Workspace/O2MConverter/models/opensim/Leg6Dof9Musc/initial_states.sto',
-  #      ["hip_flexion_r", "knee_angle_r", "ankle_angle_r"]
-  #  )
+    leg6dof9musc = EnvTemplate(
+        0.002,
+        'models/opensim/Leg6Dof9Musc/setup_fd.xml',
+        'tests/leg6dof9musc/forward_dynamics',
+        'models/converted/leg6dof9musc_for_testing_converted/leg6dof9musc_for_testing_converted.xml',
+        'tests/leg6dof9musc/output/data.pckl',
+        'tests/leg6dof9musc/output/simulations',
+        np.array([1.8, -0.1, 0.7, 0.5, 0.5, 0.5, 0.5]),
+        'models/opensim/Leg6Dof9Musc/leg6dof9musc_for_testing.osim',
+        'models/opensim/Leg6Dof9Musc/initial_states.sto',
+        ["hip_flexion_r", "knee_angle_r", "ankle_angle_r"],
+        {}, 16, 32)
+
+    gait10dof18musc = EnvTemplate(
+        0.002,
+        'models/opensim/Gait10dof18musc/setup_fd.xml',
+        'tests/gait10dof18musc/forward_dynamics',
+        'models/converted/gait10dof18musc_for_testing_converted/gait10dof18musc_for_testing_converted.xml',
+        'tests/gait10dof18musc/output/data.pckl',
+        'tests/gait10dof18musc/output/simulations',
+        np.array([1.8, -0.1, 0.7, 0.5, 0.5, 0.5, 0.5]),
+        'models/opensim/Gait10dof18musc/gait10dof18musc_for_testing.osim',
+        'models/opensim/Gait10dof18musc/initial_states.sto',
+        ["hip_flexion_r", "knee_angle_r", "ankle_angle_r", "hip_flexion_l", "knee_angle_l", "ankle_angle_l"],
+        {}, 16, 32)
 
     @staticmethod
     def get(env_name):
@@ -126,6 +142,8 @@ class EnvFactory:
             return EnvFactory.leg6dof9musc
         elif env_name.lower() == "gait2392":
             return EnvFactory.gait2392
+        elif env_name.lower() == "gait10dof18musc":
+            return EnvFactory.gait10dof18musc
         else:
             raise NotImplementedError
 
