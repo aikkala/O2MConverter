@@ -5,6 +5,7 @@ import numpy as np
 import Utils
 import os
 import tests.run_opensim_simulations
+import sys
 
 
 def calculate_joint_errors(env, viewer, sim, data, target_state_indices, initial_states=None, condition=None):
@@ -41,6 +42,8 @@ def calculate_joint_errors(env, viewer, sim, data, target_state_indices, initial
                                              error="MAE")
 
         # Add joint errors to data
+        if "errors" not in data[run_idx]:
+            data[run_idx]["errors"] = {}
         data[run_idx]["errors"][condition] = run_err
 
 
@@ -99,6 +102,4 @@ def main(model_name):
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1])
-    main("mobl_arms")
-    #main("leg6dof9musc")
+    main(*sys.argv[1:])
