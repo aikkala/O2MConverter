@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OpenSimDocument Version="40000">
+  <ForwardTool name="tool">
+    <model_file>/home/aleksi/Workspace/O2MConverter/models/opensim/Gait10dof18musc/gait10dof18musc_for_testing.osim</model_file>
+    <replace_force_set>false</replace_force_set>
+    <force_set_files></force_set_files>
+    <results_directory>.</results_directory>
+    <output_precision>20</output_precision>
+    <initial_time>0.0</initial_time>
+    <final_time>0.998</final_time>
+    <solve_for_equilibrium_for_auxiliary_states>true</solve_for_equilibrium_for_auxiliary_states>
+    <maximum_number_of_integrator_steps>2000000000</maximum_number_of_integrator_steps>
+    <maximum_integrator_step_size>0.002</maximum_integrator_step_size>
+    <minimum_integrator_step_size>0.002</minimum_integrator_step_size>
+    <integrator_error_tolerance>5e-05</integrator_error_tolerance>
+    <AnalysisSet name="Analyses">
+      <objects></objects>
+      <groups></groups>
+    </AnalysisSet>
+    <ControllerSet name="Controllers">
+      <objects>
+        <ControlSetController>
+          <controls_file>/home/aleksi/Workspace/O2MConverter/tests/gait10dof18musc/forward_dynamics/run_1590661442117/controls.sto</controls_file>
+        </ControlSetController>
+      </objects>
+      <groups></groups>
+    </ControllerSet>
+    <external_loads_file></external_loads_file>
+    <states_file>/home/aleksi/Workspace/O2MConverter/models/opensim/Gait10dof18musc/initial_states.sto</states_file>
+    <use_specified_dt>false</use_specified_dt>
+  </ForwardTool>
+</OpenSimDocument>
