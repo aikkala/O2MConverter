@@ -1,0 +1,3 @@
+gait10dof18musc_for_testing.osim:
+  - pelvis_ty changed from 0.95 to 1.2 to prevent feet hitting the ground
+  - pelvis_tilt, pelvis_tx, pelvis_ty, lumbar_extension locked
