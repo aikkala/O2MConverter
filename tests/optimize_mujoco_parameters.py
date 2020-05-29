@@ -135,7 +135,6 @@ def do_optimization(env, data, initial_parameters=None):
 
     # Go through training data once to calculate error with default parameters
     default_error = np.zeros((len(data),))
-    latest_error = np.zeros((len(data),))
     for run_idx in range(len(data)):
         states = data[run_idx]["states"]
         controls = data[run_idx]["controls"]
@@ -145,10 +144,10 @@ def do_optimization(env, data, initial_parameters=None):
         Utils.initialise_simulation(sim, timestep, initial_states)
 
         # Run simulation
-        qpos = Utils.run_simulation(sim, controls,)
+        qpos = Utils.run_simulation(sim, controls)
 
         # Calculate joint errors
-        default_error[run_idx] += np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
+        default_error[run_idx] = np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
 
     # Optimize damping and solimp width for all joints that don't depend on another joint or aren't locked, regardless
     # of whether they are limited or not (if they're not limited then solimp width can take any values)
