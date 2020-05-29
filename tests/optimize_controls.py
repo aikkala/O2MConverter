@@ -78,7 +78,7 @@ def main(model_name, alpha=1):
         # Use CMA-ES to optimize
         sigma = 0.5
         niter = 1000
-        opts = {"popsize": 32, "maxiter": niter, "CMA_diagonal": True}
+        opts = {"popsize": env.control_optim_pop_size, "maxiter": niter, "CMA_diagonal": True}
         optimizer = cma.CMAEvolutionStrategy(y, sigma, opts)
 
         while not optimizer.stop():
@@ -176,8 +176,4 @@ def main(model_name, alpha=1):
 
 
 if __name__ == "__main__":
-#    if len(sys.argv) < 3:
-#        alpha = 1
-#    else:
-#        alpha = sys.argv[2]
     main(*sys.argv[1:])
