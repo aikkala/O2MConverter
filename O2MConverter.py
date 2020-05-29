@@ -420,7 +420,9 @@ class Converter:
         for joint_name in self.joints:
             for j in self.joints[joint_name]:
                 for mujoco_joint in j.mujoco_joints:
-                    if mujoco_joint["motion_type"] not in ["dependent", "coupled"]:
+                    # Don't unclamp dependent joints or joints that have limits that need to be optimized
+                    if mujoco_joint["motion_type"] not in ["dependent", "coupled"] \
+                            and not ("user" in mujoco_joint and mujoco_joint["user"] == 1):
                         mujoco_joint["limited"] = False
 
     def add_body(self, worldbody, current_body, current_joints):
@@ -737,25 +739,39 @@ class Joint:
             # i.e. make its dependence linear
             if "coordinates" in t and t["coordinates"] == params["name"] and t["@name"].startswith(params["motion_type"][:8]):
 
-                # Check if we need to modify limits, TODO not sure if this is correct or needed
-                if Utils.is_nested_field(t, "SimmSpline", ["function"]):
+                # This is not necessary if the coordinate is dependent on another coordinate... starting to get
+                # complicated
+                ignore = False
+                if "joint" in constraints:
+                    for c in constraints["joint"]:
+                        if params["name"] == c["@joint1"]:
+                            ignore = True
+                            break
 
-                    # Fit a line/spline and check limit values within that fit
-                    x_values = np.array(t["function"]["SimmSpline"]["x"].split(), dtype=float)
-                    y_values = np.array(t["function"]["SimmSpline"]["y"].split(), dtype=float)
-                    assert len(x_values) > 1 and len(y_values) > 1, "Not enough points, can't fit a spline"
-                    fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values) - 1))
-                    assert r2_score(y_values, fit(x_values)) > 0.5, "A bad approximation of the SimmSpline"
-                    params["range"] = fit(params["range"])
+                if not ignore:
 
-                elif Utils.is_nested_field(t, "LinearFunction", ["function"]):
-                    pass
+                    # Check if we need to modify limits, TODO not sure if this is correct or needed
+                    if Utils.is_nested_field(t, "SimmSpline", ["function"]):
 
-                else:
-                    raise NotImplementedError
+                        # Fit a line/spline and check limit values within that fit
+                        x_values = np.array(t["function"]["SimmSpline"]["x"].split(), dtype=float)
+                        y_values = np.array(t["function"]["SimmSpline"]["y"].split(), dtype=float)
+                        assert len(x_values) > 1 and len(y_values) > 1, "Not enough points, can't fit a polynomial"
+                        fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, min(4, len(x_values) - 1))
+                        y_fit = fit(x_values)
+                        assert r2_score(y_values, y_fit) > 0.5, "A bad approximation of the SimmSpline"
 
-                # Make this into an identity mapping
-                t["function"] = dict({"LinearFunction": {"coefficients": '1 0'}})
+                        # Update range as min/max of the approximated range
+                        params["range"] = np.array([min(y_fit), max(y_fit)])
+
+                    elif Utils.is_nested_field(t, "LinearFunction", ["function"]):
+                        pass
+
+                    else:
+                        raise NotImplementedError
+
+                    # Make this into an identity mapping
+                    t["function"] = dict({"LinearFunction": {"coefficients": '1 0'}})
 
             # Handle a "Constant" transformation. We're not gonna create this joint
             # but we need the transformation information to properly align the joint
@@ -838,37 +854,36 @@ class Joint:
                 # the independent joint
                 # TODO We could do this after the model has been built since we just swap joint names,
                 # then we wouldn't need to pass constraints into body/joint parser
-                if "motion_type" in params and params["motion_type"] == "coupled":
+                # params["motion_type"] is typically "coupled" for dependent joints, but not always, so let's just loop
+                # through constraints and check
+                #constraint_found = False
 
-                    # Find the constraint that pertains to this joint
-                    constraint_found = False
+                # Go through all joint equality constraints
+                for c in constraints["joint"]:
+                    if c["@joint1"] != t["coordinates"]:
+                        continue
+                    else:
+                        #constraint_found = True
 
-                    # Go through all joint equality constraints
-                    for c in constraints["joint"]:
-                        if c["@joint1"] != t["coordinates"]:
-                            continue
-                        else:
-                            constraint_found = True
-
-                            # Check if this constraint is active
-                            if c["@active"] != "true":
-                                break
-
-                            # Change the name of the independent joint
-                            independent_joint = c["@joint2"]
-
-                            # We're handling only an identity transformation for now
-                            coeffs = np.array(c["@polycoef"].split(), dtype=float)
-                            assert np.array_equal(coeffs, np.array([0, 1, 0, 0, 0])), \
-                                "We're handling only identity transformations for now"
-
+                        # Check if this constraint is active
+                        if c["@active"] != "true":
                             break
 
-                    assert constraint_found, "Couldn't find an independent joint for a coupled joint"
+                        # Change the name of the independent joint
+                        independent_joint = c["@joint2"]
 
-                else:
-                    # Update motion type to dependent for posterity
-                    params["motion_type"] = "dependent"
+                        # We're handling only an identity transformation for now
+                        coeffs = np.array(c["@polycoef"].split(), dtype=float)
+                        assert np.array_equal(coeffs, np.array([0, 1, 0, 0, 0])), \
+                            "We're handling only identity transformations for now"
+
+                        break
+
+                #assert constraint_found, "Couldn't find an independent joint for a coupled joint"
+
+                #else:
+                # Update motion type to dependent for posterity
+                params["motion_type"] = "dependent"
 
                 # These joint equality constraints don't seem to work properly. Is it because they're soft constraints?
                 # E.g. the translations between femur and tibia should be strictly defined by knee angle, but it seems
