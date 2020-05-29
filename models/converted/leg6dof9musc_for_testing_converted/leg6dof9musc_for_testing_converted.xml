@@ -71,7 +71,7 @@
           <body name="talus_r" pos="       0 -0.483203        0" quat="1.0 0.0 0.0 0.0">
             <geom name="talus" type="mesh" mesh="talus"></geom>
             <inertial pos="       0        0        0" mass="0.12606858" fullinertia="0.00202166 0.00202166 0.00202166        0        0        0"></inertial>
-            <joint name="ankle_angle_r" type="hinge" pos="0 0 0" axis="  -0.105   -0.174    0.979" limited="false" range=" -1.5708   1.5708" ref="0"></joint>
+            <joint name="ankle_angle_r" type="hinge" pos="0 0 0" axis="  -0.105   -0.174    0.979" limited="false" range="  -1.571    1.571" ref="0"></joint>
             <body name="calcn_r" pos="-0.0620508 -0.0531864 0.0101307" quat="1.0 0.0 0.0 0.0">
               <geom name="foot" type="mesh" mesh="foot"></geom>
               <inertial pos="0.102693 0.0308079        0" mass="1.07224816" fullinertia="0.00090462 0.00361848 0.00361848        0        0        0"></inertial>

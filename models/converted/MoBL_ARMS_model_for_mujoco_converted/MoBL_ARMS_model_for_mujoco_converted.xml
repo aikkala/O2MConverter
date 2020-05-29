@@ -2,7 +2,7 @@
 <mujoco model="MoBL_ARMS_Upper_Limb_Model_OpenSim">
   <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001"></compiler>
   <default>
-    <joint limited="true" damping="0" armature="0.01" stiffness="0"></joint>
+    <joint limited="true" damping="0.5" armature="0.01" stiffness="0"></joint>
     <geom contype="1" conaffinity="1" condim="3" rgba="0.8 0.6 .4 1" margin="0.001" solref=".02 1" solimp=".8 .8 .01" material="geom"></geom>
     <site size="0.001"></site>
     <tendon width="0.001" rgba=".95 .3 .3 1" limited="false"></tendon>
@@ -34,7 +34,7 @@
       <site name="LAT2-P5" pos="-0.07186 -0.18818 0.00815"></site>
       <site name="LAT3-P4" pos="-0.11157 -0.19387 0.05532"></site>
       <site name="LAT3-P5" pos="-0.07117 -0.24858 0.00907"></site>
-      <joint name="r_z" type="hinge" pos="0 0 0" axis="       0        0        1" limited="true" range="-6.28319  6.28319" ref="0" armature="0" damping="0" stiffness="0"></joint>
+      <joint name="r_z" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range="-6.28319  6.28319" ref="0" armature="0" damping="0" stiffness="0"></joint>
       <body name="clavicle" pos="0.006325  0.00693 0.025465" quat="1.0 0.0 0.0 0.0">
         <geom name="clavicle" type="mesh" mesh="clavicle"></geom>
         <inertial pos="-0.011096 0.0063723 0.054168" mass="0.156" fullinertia="0.00024259 0.00025526 4.442e-05 -1.898e-05 -6.994e-05 5.371e-05"></inertial>
@@ -243,8 +243,8 @@
                           <geom name="sdfastPISIFORMw" type="mesh" mesh="sdfastPISIFORMw"></geom>
                           <geom name="sdfastTRIQUETRALw" type="mesh" mesh="sdfastTRIQUETRALw"></geom>
                           <inertial pos="       0        0        0" mass="0.0001" fullinertia="   1e-05    1e-05    1e-05        0        0        0"></inertial>
-                          <joint name="deviation" type="hinge" pos="0 0 0" axis="-0.819064 -0.135611 -0.557444" limited="true" range="-0.174533 0.436332" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 600      0.5        1" user="1"></joint>
-                          <joint name="flexion" type="hinge" pos="0 0 0" axis="0.956427 -0.252207 0.147104" limited="true" range="-0.610864 0.610864" ref="0" damping="7.615395125226858e-06" solimplimit="  0.0001     0.99    600     0.5        1" user="1"></joint>
+                          <joint name="deviation" type="hinge" pos="0 0 0" axis="-0.819064 -0.135611 -0.557444" limited="true" range="-0.174533 0.436332" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.0785397      0.5        1" user="1"></joint>
+                          <joint name="flexion" type="hinge" pos="0 0 0" axis="0.956427 -0.252207 0.147104" limited="true" range="-0.785398 0.785398" ref="0" damping="7.615395125226858e-06" solimplimit="  0.0001     0.99    0.001      0.5        1" user="1"></joint>
                           <body name="hand" pos="0.003992 -0.015054 0.002327" quat="1.0 0.0 0.0 0.0">
                             <geom name="sdfast_1seg_hand_fr_c_5mc" type="mesh" mesh="sdfast_1seg_hand_fr_c_5mc"></geom>
                             <geom name="sdfast_1seg_hand_fr_c_4mc" type="mesh" mesh="sdfast_1seg_hand_fr_c_4mc"></geom>
@@ -914,15 +914,15 @@
     <joint name="sternoclavicular_r3_con" joint1="sternoclavicular_r3" joint2="shoulder_elv" active="true" polycoef="-8.32667e-17   0.1025        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="unrotscap_r2_con" joint1="unrotscap_r2" joint2="shoulder_elv" active="true" polycoef="-1.11022e-16 0.242001        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="unrotscap_r3_con" joint1="unrotscap_r3" joint2="shoulder_elv" active="true" polycoef="8.32667e-17  -0.1025        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="acromioclavicular_r1_con" joint1="acromioclavicular_r1" joint2="shoulder_elv" active="true" polycoef="-5.55112e-17    0.178        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="acromioclavicular_r1_con" joint1="acromioclavicular_r1" joint2="shoulder_elv" active="true" polycoef="-8.32667e-17    0.178        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="acromioclavicular_r2_con" joint1="acromioclavicular_r2" joint2="shoulder_elv" active="true" polycoef="2.77556e-17 -0.0490002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="acromioclavicular_r3_con" joint1="acromioclavicular_r3" joint2="shoulder_elv" active="true" polycoef="-1.11022e-16 0.396002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="unrothum_r1_con" joint1="unrothum_r1" joint2="shoulder_elv" active="true" polycoef="5.55112e-17   -0.178        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="unrothum_r1_con" joint1="unrothum_r1" joint2="shoulder_elv" active="true" polycoef="8.32667e-17   -0.178        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="unrothum_r2_con" joint1="unrothum_r2" joint2="shoulder_elv" active="true" polycoef="-2.77556e-17 0.0490002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="unrothum_r3_con" joint1="unrothum_r3" joint2="shoulder_elv" active="true" polycoef="1.11022e-16 -0.396002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="shoulder1_r2_con" joint1="shoulder1_r2" joint2="elv_angle" active="true" polycoef="       0       -1        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="wrist_hand_r1_con" joint1="wrist_hand_r1" joint2="deviation" active="true" polycoef="2.22045e-16  1.35714 -0.818507        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="wrist_hand_r3_con" joint1="wrist_hand_r3" joint2="flexion" active="true" polycoef="1.51971e-17      0.5        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="wrist_hand_r1_con" joint1="wrist_hand_r1" joint2="deviation" active="true" polycoef="2.77556e-17  1.35714 -0.818507        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="wrist_hand_r3_con" joint1="wrist_hand_r3" joint2="flexion" active="true" polycoef="       0      0.5        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="r_z_constraint" active="true" joint1="r_z" polycoef="0.174533        0        0        0        0"></joint>
     <joint name="deviation_constraint" active="true" joint1="deviation" polycoef="       0        0        0        0        0"></joint>
     <joint name="flexion_constraint" active="true" joint1="flexion" polycoef="       0        0        0        0        0"></joint>
