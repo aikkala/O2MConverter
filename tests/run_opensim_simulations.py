@@ -13,6 +13,8 @@ import subprocess
 import math
 import pathlib
 import numpy as np
+import Utils
+from pyquaternion import Quaternion
 
 
 def forward_tool_process(setup_file, run_folder):
@@ -62,9 +64,16 @@ def run_speed_test(env, runs, N):
             model.updControllerSet().setDesiredStates(storage)
 
             # Set initial states
+            # Set initial states
             state_names = model.getStateVariableNames()
             for i in range(model.getNumStateVariables()):
                 state_idx = storage.getStateIndex(state_names.get(i))
+                if state_idx == -1:
+                    state_idx = storage.getStateIndex('/jointset/' + state_names.get(i))
+                if state_idx == -1:
+                    state_idx = storage.getStateIndex('/forceset/' + state_names.get(i))
+                if state_idx == -1:
+                    raise IndexError
                 model.setStateVariableValue(state, state_names.get(i),
                                             storage.getStateVector(0).getData().get(state_idx))
 
@@ -177,7 +186,8 @@ def run_forward_dynamics(env, runs, visualise=False):
 
             # Skip this run if the video already exists
             if os.path.isfile(output_video_file):
-                continue
+                #continue
+                pass
 
             # Create the output_folder if it doesn't exist
             os.makedirs(output_folder, exist_ok=True)
@@ -193,9 +203,26 @@ def run_forward_dynamics(env, runs, visualise=False):
         if visualise:
             visualizer = model.getVisualizer().getSimbodyVisualizer()
             visualizer.setCameraFieldOfView(0.785398)
+
+            # Get camera position
             pos = env.camera_pos[:3]
-            visualizer.setCameraTransform(opensim.Transform(opensim.Rotation(opensim.Mat33(0, 0, 1, 0, 1, 0, -1, 0, 0)),
-                                                            opensim.Vec3(pos[0], pos[2], -pos[1])))
+
+            # Transform from OpenSim camera to MuJoCo camera (only rotations since position is the same)
+            ref_x = np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]])
+            ref_y = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
+            ref_z = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+            R_om = np.matmul(np.matmul(ref_y, ref_x), ref_z).astype(np.float)
+
+            # Rotate the camera
+            rot_x = Utils.create_rotation_matrix([1, 0, 0], rad=env.camera_pos[3])
+            rot_y = Utils.create_rotation_matrix([0, 1, 0], rad=env.camera_pos[4])
+            rot_z = Utils.create_rotation_matrix([0, 0, 1], rad=env.camera_pos[5])
+            rotation = np.matmul(np.matmul(np.matmul(R_om, rot_x[:3, :3]), rot_y[:3, :3]), rot_z[:3, :3])
+
+            # Set camera transformation
+            visualizer.setCameraTransform(opensim.Transform(opensim.Rotation(
+                opensim.Mat33(*rotation.flatten())), opensim.Vec3(pos[0], pos[2], -pos[1])))
+
             visualizer.setBackgroundType(opensim.SimTKVisualizer.SolidColor)
             visualizer.setBackgroundColor(opensim.Vec3(0, 0, 0))
             visualizer.drawFrameNow(state)

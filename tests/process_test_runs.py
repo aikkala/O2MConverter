@@ -6,6 +6,7 @@ import Utils
 import os
 import tests.run_opensim_simulations
 import sys
+from pyquaternion import Quaternion
 
 
 def calculate_joint_errors(env, viewer, sim, data, target_state_indices, initial_states=None, condition=None):
@@ -65,11 +66,14 @@ def run_mujoco_simulations(env, params, test_data, output_folder):
     # Update camera position
     cam_id = model._camera_name2id["for_testing"]
     model.cam_pos[cam_id, :] = env.camera_pos[:3]
-    model.cam_quat[cam_id, :] = env.camera_pos[3:]
+    model.cam_quat[cam_id, :] = (Quaternion(axis=[1, 0, 0], angle=env.camera_pos[3])
+                                 * Quaternion(axis=[0, 1, 0], angle=env.camera_pos[4])
+                                 * Quaternion(axis=[0, 0, 1], angle=env.camera_pos[5])).elements
 
     # Run accuracy analysis first with default parameters
-    #viewer = mujoco_py.MjRenderContextOffscreen(sim, 0)
-    viewer = None
+    viewer = mujoco_py.MjRenderContextOffscreen(sim, 0)
+    #viewer = mujoco_py.MjViewer(sim)
+    #viewer = None
     calculate_joint_errors(env, viewer, sim, test_data, target_state_indices, initial_states, "default_parameters")
 
     # Set parameters and calculate errors again
