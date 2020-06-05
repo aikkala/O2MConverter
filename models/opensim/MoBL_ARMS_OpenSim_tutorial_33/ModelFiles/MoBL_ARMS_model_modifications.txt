@@ -1,9 +1,0 @@
-
-MoBL_ARMS_model_for_opensim.osim
-- deviation and flexion are locked
-- modified translation 2 of 'groundthorax' joint: added a constant value of 1 so that torso isn't inside the floor
-
-MoBL_ARMS_model_for_mujoco.osim
-- deviation and flexion are locked
-- modified translation 2 of 'groundthorax' joint: added a constant value of 1 so that torso isn't inside the floor
-- made all path point names unique in muscles

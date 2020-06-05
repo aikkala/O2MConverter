@@ -1,0 +1,16 @@
+MoBL_ARMS_module6_7_CMC.osim:
+  - the original model
+
+MoBL_ARMS_model_for_testing_opensim.osim:
+  - deviation and flexion are locked
+  - modified translation 2 of 'groundthorax' joint: added a constant value of 1 so that torso isn't inside the floor
+
+MoBL_ARMS_model_for_testing_mujoco.osim:
+  - deviation and flexion are locked
+  - modified translation 2 of 'groundthorax' joint: added a constant value of 1 so that torso isn't inside the floor
+  - made all path point names unique in muscles
+
+MoBL_ARMS_model_for_testing_opensim_no_wrap.osim:
+  - deviation and flexion are locked
+  - modified translation 2 of 'groundthorax' joint: added a constant value of 1 so that torso isn't inside the floor
+  - wrap objects and paths deleted

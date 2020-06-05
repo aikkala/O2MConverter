@@ -159,8 +159,8 @@
 				<limit>0</limit>
 			</CMC_Joint>
 		</defaults>
-		<credits>Katherine R. Saul, Wendy M. Murray, Craig M. Goehler, Melissa Daly, Meghan E. Vidt, Dustin L. Crouch</credits>
-		<publications>Comp Meth Biomech Biomed Eng 2014</publications>
+		<credits>A modified version of the original MoBL_ARMS_module6_7_CMC model</credits>
+		<publications></publications>
 		<length_units>meters</length_units>
 		<force_units>N</force_units>
 		<!--Acceleration due to gravity.-->
