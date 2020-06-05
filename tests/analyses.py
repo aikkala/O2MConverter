@@ -9,6 +9,7 @@ from timeit import default_timer as timer
 import matplotlib
 import tests.run_opensim_simulations
 import pandas as pd
+import sys
 
 
 # Increase font size
@@ -61,7 +62,7 @@ def calculate_mujoco_durations(env, data, N):
 def estimate_run_speed(env, data, train_idxs, test_idxs, output_folder):
 
     # Repeat each simulation N times
-    N = 1
+    N = 2
 
     # Calculate OpenSim simulation speed for training and test runs
     all_idxs = train_idxs + test_idxs
@@ -148,10 +149,10 @@ def analyse_errors(env, test_data, output_folder):
             bottom_controls = np.sum(avgs_controls[:joint_idx])
 
             # Do bar plots
-            h = axs[0].bar(0, avgs_default[joint_idx], yerr=std_default[joint_idx], width=0.25, bottom=bottom_default, color=colors[joint_idx])
-            axs[0].bar(0.3, avgs_params[joint_idx], yerr=std_params[joint_idx], width=0.25, bottom=bottom_params, color=colors[joint_idx])
+            h = axs[0].bar(0, avgs_default[joint_idx], yerr=std_default[joint_idx], width=0.25, bottom=bottom_default, color=colors[joint_idx % len(colors)])
+            axs[0].bar(0.3, avgs_params[joint_idx], yerr=std_params[joint_idx], width=0.25, bottom=bottom_params, color=colors[joint_idx % len(colors)])
             handles.append(h)
-            axs[1].bar(0, avgs_controls[joint_idx], yerr=std_controls[joint_idx], width=0.25, bottom=bottom_controls, color=colors[joint_idx])
+            axs[1].bar(0, avgs_controls[joint_idx], yerr=std_controls[joint_idx], width=0.25, bottom=bottom_controls, color=colors[joint_idx % len(colors)])
 
         # Set labels and such
         axs[0].set_xticks([0, 0.3])
@@ -162,21 +163,22 @@ def analyse_errors(env, test_data, output_folder):
         axs[1].set_xticklabels(["optimized params\nand controls"])
         pp.tight_layout()
         pp.ylim(bottom=0)
-        fig1.savefig(os.path.join(output_folder, 'joint_errors', f'joint_errors_stacked_bar_plot_{alpha}'))
+        fig1.savefig(os.path.join(output_folder, 'joint_errors', f'{env.model_name}_joint_errors_stacked_bar_plot_{alpha}'))
         pp.close(fig1)
 
         # Do another bar plot but use separate bars for joints
         x = np.arange(len(avgs_default))
-        fig2 = pp.figure(figsize=(20, 8))
+        fig2 = pp.figure(figsize=(20, 10))
         pp.bar(x-0.25, avgs_default, yerr=std_default, width=0.25)
         pp.bar(x, avgs_params, yerr=std_params, width=0.25)
         pp.bar(x+0.25, avgs_controls, yerr=std_controls, width=0.25)
-        pp.xticks(x, env.target_states)
+        pp.xticks(x, env.target_states, rotation=90)
         pp.ylabel('Radians')
         pp.legend(["Default params", "Optimized params", "Optimized params + controls"])
+        pp.title(f"Model: {env.model_name}")
         pp.tight_layout()
         pp.ylim(bottom=0)
-        fig2.savefig(os.path.join(output_folder, 'joint_errors', f'joint_errors_bar_plot_{alpha}'))
+        fig2.savefig(os.path.join(output_folder, 'joint_errors', f'{env.model_name}_joint_errors_bar_plot_{alpha}'))
         pp.close(fig2)
 
 
@@ -218,29 +220,31 @@ def analyse_controls(env, test_data, output_folder):
         u_opt_stack = np.stack(u_opt[alpha], axis=0)
         muscle_names = list(env.initial_states["actuators"])
         fig1, ax = pp.subplots(figsize=(24, 12))
-        ax.boxplot(abs(u_stack-u_opt_stack)*100, showfliers=False, labels=muscle_names)
+        ax.boxplot(abs(u_stack-u_opt_stack)*100, showfliers=True, labels=muscle_names)
         pp.xticks(rotation=90)
         pp.ylim(bottom=0, top=100)
         #pp.title('Average difference in\ntotal muscle utilisation')
         pp.ylabel("Percentage points")
         pp.tick_params(axis='x', which='both', bottom=False, top=False)
+        pp.title(f"Model: {env.model_name}")
         pp.tight_layout()
         fig1.savefig(os.path.join(output_folder, "control_errors",
-                                  f"difference_in_total_muscle_utilisation_{alpha}"))
+                                  f"{env.model_name}_difference_in_total_muscle_utilisation_{alpha}"))
         pp.close(fig1)
 
         # Plot mean absolute control error
         ctrl_err_stack = np.stack(ctrl_err[alpha], axis=2)
         err_per_run = np.mean(ctrl_err_stack, axis=0)
         fig2, ax = pp.subplots(figsize=(24, 12))
-        ax.boxplot(err_per_run.transpose(), showfliers=False, labels=muscle_names)
+        ax.boxplot(err_per_run.transpose(), showfliers=True, labels=muscle_names)
         pp.xticks(rotation=90)
         pp.ylim(bottom=0, top=1)
         #pp.title("Mean absolute error\nbetween control signals")
         pp.ylabel("Control value")
         pp.tick_params(axis='x', which='both', bottom=False, top=False)
+        pp.title(f"Model: {env.model_name}")
         pp.tight_layout()
-        fig2.savefig(os.path.join(output_folder, "control_errors", f"MAE_control_signals_{alpha}"))
+        fig2.savefig(os.path.join(output_folder, "control_errors", f"{env.model_name}_MAE_control_signals_{alpha}"))
         pp.close(fig2)
 
 
@@ -265,10 +269,10 @@ def main(model_name):
     analyse_controls(env, test_data, output_folder)
 
     # Run speed analysis
-    #estimate_run_speed(env, data, train_idxs, test_idxs, output_folder)
+    estimate_run_speed(env, data, train_idxs, test_idxs, output_folder)
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1])
-    main("mobl_arms")
+    main(*sys.argv[1:])
+    #main("gait10dof18musc")
     #main("leg6dof9musc")
