@@ -17,7 +17,6 @@
     <quality shadowsize="2048"></quality>
   </visual>
   <worldbody>
-    <geom name="floor" pos="0 0 0" size="10 10 0.125" type="plane" material="MatPlane" condim="3"></geom>
     <body name="pelvis" pos="       0    -0.02 1.22465e-18" quat="0.7071067811865475 0.7071067811865475 0.0 0.0">
       <light mode="trackcom" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1"></light>
       <geom name="sacrum" type="mesh" mesh="sacrum"></geom>
@@ -140,7 +139,7 @@
         <joint name="lumbar_extension" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range=" -1.5708   1.5708" ref="0"></joint>
       </body>
     </body>
-    <camera name="for_testing" pos="0 0 0" euler="0 0 0"></camera>
+    <camera name="for_testing" pos="0 0 0" euler="1.57 0 0"></camera>
   </worldbody>
   <asset>
     <mesh name="sacrum" file="Geometry/sacrum.stl" scale="       1        1        1"></mesh>
