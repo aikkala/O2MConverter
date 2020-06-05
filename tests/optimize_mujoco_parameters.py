@@ -114,7 +114,7 @@ def collect_data_from_runs(env):
     return data
 
 
-def do_optimization(env, data, initial_parameters=None):
+def do_optimization(env, data):
 
     # Initialise MuJoCo with the converted model
     model = mujoco_py.load_model_from_path(env.mujoco_model_file)
@@ -157,12 +157,8 @@ def do_optimization(env, data, initial_parameters=None):
 
     # Get initial values for params
     niter = 500
-    if initial_parameters is None:
-        sigma = 1.0
-        params = [5] * nmuscles + [1] * (2 * nmuscles + 2 * njoints)
-    else:
-        sigma = initial_parameters["sd"]
-        params = np.log(initial_parameters["parameters"])
+    sigma = 1.0
+    params = [5] * nmuscles + [1] * (2 * nmuscles + 2 * njoints)
 
     # Initialise optimizer
     opts = {"popsize": env.param_optim_pop_size, "maxiter": niter, "CMA_diagonal": True}
@@ -240,10 +236,6 @@ def do_optimization(env, data, initial_parameters=None):
         optimizer.tell(solutions, fitness)
         optimizer.disp()
 
-    # Keep all history
-    if initial_parameters is not None:
-        history = np.concatenate((initial_parameters["history"], history))
-
     # Return found solution
     return {"parameters": np.exp(optimizer.result.xfavorite),
             "joint_idxs": joint_idxs, "muscle_idxs": np.arange(len(model.actuator_names)),
@@ -255,37 +247,31 @@ def main(model_name, data_file=None):
     # Get env
     env = EnvFactory.get(model_name)
 
-    # If we're starting optimization again
-    if data_file is None:
+    # Collect states and controls from successful runs
+    data = collect_data_from_runs(env)
 
-        # Collect states and controls from successful runs
-        data = collect_data_from_runs(env)
+    # Divide successful runs into training and testing sets
+    success_idxs = []
+    for run_idx in range(len(data)):
+        if data[run_idx]["success"]:
+            success_idxs.append(run_idx)
 
-        # Divide successful runs into training and testing sets
-        success_idxs = []
-        for run_idx in range(len(data)):
-            if data[run_idx]["success"]:
-                success_idxs.append(run_idx)
-
+    # If data_file is given, use its train and test indices
+    if data_file is not None:
+        D = Utils.load_data(data_file)
+        train_idxs = D["train_idxs"]
+        test_idxs = D["test_idxs"]
+    else:
         # Use 80% of runs for training
         k = math.ceil(0.8*len(success_idxs))
         train_idxs = random.sample(success_idxs, k)
         test_idxs = list(set(success_idxs) - set(train_idxs))
-        initial_parameters = None
-
-    # Else load existing dataset and continue optimization
-    else:
-        D = Utils.load_data(data_file)
-        data = D["data"]
-        train_idxs = D["train_idxs"]
-        test_idxs = D["test_idxs"]
-        initial_parameters = {"sd": 0.1, **D["params"]}
 
     # Get training data
     train_set = [data[idx] for idx in train_idxs]
 
     # Do optimization with CMA-ES
-    parameters = do_optimization(env, train_set, initial_parameters)
+    parameters = do_optimization(env, train_set)
 
     # Make sure output folder exists
     os.makedirs(os.path.dirname(env.data_file), exist_ok=True)
@@ -296,4 +282,12 @@ def main(model_name, data_file=None):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:])
+
+    # If we're optimizing mobl_arms_no_wrap, use the same train/test indices as mobl_arms
+    model_name = sys.argv[1]
+    if model_name == "mobl_arms_no_wrap":
+        data_file = EnvFactory.get("mobl_arms").data_file
+    else:
+        data_file = None
+
+    main(model_name, data_file)
