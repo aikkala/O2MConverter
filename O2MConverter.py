@@ -104,11 +104,12 @@ class Converter:
         # xmltodict to save the model into a XML file)
         mujoco_model = self.build_mujoco_model(p["OpenSimDocument"]["Model"]["@name"])
 
-        # If we're building this model for testing we need to disable collisions and add a camera for recording
+        # If we're building this model for testing we need to disable collisions, add a camera for recording, and
+        # remove the floor
         if for_testing:
             mujoco_model["mujoco"]["option"]["@collision"] = "predefined"
             mujoco_model["mujoco"]["worldbody"]["camera"] = {"@name": "for_testing", "@pos": "0 0 0", "@euler": "0 0 0"}
-
+            del mujoco_model["mujoco"]["worldbody"]["geom"]
 
         # Finally, save the MuJoCo model into XML file
         output_xml = self.output_folder + model_name + ".xml"
