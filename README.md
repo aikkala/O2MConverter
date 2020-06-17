@@ -1,4 +1,4 @@
-# OpenSim to MuJoCo XML converter (work in progress).
+# OpenSim to MuJoCo XML converter
 
 If you use these converted MuJoCo models in your research, please cite **TBA**, as well as the original models.
 
@@ -23,11 +23,29 @@ If you use these converted MuJoCo models in your research, please cite **TBA**, 
 
 ## How to run the converter
 
-Easiest way to run the converter is to use conda to create the environment from *O2MConverter\_without\_mujoco.yml* (TBD), activate the environment, and then run *O2MConverter.py* script
+Easiest way to run the converter is to use conda to create the environment from *conda_env.yml*, activate the environment, and then run *O2MConverter.py* script
 
 ```
-> conda env create --name O2MConverter --file=O2MConverter_without_mujoco.yml
-> conda activate O2MConverter`
-> python O2MConverter.py opensim\_model\_file.osim /location/where/converted/model/will/be/saved /location/where/geometry/files/are
+> conda env create --name O2MConverter --file=conda_env.yml
+> conda activate O2MConverter
+> python O2MConverter.py opensim_model_file.osim /location/where/converted/model/will/be/saved /location/where/geometry/files/are
 ```
+
+## How to optimize converted model's parameters (for a new model)
+
+- Use conda to create the environment from *conda_env_for_testing.yml*. Note that this installs MuJoCo, and you must have set the environment variable *MUJOCO_PY_MJKEY_PATH* (pointing to your MuJoCo license file) prior to creating the environment.
+
+- Convert the OpenSim model as instructed above, but this time input *true* as fourth argument to O2MConverter.py. This disables contacts in the MuJoCo model since they are disabled in OpenSim forward simulations also.
+
+- Create a new template in *tests/envs.py* using the *EnvTemplate* class. Note that you need an OpenSim forward dynamics setup XML file (you can just copy and modify an existing one from *models/opensim/[any_model]*) and also an initial states file (this one's more tricky to create, easiest just to run forward dynamics simulation in OpenSim and use the output file with states). Also modify the function *get(model_name)* in *tests/envs.py* to return this new env.
+
+- Run script *tests/generate_controls.py* using the model name you specified in the previous step for the *get* function as input argument. This creates a hundred muscle excitation sets in a folder specified by the *EnvTemplate* object.
+
+- Run script *tests/run_opensim_simulations.py* (using the model name as input argument) to run the OpenSim simulations with the generated muscle excitation sets
+
+- Run script *tests/optimize_mujoco_parameters.py* (using the model name as input argument) to optimize the converted model parameters. The parameters will be saved in a file specified by the *EnvTemplate* object.
+
+## How to load converted model's optimized parameters
+
+The optimized parameters are saved in *tests/[model_name]/output/data.pckl*, or in a file specified by the *EnvTemplate* object if you created & optimized a new model. Use function *load_data(args)* from *Utils.py* to load the optimized parameters, and function *set_parameters(args)* to set the models into a *mujoco_py.PyMjModel* model (see function *run_mujoco_simulations(args)* in *tests/process_test_runs.py* for an example). 
 
