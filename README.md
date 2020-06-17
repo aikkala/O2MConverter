@@ -1,6 +1,8 @@
 # OpenSim to MuJoCo XML converter
 
-If you use these converted MuJoCo models in your research, please cite **TBA**, as well as the original models. The converted models, as well as the original ones, are available for academic and other non-commercial use.
+If you use these converted MuJoCo models in your research, please cite **TBA**, as well as the original models. The converted models, as well as the original ones, are available for academic and other non-commercial use (check the references given in table below for licenses of original models).
+
+Disclaimer: I started writing this code when I was still learning MuJoCo and OpenSim, and therefore the code logic is subpar at some places and could use a little update.
 
 
 ## Models
@@ -20,7 +22,8 @@ If you use these converted MuJoCo models in your research, please cite **TBA**, 
 - PathPoint names must have the same prefix and a running index, which defines the order of tendon path. For instance, in *MoBL_ARMS* model musculo-tendon unit *DELT2* has PathPoints *{"DELT2-P1", "default", "DELT2-P3", "DELT2-P4"}*, and thus the PathPoint named _"default"_ should be changed to _"DELT2-P2"_. This problem occurs because the XML parser we're using scrambles the order of individual PathPoints in certain situations. There is a pull request to fix this behaviour, but it hasn't been merged yet (and the pull request is from 2016 so chances are it won't be merged).
 - For some of the converted models the convex hulls around meshes/geometries are too close to each other and they collide. A possible remedy is to disable contacts in the converted model (although then there's a risk of physically impossible trajectories).
 - The order in which *TransformAxis* are processed for custom joints is likely to be incorrect, although it works for the models presented here. If a converted model doesn't look like the original OpenSim model, then this might be the problem.
-- *CoordinateActuator*, *PointActuator*, *TorqueActuator* are not processed
+- *CoordinateActuator*, *PointActuator*, *TorqueActuator* are ignored; *WrappingObjects* are ignored; there probably are other other OpenSim model specifications that I haven't encountered yet and are ignored as well
+- The *worldbody* is assumed to be called *ground* in an OpenSim model
 
 ## How to run the converter
 
