@@ -5,8 +5,6 @@ If you use these converted MuJoCo models in your research, please cite **TBA**, 
 
 ## Models
 
-Note that some for some of the converted models the convex hulls around meshes/geometries are too close to each other and they collide with each other. A possible remedy is to disable contacts in the converted model (although then there's a risk of physically impossible trajectories).
-
 | Converted file (in *models/converted*) | Original file (in *models/OpenSim*) | File containing optimized parameters | Description of the model | Reference |
 |---|---|---|---|---|
 | gait10dof18musc_converted/ gait10dof18musc_converted.xml | Gait10dof18musc/ gait10dof18musc.osim | *tests/gait10dof18musc/output/data.pckl* | A simple leg model consisting of both legs and rotating torso. Derived from the *gait2392* model below. | Distributed with OpenSim,  [OpenSim web page (download requires registration)](https://simtk.org/frs/download.php?file_id=4081) [GitHub](https://github.com/opensim-org/opensim-models/tree/master/Models/Gait10dof18musc)  |
@@ -20,10 +18,9 @@ Note that some for some of the converted models the convex hulls around meshes/g
 
 - Doesn't work with OpenSim 4.0 (or later) models
 - PathPoint names must have the same prefix and a running index, which defines the order of tendon path. For instance, in *MoBL_ARMS* model musculo-tendon unit *DELT2* has PathPoints *{"DELT2-P1", "default", "DELT2-P3", "DELT2-P4"}*, and thus the PathPoint named _"default"_ should be changed to _"DELT2-P2"_. This problem occurs because the XML parser we're using scrambles the order of individual PathPoints in certain situations. There is a pull request to fix this behaviour, but it hasn't been merged yet (and the pull request is from 2016 so chances are it won't be merged).
-
-
-
-
+- For some of the converted models the convex hulls around meshes/geometries are too close to each other and they collide. A possible remedy is to disable contacts in the converted model (although then there's a risk of physically impossible trajectories).
+- The order in which *TransformAxis* are processed for custom joints is likely to be incorrect, although it works for the models presented here. If a converted model doesn't look like the original OpenSim model, then this might be the problem.
+- *CoordinateActuator*, *PointActuator*, *TorqueActuator* are not processed
 
 ## How to run the converter
 
