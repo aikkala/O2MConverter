@@ -159,8 +159,8 @@
 				<limit>0</limit>
 			</CMC_Joint>
 		</defaults>
-		<credits>Katherine R. Saul, Wendy M. Murray, Craig M. Goehler, Melissa Daly, Meghan E. Vidt, Dustin L. Crouch</credits>
-		<publications>Comp Meth Biomech Biomed Eng 2014</publications>
+		<credits>A modified version of the original MoBL_ARMS_module6_7_CMC model</credits>
+		<publications></publications>
 		<length_units>meters</length_units>
 		<force_units>N</force_units>
 		<!--Acceleration due to gravity.-->
@@ -307,7 +307,7 @@
 									<!--Transform function of the generalized coordinates used to        represent the amount of transformation along a specified axis.-->
 									<function>
 										<Constant>
-											<value>0</value>
+											<value>1</value>
 										</Constant>
 									</function>
 								</TransformAxis>
@@ -5344,7 +5344,7 @@
 									<location> 0.00461 -0.13611 0.0056</location>
 									<body>humerus</body>
 								</PathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="DELT2-P2">
 									<location> 0.02 0.005635 0.183675</location>
 									<body>clavicle</body>
 									<x_location>
@@ -6033,7 +6033,7 @@
 									<location> 0.01169 -0.04191 0.0078</location>
 									<body>humerus</body>
 								</PathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="PECM1-P2">
 									<location> 0.0171333 -0.037 -0.00337</location>
 									<body>humerus</body>
 									<x_location>
@@ -6058,7 +6058,7 @@
 									</z_location>
 									<z_coordinate>shoulder_elv</z_coordinate>
 								</MovingPathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="PECM1-P3">
 									<location> 0.00636333 -0.00732333 0.119273</location>
 									<body>thorax</body>
 									<x_location>
@@ -6083,7 +6083,7 @@
 									</z_location>
 									<z_coordinate>shoulder_elv</z_coordinate>
 								</MovingPathPoint>
-								<PathPoint name="PECM1-P2">
+								<PathPoint name="PECM1-P4">
 									<location> 0.00321 -0.00013 0.05113</location>
 									<body>clavicle</body>
 								</PathPoint>
@@ -6178,7 +6178,7 @@
 									<location> 0.01274 -0.04289 0.00785</location>
 									<body>humerus</body>
 								</PathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="PECM2-P2">
 									<location> 0.0155133 -0.04223 -0.00447</location>
 									<body>humerus</body>
 									<x_location>
@@ -6203,7 +6203,7 @@
 									</z_location>
 									<z_coordinate>shoulder_elv</z_coordinate>
 								</MovingPathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="PECM2-P3">
 									<location> 0.0203967 -0.03445 0.123117</location>
 									<body>thorax</body>
 									<x_location>
@@ -6332,7 +6332,7 @@
 									<location> 0.01269 -0.04375 0.0075</location>
 									<body>humerus</body>
 								</PathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="PECM3-P2">
 									<location> 0.0142392 -0.0496515 -0.00936368</location>
 									<body>humerus</body>
 									<x_location>
@@ -6357,7 +6357,7 @@
 									</z_location>
 									<z_coordinate>shoulder_elv</z_coordinate>
 								</MovingPathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="PECM3-P3">
 									<location> 0.02984 -0.0697393 0.1151</location>
 									<body>thorax</body>
 									<x_location>
@@ -6481,7 +6481,7 @@
 									<location> 0.0105 -0.03415 -0.00653</location>
 									<body>humerus</body>
 								</PathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="LAT1-P2">
 									<location> -0.07982 -0.0799433 -0.02428</location>
 									<body>scapula</body>
 									<x_location>
@@ -6506,7 +6506,7 @@
 									</z_location>
 									<z_coordinate>shoulder_elv</z_coordinate>
 								</MovingPathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="LAT1-P3">
 									<location> -0.111183 -0.0893233 -0.06022</location>
 									<body>scapula</body>
 									<x_location>
@@ -6630,7 +6630,7 @@
 									<location> 0.00968 -0.04071 -0.00611</location>
 									<body>humerus</body>
 								</PathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="LAT2-P2">
 									<location> -0.07875 -0.0971167 -0.02023</location>
 									<body>scapula</body>
 									<x_location>
@@ -6655,7 +6655,7 @@
 									</z_location>
 									<z_coordinate>shoulder_elv</z_coordinate>
 								</MovingPathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="LAT2-P3">
 									<location> -0.10544 -0.128957 -0.0645967</location>
 									<body>scapula</body>
 									<x_location>
@@ -6779,7 +6779,7 @@
 									<location> 0.01208 -0.03922 -0.00416</location>
 									<body>humerus</body>
 								</PathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="LAT3-P2">
 									<location> -0.06598 -0.127347 -0.0241833</location>
 									<body>scapula</body>
 									<x_location>
@@ -6804,7 +6804,7 @@
 									</z_location>
 									<z_coordinate>shoulder_elv</z_coordinate>
 								</MovingPathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="LAT3-P3">
 									<location> -0.10059 -0.16313 -0.0590767</location>
 									<body>scapula</body>
 									<x_location>
@@ -7525,7 +7525,7 @@
 									<location> 0.0228 -0.1754 -0.0063</location>
 									<body>humerus</body>
 								</PathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="BIClong-P9">
 									<location> 0.00272316 -0.035 -0.0135667</location>
 									<body>radius</body>
 									<x_location>
@@ -7656,7 +7656,7 @@
 									<location> 0.0228 -0.1754 -0.0063</location>
 									<body>humerus</body>
 								</PathPoint>
-								<MovingPathPoint name="default">
+								<MovingPathPoint name="BICshort-P6">
 									<location> 0.00272316 -0.035 -0.0135667</location>
 									<body>radius</body>
 									<x_location>
