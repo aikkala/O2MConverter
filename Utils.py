@@ -3,7 +3,6 @@ from pyquaternion import Quaternion
 import math
 import pandas as pd
 import matplotlib.pyplot as pp
-import mujoco_py
 import skvideo.io
 import os
 import pickle
