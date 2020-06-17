@@ -1,5 +1,6 @@
 name: O2MConverter
 channels:
+  - kidzik
   - conda-forge
   - https://conda.anaconda.org/conda-forge/
   - defaults
@@ -9,6 +10,7 @@ dependencies:
   - bzip2=1.0.8=h516909a_2
   - ca-certificates=2020.4.5.1=hecc5488_0
   - certifi=2020.4.5.1=py36h9f0ad1d_0
+  - cma=2.7.0=py_0
   - curl=7.61.0=h93b3f91_2
   - expat=2.2.9=he1b5a44_2
   - freeglut=3.0.0=hf484d3e_1005
@@ -42,6 +44,7 @@ dependencies:
   - natsort=7.0.1=py_0
   - ncurses=5.9=10
   - openblas=0.3.9=he1df0ab_0
+  - opensim=4.0.0=py36_17
   - openssl=1.0.2u=h516909a_0
   - pandas=1.0.3=py36h830a2c2_0
   - patchelf=0.10=he1b5a44_0
@@ -88,10 +91,14 @@ dependencies:
     - cython==0.29.16
     - fasteners==0.15
     - glfw==1.11.0
+    - gym==0.17.1
     - imageio==2.8.0
     - kiwisolver==1.1.0
     - matplotlib==3.2.1
     - monotonic==1.5
+    - mujoco-py==2.0.2.9
+    - numpy==1.18.2
+    - osim-rl==3.0.11
     - pillow==7.0.0
     - pycparser==2.20
     - pyglet==1.5.0
