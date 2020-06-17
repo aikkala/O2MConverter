@@ -10,7 +10,7 @@ class EnvFactory:
     class EnvTemplate:
         def __init__(self, model_name, timestep, opensim_setup_file, forward_dynamics_folder, mujoco_model_file, data_file,
                      output_folder, camera_pos, opensim_model_file, initial_states_file, target_states,
-                     osim_mapping, param_optim_pop_size, control_optim_pop_size, control_optim_diag):
+                     param_optim_pop_size, control_optim_pop_size, control_optim_diag):
 
             # Get project path
             self.project_path = pathlib.Path(__file__).parent.parent.absolute()
@@ -27,7 +27,6 @@ class EnvFactory:
             self.camera_pos = camera_pos
             self.opensim_model_file = os.path.join(self.project_path, opensim_model_file)
             self.target_states = target_states
-            self.osim_mapping = osim_mapping
             self.param_optim_pop_size = param_optim_pop_size
             self.control_optim_pop_size = control_optim_pop_size
             self.control_optim_diag = control_optim_diag
@@ -72,28 +71,7 @@ class EnvFactory:
         np.array([1.8, -0.1, 0.7, np.pi/2, np.pi/2, 0]),
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/MoBL_ARMS_model_for_testing_opensim.osim',
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/initial_states.sto',
-        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"],
-        {"r_z": ("groundthorax", 0),
-         "sternoclavicular_r2": ("sternoclavicular", 0),
-         "sternoclavicular_r3": ("sternoclavicular", 1),
-         "unrotscap_r3": ("unrotscap", 0),
-         "unrotscap_r2": ("unrotscap", 1),
-         "acromioclavicular_r2": ("acromioclavicular", 0),
-         "acromioclavicular_r3": ("acromioclavicular", 1),
-         "acromioclavicular_r1": ("acromioclavicular", 2),
-         "unrothum_r1": ("unrothum", 0),
-         "unrothum_r3": ("unrothum", 1),
-         "unrothum_r2": ("unrothum", 2),
-         "elv_angle": ("shoulder0", 0),
-         "shoulder_elv": ("shoulder1", 0),
-         "shoulder1_r2": ("shoulder1", 1),
-         "shoulder_rot": ("shoulder2", 0),
-         "elbow_flexion": ("elbow", 0),
-         "pro_sup": ("radioulnar", 0),
-         "deviation": ("radiocarpal", 0),
-         "flexion": ("radiocarpal", 1),
-         "wrist_hand_r1": ("wrist_hand", 0),
-         "wrist_hand_r3": ("wrist_hand", 1)}, 16, 32, True
+        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"], 16, 32, True
     )
 
     MoBL_ARMS_no_wrap = EnvTemplate("mobl_arms_no_wrap",
@@ -106,28 +84,7 @@ class EnvFactory:
         np.array([1.8, -0.1, 0.7, np.pi/2, np.pi/2, 0]),
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/MoBL_ARMS_model_for_testing_opensim_no_wrapobjects.osim',
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/initial_states.sto',
-        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"],
-        {"r_z": ("groundthorax", 0),
-         "sternoclavicular_r2": ("sternoclavicular", 0),
-         "sternoclavicular_r3": ("sternoclavicular", 1),
-         "unrotscap_r3": ("unrotscap", 0),
-         "unrotscap_r2": ("unrotscap", 1),
-         "acromioclavicular_r2": ("acromioclavicular", 0),
-         "acromioclavicular_r3": ("acromioclavicular", 1),
-         "acromioclavicular_r1": ("acromioclavicular", 2),
-         "unrothum_r1": ("unrothum", 0),
-         "unrothum_r3": ("unrothum", 1),
-         "unrothum_r2": ("unrothum", 2),
-         "elv_angle": ("shoulder0", 0),
-         "shoulder_elv": ("shoulder1", 0),
-         "shoulder1_r2": ("shoulder1", 1),
-         "shoulder_rot": ("shoulder2", 0),
-         "elbow_flexion": ("elbow", 0),
-         "pro_sup": ("radioulnar", 0),
-         "deviation": ("radiocarpal", 0),
-         "flexion": ("radiocarpal", 1),
-         "wrist_hand_r1": ("wrist_hand", 0),
-         "wrist_hand_r3": ("wrist_hand", 1)}, 16, 32, True
+        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"], 16, 32, True
     )
 
     gait2392_leg_dof = ["hip_flexion_", "hip_adduction_", "hip_rotation_", "knee_angle_", "ankle_angle_", "subtalar_angle_", "mtp_angle_"]
@@ -142,7 +99,7 @@ class EnvFactory:
         'models/opensim/Gait2392_Simbody/gait2392_millard2012muscle_for_testing.osim',
         'models/opensim/Gait2392_Simbody/initial_states.sto',
         [dof + "r" for dof in gait2392_leg_dof] + [dof + "l" for dof in gait2392_leg_dof] + ["lumbar_extension", "lumbar_bending", "lumbar_rotation"],
-        {}, 32, 64, False
+        32, 64, False
     )
 
     leg6dof9musc = EnvTemplate("leg6dof9musc",
@@ -156,7 +113,7 @@ class EnvFactory:
         'models/opensim/Leg6Dof9Musc/leg6dof9musc_for_testing.osim',
         'models/opensim/Leg6Dof9Musc/initial_states.sto',
         ["hip_flexion_r", "knee_angle_r", "ankle_angle_r"],
-        {}, 16, 32, True)
+        16, 32, True)
 
     gait10dof18musc = EnvTemplate("gait10dof18musc",
         0.002,
@@ -169,7 +126,7 @@ class EnvFactory:
         'models/opensim/Gait10dof18musc/gait10dof18musc_for_testing.osim',
         'models/opensim/Gait10dof18musc/initial_states.sto',
         ["hip_flexion_r", "knee_angle_r", "ankle_angle_r", "hip_flexion_l", "knee_angle_l", "ankle_angle_l"],
-        {}, 16, 32, True)
+        16, 32, True)
 
     @staticmethod
     def get(env_name):
