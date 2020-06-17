@@ -99,9 +99,8 @@ class Converter:
         if for_testing:
             self.unclamp_all_mujoco_joints()
 
-        # Now we need to re-assemble them in MuJoCo format
-        # (or actually a dict version of the model so we can use
-        # xmltodict to save the model into a XML file)
+        # Now we need to re-assemble all of the above in MuJoCo format
+        # (or actually a dict version of the model so we can use xmltodict to save the model into a XML file)
         mujoco_model = self.build_mujoco_model(p["OpenSimDocument"]["Model"]["@name"])
 
         # If we're building this model for testing we need to disable collisions, add a camera for recording, and
@@ -140,6 +139,7 @@ class Converter:
                     else:
                         spline_type = "NaturalCubicSpline"
 
+                    # Get x and y values that define the spline
                     x_values = constraint["coupled_coordinates_function"][spline_type]["x"]
                     y_values = constraint["coupled_coordinates_function"][spline_type]["y"]
 
@@ -156,7 +156,7 @@ class Converter:
                     y_fit = fit(x_values)
                     assert r2_score(y_values, y_fit) > 0.5, "A bad approximation of the SimmSpline"
 
-                    # Get the weights
+                    # Get the polynomial function's weights
                     polycoef = np.zeros((5,))
                     polycoef[:fit.coef.shape[0]] = fit.convert().coef
 
@@ -248,6 +248,7 @@ class Converter:
         # Go through each force and set corresponding joint parameters
         for force in forces:
 
+            # Ignore disabled forces
             if force["isDisabled"].lower() == "true":
                 continue
 
@@ -418,6 +419,9 @@ class Converter:
         return model
 
     def unclamp_all_mujoco_joints(self):
+
+        # Unclamp (set limited=false) all joints except those that have limites that need to be optimized
+
         for joint_name in self.joints:
             for j in self.joints[joint_name]:
                 for mujoco_joint in j.mujoco_joints:
@@ -645,8 +649,7 @@ class Joint:
         self.location = np.array(joint["location"].split(), dtype=float)
         self.orientation = np.array(joint["orientation"].split(), dtype=float)
 
-        # Calculate orientation in parent; Quaternion.rotate() doesn't seem to work properly
-        # (or I don't just know how to use it) so let's rotate with rotation matrices
+        # Calculate orientation in parent
         orientation_in_parent = np.array(joint["orientation_in_parent"].split(), dtype=float)
         x = Quaternion(axis=[1, 0, 0], radians=orientation_in_parent[0]).rotation_matrix
         y = Quaternion(axis=[0, 1, 0], radians=orientation_in_parent[1]).rotation_matrix
@@ -1157,8 +1160,6 @@ class Muscle:
                 elif pp_type == "ConditionalPathPoint":
 
                     # We're ignoring ConditionalPathPoints for now
-                    #self.path_point_set[path_point["body"]].append(path_point)
-                    #self.sites.append({"@site": path_point["@name"]})
                     continue
 
                 elif pp_type == "MovingPathPoint":
