@@ -44,8 +44,10 @@ def main(model_names):
     # Load data for each model
     #tradeoff_error = {}
     handles = []
-    markers = ['o', 's', 'P']
-    alpha_idx = {"mobl_arms": 5, "gait10dof18musc": 7, "gait2392": 7}
+    colors = {"gait10dof18musc": '#87cf51', "mobl_arms": '#ba6a07',
+              "mobl_arms_no_wrap": '#f2a23f', "gait2392": '#a31f28'}
+    markers = {"gait10dof18musc": 'o', "mobl_arms": '^', "mobl_arms_no_wrap": 'v', "gait2392": 'P'}
+    alpha_idx = {"mobl_arms": 5, "mobl_arms_no_wrap": 5, "gait10dof18musc": 7, "gait2392": 7}
     for model_idx, model_name in enumerate(model_names):
         env = EnvFactory.get(model_name)
         d = Utils.load_data(env.data_file)
@@ -72,7 +74,7 @@ def main(model_names):
 
         # Plot
         handles.append(ax.scatter(tradeoff_error[:, :, 0].mean(axis=0), tradeoff_error[:, :, 1].mean(axis=0), s=100,
-                                  marker=markers[model_idx]))
+                                  marker=markers[model_name], c=colors[model_name]))
         ax.scatter(tradeoff_error[:, alpha_idx[model_name], 0].mean(axis=0),
                    tradeoff_error[:, alpha_idx[model_name], 1].mean(axis=0),
                    s=250, marker='o', edgecolors='k', facecolors='none', linewidths=3)
