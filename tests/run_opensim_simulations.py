@@ -256,6 +256,7 @@ def run_forward_dynamics(env, runs, visualise=False):
         manager.setUseSpecifiedDT(True)
         L = math.ceil(tf/env.timestep)
         manager.setDTArray(opensim.Vector([env.timestep]*L))
+        manager.setPerformAnalyses(True)
 
         # Equilibrate muscles once initial state is set
         if equilibrate:
@@ -274,10 +275,16 @@ def run_forward_dynamics(env, runs, visualise=False):
             sleep(1)
 
         # Integrate from ti to tf
+        analysis = model.getAnalysisSet().get(0)
+        analysis.begin(state)
         state.setTime(ti)
         manager.initialize(state)
         for i in range(1, L):
             manager.integrate(i*env.timestep)
+            analysis.step(manager.getState(), i)
+
+        analysis.end(manager.getState())
+        analysis.printResults("analysis", run_folder)
 
         if visualise:
             # Stop video capture
