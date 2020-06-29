@@ -102,19 +102,6 @@ class EnvFactory:
         32, 64, False
     )
 
-    leg6dof9musc = EnvTemplate("leg6dof9musc",
-        0.002,
-        'models/opensim/Leg6Dof9Musc/setup_fd.xml',
-        'tests/leg6dof9musc/forward_dynamics',
-        'models/converted/leg6dof9musc_for_testing_converted/leg6dof9musc_for_testing_converted.xml',
-        'tests/leg6dof9musc/output/data.pckl',
-        'tests/leg6dof9musc/output/simulations',
-        np.array([2, -2, 1, np.pi/2, np.pi/4, 0]),
-        'models/opensim/Leg6Dof9Musc/leg6dof9musc_for_testing.osim',
-        'models/opensim/Leg6Dof9Musc/initial_states.sto',
-        ["hip_flexion_r", "knee_angle_r", "ankle_angle_r"],
-        16, 32, True)
-
     gait10dof18musc = EnvTemplate("gait10dof18musc",
         0.002,
         'models/opensim/Gait10dof18musc/setup_fd.xml',
