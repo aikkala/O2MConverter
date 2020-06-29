@@ -12,6 +12,7 @@ from shutil import copyfile
 from natsort import natsorted, ns
 from operator import itemgetter
 from sklearn.metrics import r2_score
+from collections import OrderedDict
 
 import Utils
 
@@ -28,10 +29,7 @@ class Converter:
         # List of constraints
         self.constraints = None
 
-        # A OpenSim model consists of
-        #  - a set of bodies
-        #  - joints that connect those bodies
-        #  - muscles that are connected to bodies
+        # Parse bodies, joints, muscles
         self.bodies = dict()
         self.joints = dict()
         self.muscles = []
@@ -43,7 +41,7 @@ class Converter:
         # These dictionaries (or list of dicts) are in MuJoCo style (when converted to XML)
         self.asset = dict()
         self.tendon = []
-        self.actuator = []
+        self.actuator = {"motor": [], "muscle": []}
         self.equality = {"joint": [], "weld": []}
 
         # Use mesh files if they are given
@@ -60,8 +58,24 @@ class Converter:
         self.origin_body = None
         self.origin_joint = None
 
+    def reset(self):
+        self.constraints = None
+        self.bodies = dict()
+        self.joints = dict()
+        self.muscles = []
+        self.coordinates = dict()
+        self.asset = dict()
+        self.tendon = []
+        self.actuator = {"motor": [], "muscle": []}
+        self.equality = {"joint": [], "weld": []}
+        self.origin_body = None
+        self.origin_joint = None
+
     def convert(self, input_xml, output_folder, geometry_folder=None, for_testing=False):
         """Convert given OpenSim XML model to MuJoCo XML model"""
+
+        # Reset all variables
+        self.reset()
 
         # Save input and output XML files in case we need them somewhere
         self.input_xml = input_xml
@@ -217,7 +231,9 @@ class Converter:
             if muscle_type == "CoordinateLimitForce":
                 # We'll handle these later
                 continue
-            elif muscle_type in ["HuntCrossleyForce"]:
+            elif muscle_type not in \
+                    ["Millard2012EquilibriumMuscle", "Thelen2003Muscle",
+                     "Schutte1993Muscle_Deprecated", "CoordinateActuator"]:
                 print("Skipping a force: {}".format(muscle_type))
                 continue
 
@@ -227,19 +243,21 @@ class Converter:
 
             # Go through all muscles
             for muscle in p[muscle_type]:
-                m = Muscle(muscle)
+                m = Muscle(muscle, muscle_type)
                 self.muscles.append(m)
 
                 # Check if the muscle is disabled
                 if m.is_disabled():
                     continue
-                else:
+                elif m.is_muscle:
+                    self.actuator["muscle"].append(m.get_actuator())
                     self.tendon.append(m.get_tendon())
-                    self.actuator.append(m.get_actuator())
 
                     # Add sites to all bodies this muscle/tendon spans
                     for body_name in m.path_point_set:
                         self.bodies[body_name].add_sites(m.path_point_set[body_name])
+                else:
+                    self.actuator["motor"].append(m.get_actuator())
 
     def parse_coordinate_limit_forces(self, forces):
 
@@ -400,11 +418,12 @@ class Converter:
 
         # Add tendons and actuators
         model["mujoco"]["tendon"] = {"spatial": self.tendon}
-        model["mujoco"]["actuator"] = {"muscle": self.actuator}
+        model["mujoco"]["actuator"] = self.actuator
 
         # Add equality constraints between joints; note that we may need to remove some equality constraints
         # that were set in ConstraintSet but then overwritten or not used
-        for constraint in self.equality["joint"]:
+        remove_idxs = []
+        for idx, constraint in enumerate(self.equality["joint"]):
             constraint_found = False
             for parent_body in self.joints:
                 for joint in self.joints[parent_body]:
@@ -413,7 +432,14 @@ class Converter:
                             constraint_found = True
 
             if not constraint_found:
-                self.equality["joint"].remove(constraint)
+                remove_idxs.append(idx)
+                #self.equality["joint"].remove(constraint)
+
+        # Remove constraints that aren't used
+        for idx in sorted(remove_idxs, reverse=True):
+            del self.equality["joint"][idx]
+
+        # Add equality constraints into the model
         model["mujoco"]["equality"] = self.equality
 
         return model
@@ -439,6 +465,11 @@ class Converter:
         # since we're progressing down the kinematic chain, each body
         # should have a joint to parent body
         joint_to_parent = self.find_joint_to_parent(current_body.name)
+
+        # Update location and orientation of child body
+        T = Utils.create_transformation_matrix(joint_to_parent.location, quat=joint_to_parent.orientation)
+        joint_to_parent.set_transformation_matrix(
+            np.matmul(joint_to_parent.get_transformation_matrix(), np.linalg.inv(T)))
 
         # Define position and orientation
         worldbody["@pos"] = Utils.array_to_string(joint_to_parent.location_in_parent)
@@ -647,7 +678,11 @@ class Joint:
         # And other parameters
         self.location_in_parent = np.array(joint["location_in_parent"].split(), dtype=float)
         self.location = np.array(joint["location"].split(), dtype=float)
-        self.orientation = np.array(joint["orientation"].split(), dtype=float)
+        orientation = np.array(joint["orientation"].split(), dtype=float)
+        x = Quaternion(axis=[1, 0, 0], radians=orientation[0]).rotation_matrix
+        y = Quaternion(axis=[0, 1, 0], radians=orientation[1]).rotation_matrix
+        z = Quaternion(axis=[0, 0, 1], radians=orientation[2]).rotation_matrix
+        self.orientation = Quaternion(matrix=np.matmul(np.matmul(x, y), z))
 
         # Calculate orientation in parent
         orientation_in_parent = np.array(joint["orientation_in_parent"].split(), dtype=float)
@@ -655,6 +690,12 @@ class Joint:
         y = Quaternion(axis=[0, 1, 0], radians=orientation_in_parent[1]).rotation_matrix
         z = Quaternion(axis=[0, 0, 1], radians=orientation_in_parent[2]).rotation_matrix
         self.orientation_in_parent = Quaternion(matrix=np.matmul(np.matmul(x, y), z))
+
+        # Not sure if we should update child body location and orientation before or after parsing joints;
+        # at the moment we're doing it after
+        #T = Utils.create_transformation_matrix(self.location, quat=self.orientation)
+        #self.set_transformation_matrix(
+        #    np.matmul(self.get_transformation_matrix(), np.linalg.inv(T)))
 
         # Some joint values are dependent on other joint values; we need to create equality constraints between those
         # Also we might need to use weld constraints on locked joints
@@ -678,6 +719,9 @@ class Joint:
 
         elif self.joint_type == "PinJoint":
             self.parse_pin_joint(joint)
+
+        elif self.joint_type == "UniversalJoint":
+            self.parse_universal_joint(joint)
 
         else:
             raise NotImplementedError
@@ -718,6 +762,8 @@ class Joint:
         # it's likely to be incorrect
         transforms = ["rotation1", "rotation2", "rotation3", "translation1", "translation2", "translation3"]
         order = [5, 4, 3, 0, 1, 2]
+        #order = [5, 4, 3, 2, 1, 0]
+        dof_designated = []
         for idx in order:
 
             t = transform_axes[idx]
@@ -732,6 +778,8 @@ class Joint:
                 params = {"name": "{}_{}".format(joint["@name"], t["@name"]), "limited": False,
                           "transform_value": 0, "coordinates": "unspecified"}
 
+            params["original_name"] = params["name"]
+
             # Set default reference position/angle to zero. If this value is not zero, then you need
             # more care while calculating quartic functions for equality constraints
             params["ref"] = 0
@@ -741,7 +789,8 @@ class Joint:
 
             # See the comment before this loop. We have to designate one DoF per Coordinate as an independent variable,
             # i.e. make its dependence linear
-            if "coordinates" in t and t["coordinates"] == params["name"] and t["@name"].startswith(params["motion_type"][:8]):
+            if "coordinates" in t and t["coordinates"] == params["name"] \
+                    and t["@name"].startswith(params["motion_type"][:8]) and not params["name"] in dof_designated:
 
                 # This is not necessary if the coordinate is dependent on another coordinate... starting to get
                 # complicated
@@ -776,6 +825,11 @@ class Joint:
 
                     # Make this into an identity mapping
                     t["function"] = dict({"LinearFunction": {"coefficients": '1 0'}})
+                    dof_designated.append(params["name"])
+
+            elif params["name"] in dof_designated:
+                # A DoF has already been designated for a coordinate with params["name"], rename this joint
+                params["name"] = "{}_{}".format(params["name"], t["@name"])
 
             # Handle a "Constant" transformation. We're not gonna create this joint
             # but we need the transformation information to properly align the joint
@@ -843,7 +897,8 @@ class Joint:
 
                 # Update name; since this is a dependent joint variable the independent joint variable might already
                 # have this name
-                params["name"] = "{}_{}".format(params["name"], t["@name"])
+                if params["name"] == params["original_name"]:
+                    params["name"] = "{}_{}".format(params["name"], t["@name"])
                 params["limited"] = True
 
                 # Get min and max values
@@ -923,9 +978,12 @@ class Joint:
                 print("Skipping transformation:")
                 print(t)
 
-            # Figure out whether this is rotation or translation
-            params["axis"] = np.array(t["axis"].split(), dtype=float)
+            # Calculate new axis
+            axis = np.array(t["axis"].split(), dtype=float)
+            new_axis = np.matmul(self.orientation.transformation_matrix, Utils.create_transformation_matrix(axis))[:3, 3]
+            params["axis"] = new_axis
 
+            # Figure out whether this is rotation or translation
             if t["@name"].startswith('rotation'):
                 params["type"] = "hinge"
             elif t["@name"].startswith('translation'):
@@ -966,7 +1024,7 @@ class Joint:
     def parse_coordinate_set(joint):
         # Parse all Coordinates defined for this joint
 
-        coordinate_set = dict()
+        coordinate_set = OrderedDict()
         if Utils.is_nested_field(joint, "Coordinate", ["CoordinateSet", "objects"]):
             coordinate = joint["CoordinateSet"]["objects"]["Coordinate"]
 
@@ -998,9 +1056,11 @@ class Joint:
         # more care while calculating quartic functions for equality constraints
         params["ref"] = 0
 
-        # We know this is a hinge joint and axis is [0, 0, 1]
+        # We know this is a hinge joint; calculate new axis
         params["type"] = "hinge"
-        params["axis"] = np.array([0, 0, 1])
+        axis = np.array([0, 0, 1])
+        new_axis = np.matmul(self.orientation.transformation_matrix, Utils.create_transformation_matrix(axis))[:3, 3]
+        params["axis"] = new_axis
 
         # Don't use transform_value here; we just want to use this joint as a mujoco joint
         # NOTE! We do need the transform_value for weld constraint if this joint is locked
@@ -1022,6 +1082,55 @@ class Joint:
 
             # Add to equality constraints
             self.equality_constraints["joint"].append(constraint)
+
+    def parse_universal_joint(self, joint):
+
+        # Start by parsing the CoordinateSet
+        coordinate_set = self.parse_coordinate_set(joint)
+
+        # There should be two coordinates for this joint
+        assert len(coordinate_set.keys()) == 2, "There should be two Coordinates for a UniversalJoint"
+
+        first = True
+        for coordinate in coordinate_set:
+            params = copy.deepcopy(coordinate_set[coordinate])
+
+            # Set default reference position/angle to zero. If this value is not zero, then you need
+            # more care while calculating quartic functions for equality constraints
+            params["ref"] = 0
+
+            # Both DoFs should be rotational, calculate new axes
+            # TODO not sure if this is the correct order / axis
+            assert params["motion_type"] == "rotational", "Both DoFs of an UniversalJoint should be rotational"
+            params["type"] = "hinge"
+            if first:
+                axis = np.array([1, 0, 0])
+                first = False
+            else:
+                axis = np.array([0, 1, 0])
+            new_axis = np.matmul(self.orientation.transformation_matrix, Utils.create_transformation_matrix(axis))[:3, 3]
+            params["axis"] = new_axis
+
+            # Don't use transform_value here; we just want to use this joint as a mujoco joint
+            # NOTE! We do need the transform_value for weld constraint if this joint is locked
+            if "locked" in params and params["locked"]:
+                params["default_value_for_locked"] = params["transform_value"]
+            params["transform_value"] = 0
+
+            # Append to mujoco joints
+            self.mujoco_joints.append(params)
+
+            # We need to add an equality constraint for locked joints
+            if "locked" in params and params["locked"]:
+
+                # Create the constraint
+                polycoef = np.array([params["default_value_for_locked"], 0, 0, 0, 0])
+                constraint = {"@name": params["name"] + "_constraint", "@active": "true",
+                              "@joint1": params["name"],
+                              "@polycoef": Utils.array_to_string(polycoef)}
+
+                # Add to equality constraints
+                self.equality_constraints["joint"].append(constraint)
 
     def get_equality_constraints(self, constraint_type):
         return self.equality_constraints[constraint_type]
@@ -1088,7 +1197,13 @@ class Body:
 
 class Muscle:
 
-    def __init__(self, obj):
+    def __init__(self, obj, muscle_type):
+        # Note: Muscle class represents other types of actuators (just CoordinateActuator at the moment) as well
+        self.muscle_type = muscle_type
+        if muscle_type in ["CoordinateActuator", "PointActuator", "TorqueActuator"]:
+            self.is_muscle = False
+        else:
+            self.is_muscle = True
 
         # Get important attributes
         self.name = obj["@name"]
@@ -1132,73 +1247,80 @@ class Muscle:
         if "max_control" in obj:
             self.limit[1] = obj["max_control"]
 
+        # Get optimal force if defined (for non-muscle actuators only?)
+        self.optimal_force = obj.get("optimal_force", None)
+
+        # Get coordinate on which this actuator works (for non-muscle actuators only)
+        self.coordinate = obj.get("coordinate", None)
+
         # Get path points so we can later add them into bodies; note that we treat
         # each path point type (i.e. PathPoint, ConditionalPathPoint, MovingPathPoint)
-        # as a fixed path point
-        self.path_point_set = dict()
-        self.sites = []
-        path_point_set = obj["GeometryPath"]["PathPointSet"]["objects"]
-        for pp_type in path_point_set:
+        # as a fixed path point; also note that non-muscle actuators don't have GeometryPaths
+        if self.is_muscle:
+            self.path_point_set = dict()
+            self.sites = []
+            path_point_set = obj["GeometryPath"]["PathPointSet"]["objects"]
+            for pp_type in path_point_set:
 
-            # TODO We're defining MovingPathPoints as fixed PathPoints and ignoring ConditionalPathPoints
+                # TODO We're defining MovingPathPoints as fixed PathPoints and ignoring ConditionalPathPoints
 
-            # Put the dict into a list of it's not already
-            if isinstance(path_point_set[pp_type], dict):
-                path_point_set[pp_type] = [path_point_set[pp_type]]
+                # Put the dict into a list of it's not already
+                if isinstance(path_point_set[pp_type], dict):
+                    path_point_set[pp_type] = [path_point_set[pp_type]]
 
-            # Go through all path points
-            for path_point in path_point_set[pp_type]:
-                if path_point["body"] not in self.path_point_set:
-                    self.path_point_set[path_point["body"]] = []
+                # Go through all path points
+                for path_point in path_point_set[pp_type]:
+                    if path_point["body"] not in self.path_point_set:
+                        self.path_point_set[path_point["body"]] = []
 
-                if pp_type == "PathPoint":
+                    if pp_type == "PathPoint":
 
-                    # A normal PathPoint, easy to define
-                    self.path_point_set[path_point["body"]].append(path_point)
-                    self.sites.append({"@site": path_point["@name"]})
+                        # A normal PathPoint, easy to define
+                        self.path_point_set[path_point["body"]].append(path_point)
+                        self.sites.append({"@site": path_point["@name"]})
 
-                elif pp_type == "ConditionalPathPoint":
+                    elif pp_type == "ConditionalPathPoint":
 
-                    # We're ignoring ConditionalPathPoints for now
-                    continue
+                        # We're ignoring ConditionalPathPoints for now
+                        continue
 
-                elif pp_type == "MovingPathPoint":
+                    elif pp_type == "MovingPathPoint":
 
-                    # We treat this as a fixed PathPoint, definitely not kosher
+                        # We treat this as a fixed PathPoint, definitely not kosher
 
-                    # Get path point location
-                    if "location" not in path_point:
-                        location = np.array([0, 0, 0], dtype=float)
+                        # Get path point location
+                        if "location" not in path_point:
+                            location = np.array([0, 0, 0], dtype=float)
+                        else:
+                            location = np.array(path_point["location"].split(), dtype=float)
+
+                        # Transform x,y, and z values (if they are defined) to their mean values to minimise error
+                        location[0] = self.update_moving_path_point_location("x_location", path_point)
+                        location[1] = self.update_moving_path_point_location("y_location", path_point)
+                        location[2] = self.update_moving_path_point_location("z_location", path_point)
+
+                        # Save the new location and the path point
+                        path_point["location"] = Utils.array_to_string(location)
+                        self.path_point_set[path_point["body"]].append(path_point)
+
+                        self.sites.append({"@site": path_point["@name"]})
+
                     else:
-                        location = np.array(path_point["location"].split(), dtype=float)
+                        raise TypeError("Undefined path point type {}".format(pp_type))
 
-                    # Transform x,y, and z values (if they are defined) to their mean values to minimise error
-                    location[0] = self.update_moving_path_point_location("x_location", path_point)
-                    location[1] = self.update_moving_path_point_location("y_location", path_point)
-                    location[2] = self.update_moving_path_point_location("z_location", path_point)
+            # Finally, we need to sort the sites so that they are in correct order. Unfortunately we have to rely
+            # on the site names since xmltodict decomposes the list into dictionaries. There's a pull request in
+            # xmltodict for ordering children that might be helpful, but it has not been merged yet
 
-                    # Save the new location and the path point
-                    path_point["location"] = Utils.array_to_string(location)
-                    self.path_point_set[path_point["body"]].append(path_point)
+            # Check that the site name prefixes are similar, and only the number is changing
+            site_names = [d["@site"] for d in self.sites]
+            prefix = os.path.commonprefix(site_names)
+            try:
+                numbers = [int(name[len(prefix):]) for name in site_names]
+            except ValueError:
+                raise ValueError("Check these site names, they might not be sorted correctly")
 
-                    self.sites.append({"@site": path_point["@name"]})
-
-                else:
-                    raise TypeError("Undefined path point type {}".format(pp_type))
-
-        # Finally, we need to sort the sites so that they are in correct order. Unfortunately we have to rely
-        # on the site names since xmltodict decomposes the list into dictionaries. There's a pull request in
-        # xmltodict for ordering children that might be helpful, but it has not been merged yet
-
-        # Check that the site name prefixes are similar, and only the number is changing
-        site_names = [d["@site"] for d in self.sites]
-        prefix = os.path.commonprefix(site_names)
-        try:
-            numbers = [int(name[len(prefix):]) for name in site_names]
-        except ValueError:
-            raise ValueError("Check these site names, they might not be sorted correctly")
-
-        self.sites = natsorted(self.sites, key=itemgetter(*['@site']), alg=ns.IGNORECASE)
+            self.sites = natsorted(self.sites, key=itemgetter(*['@site']), alg=ns.IGNORECASE)
 
     def update_moving_path_point_location(self, coordinate_name, path_point):
         if coordinate_name in path_point:
@@ -1242,21 +1364,27 @@ class Muscle:
         return tendon
 
     def get_actuator(self):
-        # Return MuJoCo actuator representation of this muscle
-        actuator = {"@name": self.name, "@tendon": self.name + "_tendon", "@lengthrange": Utils.array_to_string(self.length_range)}
+        # Return MuJoCo actuator representation of this actuator
+        actuator = {"@name": self.name}
+        if self.is_muscle:
+            actuator["@tendon"] = self.name + "_tendon"
+            actuator["@lengthrange"] = Utils.array_to_string(self.length_range)
 
-        # Set timeconst
-        if np.all(np.isfinite(self.timeconst)):
-            actuator["@timeconst"] = Utils.array_to_string(self.timeconst)
+            # Set timeconst
+            if np.all(np.isfinite(self.timeconst)):
+                actuator["@timeconst"] = Utils.array_to_string(self.timeconst)
+        else:
+            actuator["@gear"] = self.optimal_force
+            actuator["@joint"] = self.coordinate
+
+        # Set scale
+        #if self.scale is not None:
+        #    actuator["@scale"] = str(self.scale)
 
         # Set ctrl limit
         if np.all(np.isfinite(self.limit)):
             actuator["@ctrllimited"] = "true"
             actuator["@ctrlrange"] = Utils.array_to_string(self.limit)
-
-        # Set scale
-        #if self.scale is not None:
-        #    actuator["@scale"] = str(self.scale)
 
         return actuator
 
