@@ -54,11 +54,11 @@ def create_rotation_matrix(axis, rad=None, deg=None):
 
 def create_translation_vector(axis, l):
     t = np.zeros(shape=(3,))
-    if axis[0] == 1 and axis[1] == 0 and axis[2] == 0:
+    if abs(axis[0]) == 1 and axis[1] == 0 and axis[2] == 0:
         t[0] = l
-    elif axis[0] == 0 and axis[1] == 1 and axis[2] == 0:
+    elif axis[0] == 0 and abs(axis[1]) == 1 and axis[2] == 0:
         t[1] = l
-    elif axis[0] == 0 and axis[1] == 0 and axis[2] == 1:
+    elif axis[0] == 0 and axis[1] == 0 and abs(axis[2]) == 1:
         t[2] = l
     else:
         raise NotImplementedError
@@ -169,15 +169,15 @@ def reindex_dataframe(df, new_index):
     return new_df
 
 
-def estimate_joint_error(reference, simulated, joint_names=None, timesteps=None, plot=False, output_file=None,
-                         error="squared_sum"):
+def estimate_error(reference, simulated, target_names=None, timesteps=None, plot=False, output_file=None,
+                   error="squared_sum"):
 
     # Reference and simulated need to be same shape
     if reference.shape != simulated.shape:
         print("Shapes of reference and simulated must be equal")
         return np.nan
 
-    # Collect errors per joint
+    # Collect errors per joint/muscle
     errors = np.empty((reference.shape[1],))
 
     if plot:
@@ -188,7 +188,7 @@ def estimate_joint_error(reference, simulated, joint_names=None, timesteps=None,
         else:
             axes[-1].set_xlabel('Time (seconds)')
 
-    # Get abs sum of difference between reference joint and simulated joint
+    # Get error between reference joint/muscle and simulated joint/muscle
     for idx in range(reference.shape[1]):
         e = reference[:, idx] - simulated[:, idx]
 
@@ -203,8 +203,8 @@ def estimate_joint_error(reference, simulated, joint_names=None, timesteps=None,
         if plot:
             axes[idx].plot(timesteps, e)
             axes[idx].plot(np.array([timesteps[0], timesteps[-1]]), np.array([0, 0]), 'k--')
-            if joint_names is not None:
-                axes[idx].set_ylabel(joint_names[idx])
+            if target_names is not None:
+                axes[idx].set_ylabel(target_names[idx])
 
     # Save the file if output_file is defined
     if plot and output_file is not None:
@@ -334,6 +334,7 @@ def initialise_simulation(sim, timestep, initial_states=None):
 def run_simulation(sim, controls, viewer=None, output_video_file=None):
 
     qpos = np.empty((len(controls), len(sim.model.joint_names)))
+    qvel = np.empty((len(controls), len(sim.model.joint_names)))
 
     # For recording / viewing purposes
     imgs = []
@@ -349,8 +350,9 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None):
         # Forward the simulation
         sim.step()
 
-        # Get joint positions
+        # Get joint positions, joint velocities, and actuator forces
         qpos[t, :] = sim.data.qpos
+        qvel[t, :] = sim.data.qvel
 
         if viewer is not None:
             if output_video_file is None:
@@ -376,7 +378,7 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None):
         # Close writer
         writer.close()
 
-    return qpos
+    return {"qpos": qpos, "qvel": qvel}
 
 
 def set_parameters(model, parameters, muscle_idxs, joint_idxs):
