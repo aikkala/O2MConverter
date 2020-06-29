@@ -17,7 +17,6 @@
     <quality shadowsize="2048"></quality>
   </visual>
   <worldbody>
-    <geom name="floor" pos="0 0 0" size="10 10 0.125" type="plane" material="MatPlane" condim="3"></geom>
     <body name="thorax" pos="       0 6.12323e-17        1" quat="0.7071067811865475 0.7071067811865475 0.0 0.0">
       <light mode="trackcom" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1"></light>
       <geom name="thorax" type="mesh" mesh="thorax"></geom>

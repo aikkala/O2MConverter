@@ -139,7 +139,7 @@
         <joint name="lumbar_extension" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range=" -1.5708   1.5708" ref="0"></joint>
       </body>
     </body>
-    <camera name="for_testing" pos="0 0 0" euler="1.57 0 0"></camera>
+    <camera name="for_testing" pos="0 0 0" euler="0 0 0"></camera>
   </worldbody>
   <asset>
     <mesh name="sacrum" file="Geometry/sacrum.stl" scale="       1        1        1"></mesh>
