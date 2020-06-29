@@ -27,7 +27,20 @@
 		<integrator_error_tolerance>1e-005</integrator_error_tolerance>
 		<!--Set of analyses to be run during the investigation.-->
 		<AnalysisSet name="Analyses">
-			<objects />
+			<objects>
+				<Actuation name="Actuation">
+					<!--Flag (true or false) specifying whether on. True by default.-->
+					<on>true</on>
+					<!--Start time.-->
+					<start_time>0</start_time>
+					<!--End time.-->
+					<end_time>0.998</end_time>
+					<!--Specifies how often to store results during a simulation. More specifically, the interval (a positive integer) specifies how many successful integration steps should be taken before results are recorded again.-->
+					<step_interval>1</step_interval>
+					<!--Flag (true or false) indicating whether the results are in degrees or not.-->
+					<in_degrees>false</in_degrees>
+				</Actuation>
+			</objects>
 			<groups />
 		</AnalysisSet>
 		<!--Controller objects in the model.-->
