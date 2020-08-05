@@ -2,19 +2,15 @@ import opensim
 import os
 import xmltodict
 import sys
-import multiprocessing
 from timeit import default_timer as timer
 from tests.envs import EnvFactory
-import matplotlib.pyplot as pp
 import shutil
 from time import sleep
-from pynput.mouse import Button, Controller
 import subprocess
 import math
 import pathlib
 import numpy as np
 import Utils
-from pyquaternion import Quaternion
 
 
 def forward_tool_process(setup_file, run_folder):
@@ -140,6 +136,10 @@ def run_forward_tool(env, runs, N):
 
 
 def run_forward_dynamics(env, runs, visualise=False):
+
+    # Import Button, Controller only when actually using visualisations, this way we can run this code in Triton
+    if visualise:
+        from pynput.mouse import Button, Controller
 
     # We need to modify the setup file for each run
     with open(env.opensim_setup_file) as f:
