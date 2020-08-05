@@ -115,20 +115,28 @@ class EnvFactory:
         ["hip_flexion_r", "knee_angle_r", "ankle_angle_r", "hip_flexion_l", "knee_angle_l", "ankle_angle_l"],
         16, 32, True)
 
+    rajagopal_leg_dof = ["hip_flexion_", "hip_adduction_", "hip_rotation_", "knee_angle_", "ankle_angle_",
+                         "subtalar_angle_", "mtp_angle_"]
+    rajagopal_arm_dof = ["arm_flex_", "arm_add_", "arm_rot_", "elbow_flex_", "pro_sup_", "wrist_flex_", "wrist_dev_"]
+    rajagopal_walk = EnvTemplate("rajagopal_walk",
+        0.0002,
+        'models/opensim/rajagopal_walking/setup_fd_walk.xml',
+        'tests/rajagopal_walk/forward_dynamics',
+        'models/converted/subject_scaled_walk_for_testing_converted/subject_scaled_walk_for_testing_converted.xml',
+        'tests/rajagopal_walk/output/data.pckl',
+        'tests/rajagopal_walk/output/simulations',
+        np.array([2, -2, 1, np.pi/2, np.pi/4, 0]),
+        'models/opensim/rajagopal_walking/Scale/subject_scaled_walk_for_testing.osim',
+        'models/opensim/rajagopal_walking/initial_states_walk.sto',
+        [dof + "r" for dof in rajagopal_leg_dof] + [dof + "l" for dof in rajagopal_leg_dof] +
+        [dof + "r" for dof in rajagopal_arm_dof] + [dof + "l" for dof in rajagopal_arm_dof] +
+        ["lumbar_extension", "lumbar_bending", "lumbar_rotation"],
+        32, 64, False)
+
     @staticmethod
     def get(env_name):
-        if env_name.lower() == "mobl_arms":
-            return EnvFactory.MoBL_ARMS
-        elif env_name.lower() == "mobl_arms_no_wrap":
-            return EnvFactory.MoBL_ARMS_no_wrap
-        elif env_name.lower() == "leg6dof9musc":
-            return EnvFactory.leg6dof9musc
-        elif env_name.lower() == "gait2392":
-            return EnvFactory.gait2392
-        elif env_name.lower() == "gait10dof18musc":
-            return EnvFactory.gait10dof18musc
-        else:
-            raise NotImplementedError
+        assert hasattr(EnvFactory, env_name), f"There is no env called '{env_name}'"
+        return getattr(EnvFactory, env_name.lower())
 
 
 class OsimWrapper(OsimEnv):
