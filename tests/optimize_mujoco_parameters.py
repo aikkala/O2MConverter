@@ -285,8 +285,8 @@ if __name__ == "__main__":
 
     # If we're optimizing mobl_arms_no_wrap, use the same train/test indices as mobl_arms
     model_name = sys.argv[1]
-    if model_name == "mobl_arms_no_wrap":
-        data_file = EnvFactory.get("mobl_arms").data_file
+    if model_name == "MoBL_ARMS_no_wrap":
+        data_file = EnvFactory.get("MoBL_ARMS").data_file
     else:
         data_file = None
 
