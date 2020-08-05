@@ -69,8 +69,7 @@ def main(model_name, N):
     N = int(N)
 
     duration = 1
-    timestep = 0.002
-    t = np.arange(0, duration, timestep)
+    t = np.arange(0, duration, env.timestep)
 
     # First we need to read the MuJoCo model file and get actuator names
     model = mujoco_py.load_model_from_path(env.mujoco_model_file)
