@@ -279,9 +279,12 @@ def run_forward_dynamics(env, runs, visualise=False):
         analysis.begin(state)
         state.setTime(ti)
         manager.initialize(state)
-        for i in range(1, L):
-            manager.integrate(i*env.timestep)
-            analysis.step(manager.getState(), i)
+        try:
+            for i in range(1, L):
+                manager.integrate(i*env.timestep)
+                analysis.step(manager.getState(), i)
+        except:
+            print(f"{run} failed")
 
         analysis.end(manager.getState())
         analysis.printResults("analysis", run_folder)
