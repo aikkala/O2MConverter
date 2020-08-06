@@ -153,6 +153,10 @@ def run_forward_dynamics(env, runs, visualise=False):
         run_folder = os.path.join(env.forward_dynamics_folder, run)
         print("Processing {}".format(run))
 
+        # Skip this if FDS_states.sto file already exists
+        if os.path.isfile(os.path.join(run_folder, "FDS_states.sto")):
+            continue
+
         # Edit settings
         setup["OpenSimDocument"]["ForwardTool"]["@name"] = "tool"
         setup["OpenSimDocument"]["ForwardTool"]["model_file"] = env.opensim_model_file
