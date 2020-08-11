@@ -68,8 +68,13 @@ def main(model_name, N):
     env = EnvFactory.get(model_name)
     N = int(N)
 
+    if env.opensim_timestep is not None:
+        timestep = env.opensim_timestep
+    else:
+        timestep = env.timestep
+
     duration = 1
-    t = np.arange(0, duration, env.timestep)
+    t = np.arange(0, duration, timestep)
 
     # First we need to read the MuJoCo model file and get actuator names
     model = mujoco_py.load_model_from_path(env.mujoco_model_file)

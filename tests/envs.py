@@ -10,7 +10,7 @@ class EnvFactory:
     class EnvTemplate:
         def __init__(self, model_name, timestep, opensim_setup_file, forward_dynamics_folder, mujoco_model_file, data_file,
                      output_folder, camera_pos, opensim_model_file, initial_states_file, target_states,
-                     param_optim_pop_size, control_optim_pop_size, control_optim_diag):
+                     param_optim_pop_size, control_optim_pop_size, control_optim_diag, opensim_timestep=None):
 
             # Get project path
             self.project_path = pathlib.Path(__file__).parent.parent.absolute()
@@ -30,6 +30,7 @@ class EnvFactory:
             self.param_optim_pop_size = param_optim_pop_size
             self.control_optim_pop_size = control_optim_pop_size
             self.control_optim_diag = control_optim_diag
+            self.opensim_timestep = opensim_timestep
 
             # Read initial states from a file if given
             self.initial_states_file = os.path.join(self.project_path, initial_states_file)
@@ -119,19 +120,19 @@ class EnvFactory:
                          "subtalar_angle_", "mtp_angle_"]
     rajagopal_arm_dof = ["arm_flex_", "arm_add_", "arm_rot_", "elbow_flex_", "pro_sup_", "wrist_flex_", "wrist_dev_"]
     rajagopal_walk = EnvTemplate("rajagopal_walk",
-        0.0002,
+        0.002,
         'models/opensim/rajagopal_walking/setup_fd_walk.xml',
         'tests/rajagopal_walk/forward_dynamics',
         'models/converted/subject_scaled_walk_for_testing_converted/subject_scaled_walk_for_testing_converted.xml',
         'tests/rajagopal_walk/output/data.pckl',
         'tests/rajagopal_walk/output/simulations',
         np.array([2, -2, 1, np.pi/2, np.pi/4, 0]),
-        'models/opensim/rajagopal_walking/Scale/subject_scaled_walk_for_testing.osim',
+        'models/opensim/rajagopal_walking/subject_scaled_walk_for_testing.osim',
         'models/opensim/rajagopal_walking/initial_states_walk.sto',
         [dof + "r" for dof in rajagopal_leg_dof] + [dof + "l" for dof in rajagopal_leg_dof] +
         [dof + "r" for dof in rajagopal_arm_dof] + [dof + "l" for dof in rajagopal_arm_dof] +
         ["lumbar_extension", "lumbar_bending", "lumbar_rotation"],
-        32, 64, False)
+        32, 64, False, opensim_timestep=0.0002)
 
     @staticmethod
     def get(env_name):

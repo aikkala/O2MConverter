@@ -31,6 +31,12 @@ def forward_tool_process(setup_file, run_folder):
 
 def run_speed_test(env, runs, N):
 
+    # Get timestep for OpenSim simulations
+    if env.opensim_timestep is not None:
+        timestep = env.opensim_timestep
+    else:
+        timestep = env.timestep
+
     # Loop through runs and simulate forward dynamics
     durations = np.zeros((N, len(runs)))
     for run_idx, run in enumerate(runs):
@@ -54,7 +60,7 @@ def run_speed_test(env, runs, N):
             # Load initial states
             storage = opensim.Storage(env.initial_states_file)
             ti = tool.getStartTime()
-            tf = tool.getFinalTime() + env.timestep
+            tf = tool.getFinalTime() + timestep
 
             # Set initial states for controllers
             model.updControllerSet().setDesiredStates(storage)
@@ -77,8 +83,8 @@ def run_speed_test(env, runs, N):
             manager = opensim.Manager(model)
             manager.setIntegratorAccuracy(integrator_accuracy)
             manager.setUseSpecifiedDT(True)
-            L = math.ceil(tf / env.timestep)
-            manager.setDTArray(opensim.Vector([env.timestep] * L))
+            L = math.ceil(tf / timestep)
+            manager.setDTArray(opensim.Vector([timestep] * L))
 
             # Equilibrate muscles once initial state is set
             if equilibrate:
@@ -89,7 +95,7 @@ def run_speed_test(env, runs, N):
             manager.initialize(state)
             start = timer()
             # for i in range(1, L):
-            #    manager.integrate(i*env.timestep)
+            #    manager.integrate(i*timestep)
             manager.integrate(tf)
             durations[repeat_idx, run_idx] = timer() - start
 
@@ -146,6 +152,12 @@ def run_forward_dynamics(env, runs, visualise=False):
         text = f.read()
     setup = xmltodict.parse(text)
 
+    # Get timestep for OpenSim simulations
+    if env.opensim_timestep is not None:
+        timestep = env.opensim_timestep
+    else:
+        timestep = env.timestep
+
     # Loop through runs and simulate forward dynamics
     for run_idx, run in enumerate(runs):
 
@@ -163,8 +175,8 @@ def run_forward_dynamics(env, runs, visualise=False):
         setup["OpenSimDocument"]["ForwardTool"]["ControllerSet"]["objects"]["ControlSetController"]["controls_file"] = os.path.join(run_folder, "controls.sto")
         setup["OpenSimDocument"]["ForwardTool"]["results_directory"] = "."
         setup["OpenSimDocument"]["ForwardTool"]["states_file"] = env.initial_states_file
-        setup["OpenSimDocument"]["ForwardTool"]["minimum_integrator_step_size"] = env.timestep
-        setup["OpenSimDocument"]["ForwardTool"]["maximum_integrator_step_size"] = env.timestep
+        setup["OpenSimDocument"]["ForwardTool"]["minimum_integrator_step_size"] = timestep
+        setup["OpenSimDocument"]["ForwardTool"]["maximum_integrator_step_size"] = timestep
         setup["OpenSimDocument"]["ForwardTool"]['solve_for_equilibrium_for_auxiliary_states'] = 'true' if equilibrate else 'false'
         setup["OpenSimDocument"]["ForwardTool"]["integrator_error_tolerance"] = integrator_accuracy
 
@@ -237,7 +249,7 @@ def run_forward_dynamics(env, runs, visualise=False):
         # Load initial states
         storage = opensim.Storage(env.initial_states_file)
         ti = tool.getStartTime()
-        tf = tool.getFinalTime() + env.timestep
+        tf = tool.getFinalTime() + timestep
 
         # Set initial states for controllers
         model.updControllerSet().setDesiredStates(storage)
@@ -258,8 +270,8 @@ def run_forward_dynamics(env, runs, visualise=False):
         manager = opensim.Manager(model)
         manager.setIntegratorAccuracy(integrator_accuracy)
         manager.setUseSpecifiedDT(True)
-        L = math.ceil(tf/env.timestep)
-        manager.setDTArray(opensim.Vector([env.timestep]*L))
+        L = math.ceil(tf/timestep)
+        manager.setDTArray(opensim.Vector([timestep]*L))
         manager.setPerformAnalyses(True)
 
         # Equilibrate muscles once initial state is set
@@ -285,7 +297,7 @@ def run_forward_dynamics(env, runs, visualise=False):
         manager.initialize(state)
         try:
             for i in range(1, L):
-                manager.integrate(i*env.timestep)
+                manager.integrate(i*timestep)
                 analysis.step(manager.getState(), i)
         except:
             print(f"{run} failed")
