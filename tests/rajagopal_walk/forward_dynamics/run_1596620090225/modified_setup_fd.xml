@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <OpenSimDocument Version="40000">
   <ForwardTool name="tool">
-    <model_file>/home/aleksi/Workspace/O2MConverter/models/opensim/rajagopal_walking/Scale/subject_scaled_walk_for_testing.osim</model_file>
+    <model_file>/scratch/work/ikkalaa1/projects/O2MConverter/models/opensim/rajagopal_walking/Scale/subject_scaled_walk_for_testing.osim</model_file>
     <replace_force_set>false</replace_force_set>
     <force_set_files></force_set_files>
     <results_directory>.</results_directory>
@@ -28,13 +28,13 @@
     <ControllerSet name="Controllers">
       <objects>
         <ControlSetController>
-          <controls_file>/home/aleksi/Workspace/O2MConverter/tests/rajagopal_walk/forward_dynamics/run_1596620090225/controls.sto</controls_file>
+          <controls_file>/scratch/work/ikkalaa1/projects/O2MConverter/tests/rajagopal_walk/forward_dynamics/run_1596620090225/controls.sto</controls_file>
         </ControlSetController>
       </objects>
       <groups></groups>
     </ControllerSet>
     <external_loads_file></external_loads_file>
-    <states_file>/home/aleksi/Workspace/O2MConverter/models/opensim/rajagopal_walking/initial_states_walk.sto</states_file>
+    <states_file>/scratch/work/ikkalaa1/projects/O2MConverter/models/opensim/rajagopal_walking/initial_states_walk.sto</states_file>
     <use_specified_dt>false</use_specified_dt>
   </ForwardTool>
 </OpenSimDocument>
