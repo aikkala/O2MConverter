@@ -337,9 +337,24 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None):
     qvel = np.empty((len(controls), len(sim.model.joint_names)))
 
     # For recording / viewing purposes
-    imgs = []
-    width = 1200
-    height = 1200
+    if viewer is not None and output_video_file is not None:
+
+        # Make sure output folder exists
+        os.makedirs(os.path.dirname(output_video_file), exist_ok=True)
+
+        # Set params
+        width = 1200
+        height = 1200
+        fs = 120
+
+        # Get writer
+        writer = skvideo.io.FFmpegWriter(output_video_file,
+                                         inputdict={"-s": "{}x{}".format(width, height),
+                                                    "-r": str(fs)})
+                                                    #"-r": str(0.1/sim.model.opt.timestep)})
+
+        # Get indices of frames to be recorded
+        frame_idxs = np.arange(0, len(controls), (1 / fs) / sim.model.opt.timestep).astype(int)
 
     # We assume there's one set of controls for each timestep
     for t in range(len(controls)):
@@ -357,24 +372,14 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None):
         if viewer is not None:
             if output_video_file is None:
                 viewer.render()
-            else:
+            elif t in frame_idxs:
                 viewer.render(width, height, sim.model._camera_name2id["for_testing"])
                 #imgs.append(np.flip(sim.render(width, height, camera_name="for_testing"), axis=0))
-                imgs.append(np.flipud(viewer.read_pixels(width, height, depth=False)))
+                img = np.flipud(viewer.read_pixels(width, height, depth=False))
+                writer.writeFrame(img)
+
 
     if viewer is not None and output_video_file is not None:
-
-        # Make sure output folder exists
-        os.makedirs(os.path.dirname(output_video_file), exist_ok=True)
-
-        # Get writer
-        writer = skvideo.io.FFmpegWriter(output_video_file,
-                                         inputdict={"-s": "{}x{}".format(width, height),
-                                                    "-r": str(1/sim.model.opt.timestep)})
-        # Write the video
-        for img in imgs:
-            writer.writeFrame(img)
-
         # Close writer
         writer.close()
 
@@ -416,3 +421,85 @@ def find_outliers(data, k=1.5):
     quartiles = np.percentile(data, [25, 75])
     iqr = quartiles[1] - quartiles[0]
     return (data > quartiles[1] + k*iqr) | (data < quartiles[0] - k*iqr)
+
+
+class Parameters:
+
+    def __init__(self, motor_idxs, muscle_idxs, joint_idxs, initial_values=[1, 1, 1]):
+        self.motor_idxs = motor_idxs
+        self.nmotors = len(motor_idxs)
+        self.gear = np.ones(self.nmotors) * initial_values[0]
+
+        self.muscle_idxs = muscle_idxs
+        self.nmuscles = len(muscle_idxs)
+        self.scale = np.ones(self.nmuscles) * initial_values[1]
+
+        # We assume there is a tendon for each muscle
+        self.tendon_idxs = np.arange(self.nmuscles)
+        self.ntendons = self.nmuscles
+        self.tendon_stiffness = np.ones(self.ntendons) * initial_values[2]
+        self.tendon_damping = np.ones(self.ntendons) * initial_values[2]
+
+        self.joint_idxs = joint_idxs
+        self.njoints = len(joint_idxs)
+        self.dof_damping = np.ones(self.njoints) * initial_values[2]
+        self.jnt_solimp = np.ones(self.njoints) * initial_values[2]
+
+    def set_values_to_model(self, model, values):
+
+        # Set motor gears
+        idx = 0
+        for motor_idx in self.motor_idxs:
+            model.actuator_gear[motor_idx, 0] = values[idx]
+            idx += 1
+
+        # Set muscle scales
+        for muscle_idx in self.muscle_idxs:
+            model.actuator_gainprm[muscle_idx][3] = values[idx]
+            idx += 1
+
+        # Set tendon stiffness
+        for tendon_idx in self.tendon_idxs:
+            model.tendon_stiffness[tendon_idx] = values[idx]
+            idx += 1
+
+        # Set tendon damping
+        for tendon_idx in self.tendon_idxs:
+            model.tendon_damping[tendon_idx] = values[idx]
+            idx += 1
+
+        # Set joint damping and damping
+        for joint_idx in self.joint_idxs:
+            model.dof_damping[joint_idx] = values[idx]
+            idx += 1
+
+        # Set joint solimp
+        for joint_idx in self.joint_idxs:
+            model.jnt_solimp[joint_idx, 2] = values[idx]
+            idx += 1
+
+    def get_values(self):
+        return np.concatenate((self.gear, self.scale, self.tendon_stiffness, self.tendon_damping,
+                               self.dof_damping, self.jnt_solimp))
+
+    def get_cost(self, values, f):
+        # Return sum of all parameters except jnt_solimp after transforming with function f
+        return np.sum(f(values[:-self.njoints]))
+
+    def set_values(self, values):
+        last_idx = self.nmotors
+        self.gear = values[:last_idx]
+        first_idx = last_idx
+        last_idx += self.nmuscles
+        self.scale = values[first_idx:last_idx]
+        first_idx = last_idx
+        last_idx += self.ntendons
+        self.tendon_stiffness = values[first_idx:last_idx]
+        first_idx = last_idx
+        last_idx += self.ntendons
+        self.tendon_damping = values[first_idx:last_idx]
+        first_idx = last_idx
+        last_idx += self.njoints
+        self.dof_damping = values[first_idx:last_idx]
+        first_idx = last_idx
+        self.jnt_solimp = values[first_idx:]

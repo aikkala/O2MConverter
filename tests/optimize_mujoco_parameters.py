@@ -91,6 +91,10 @@ def collect_data_from_runs(env):
         # Get number of evaluations (forward steps); note that the last timestep isn't simulated
         num_evals = len(states) - 1
 
+        # Reindex controls if they were generated with a different timestep
+        if env.opensim_timestep != env.timestep:
+            controls = Utils.reindex_dataframe(controls, np.arange(0, controls.index.values[-1], env.timestep))
+
         # Reindex states
         states = Utils.reindex_dataframe(states, np.arange(env.timestep, controls.index.values[-1]+2*env.timestep, env.timestep))
 
@@ -144,26 +148,30 @@ def do_optimization(env, data):
         Utils.initialise_simulation(sim, timestep, initial_states)
 
         # Run simulation
-        qpos = Utils.run_simulation(sim, controls)
+        sim_states = Utils.run_simulation(sim, controls)
 
         # Calculate joint errors
-        default_error[run_idx] = np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
+        default_error[run_idx] = np.sum(Utils.estimate_error(states, sim_states["qpos"][:, target_state_indices]))
 
     # Optimize damping and solimp width for all joints that don't depend on another joint or aren't locked, regardless
     # of whether they are limited or not (if they're not limited then solimp width can take any values)
     joint_idxs = list(set(range(len(model.joint_names))) - set(model.eq_obj1id[np.asarray(model.eq_active, dtype=bool)]))
-    njoints = len(joint_idxs)
-    nmuscles = len(model.actuator_names)
+    #njoints = len(joint_idxs)
+    muscle_idxs = np.where(model.actuator_trntype==3)[0]
+    motor_idxs = np.where(model.actuator_trntype==0)[0]
+    assert len(set(model.actuator_trntype) - {0, 3}) == 0, "Unidentified actuators in model"
 
     # Get initial values for params
-    niter = 500
+    niter = 5
     sigma = 1.0
-    params = [5] * nmuscles + [1] * (2 * nmuscles + 2 * njoints)
+    params = Utils.Parameters(motor_idxs, muscle_idxs, joint_idxs, [1, 5, 1])
+    #params = [5] * nmuscles + [1] * (2 * nmuscles + 2 * njoints)
 
     # Initialise optimizer
     opts = {"popsize": env.param_optim_pop_size, "maxiter": niter, "CMA_diagonal": True}
-    optimizer = cma.CMAEvolutionStrategy(params, sigma, opts)
+    optimizer = cma.CMAEvolutionStrategy(params.get_values(), sigma, opts)
     nbatch = len(data)
+    highest_error_so_far = 1e4
 
     # Keep track of errors
     history = np.empty((niter,))
@@ -193,9 +201,10 @@ def do_optimization(env, data):
 
             # Set parameters
             #params = np.concatenate((np.exp(solution[:nmuscles]), np.maximum(solution[nmuscles:], 0)))
-            params = np.exp(solution)
-            Utils.set_parameters(model, params, np.arange(nmuscles), joint_idxs)
-            params_cost[solution_idx] = 1e-3 * np.sum(np.exp(solution[-njoints:]))
+            #params = np.exp(solution)
+            #Utils.set_parameters(model, params, np.arange(nmuscles), joint_idxs)
+            params.set_values_to_model(model, np.exp(solution))
+            params_cost[solution_idx] = 1e-3 * params.get_cost(solution, np.exp)
 
             # Go through all simulations in batch
             for idx, run_idx in enumerate(batch_idxs):
@@ -207,10 +216,21 @@ def do_optimization(env, data):
                 Utils.initialise_simulation(sim, timestep, initial_states)
 
                 # Run simulation
-                qpos = Utils.run_simulation(sim, controls)
+                sim_success = True
+                try:
+                    sim_states = Utils.run_simulation(sim, controls)
+                except mujoco_py.builder.MujocoException:
+                    # Simulation failed
+                    sim_success = False
 
-                # Calculate joint errors
-                errors[idx, solution_idx] = np.sum(Utils.estimate_joint_error(states, qpos[:, target_state_indices]))
+                if sim_success:
+                    # Calculate joint errors
+                    errors[idx, solution_idx] = np.sum(Utils.estimate_error(states, sim_states["qpos"][:, target_state_indices]))
+                    if errors[idx, solution_idx] > highest_error_so_far:
+                        highest_error_so_far = errors[idx, solution_idx]
+                else:
+                    errors[idx, solution_idx] = 1.5*highest_error_so_far
+
 
         # Use sum of errors over runs as fitness, and calculate mean error for each run
         fitness = errors.sum(axis=0) + params_cost
@@ -237,9 +257,10 @@ def do_optimization(env, data):
         optimizer.disp()
 
     # Return found solution
-    return {"parameters": np.exp(optimizer.result.xfavorite),
-            "joint_idxs": joint_idxs, "muscle_idxs": np.arange(len(model.actuator_names)),
-            "history": history}
+    params.set_values(np.exp(optimizer.result.xfavorite))
+    return {"parameters": params, "history": history}
+            #"joint_idxs": joint_idxs, "muscle_idxs": np.arange(len(model.actuator_names)),
+            #"history": history}
 
 
 def main(model_name, data_file=None):
@@ -271,14 +292,14 @@ def main(model_name, data_file=None):
     train_set = [data[idx] for idx in train_idxs]
 
     # Do optimization with CMA-ES
-    parameters = do_optimization(env, train_set)
+    output = do_optimization(env, train_set)
 
     # Make sure output folder exists
     os.makedirs(os.path.dirname(env.data_file), exist_ok=True)
 
     # Save parameters, data, and indices
     with open(env.data_file, 'wb') as f:
-        pickle.dump([parameters, data, train_idxs, test_idxs], f)
+        pickle.dump([output, data, train_idxs, test_idxs], f)
 
 
 if __name__ == "__main__":
