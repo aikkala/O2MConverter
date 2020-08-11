@@ -353,13 +353,15 @@ class Converter:
         # (that contain incorrect inertial properties or massless moving bodies)
         model["mujoco"]["compiler"] = {"@inertiafromgeom": "auto", "@angle": "radian", "@balanceinertia": "true",
                                        "@boundmass": "0.001", "@boundinertia": "0.001"}
+        model["mujoco"]["compiler"]["lengthrange"] = {"@inttotal": "50"}
         model["mujoco"]["default"] = {
             "joint": {"@limited": "true", "@damping": "0.5", "@armature": "0.01", "@stiffness": "0"},
             "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "3", "@rgba": "0.8 0.6 .4 1",
                      "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
             "site": {"@size": "0.001"},
             "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"},
-            "muscle": {"@scale": "400"}}
+            "muscle": {"@scale": "400"},
+            "motor": {"@gear": "20"}}
         model["mujoco"]["option"] = {"@timestep": "0.002", "flag": {"@energy": "enable"}}
         model["mujoco"]["size"] = {"@nconmax": "400", "@nuser_jnt": 1}
         model["mujoco"]["visual"] = {
@@ -1228,10 +1230,11 @@ class Muscle:
 
         # TODO We're adding length ranges here because MuJoCo's automatic computation fails. Not sure how they should
         # be calculated though, these values are most likely incorrect
+        # ==> this is possibly fixed, just needed to give longer simulation time for the automatic computation
         self.length_range = np.array([0, 2])
         if "tendon_slack_length" in obj:
             self.tendon_slack_length = obj["tendon_slack_length"]
-            self.length_range = np.array([0.025*float(self.tendon_slack_length), 40*float(self.tendon_slack_length)])
+            #self.length_range = np.array([0.025*float(self.tendon_slack_length), 40*float(self.tendon_slack_length)])
 
         # Get damping for tendon -- not sure what the unit in OpenSim is, or how it relates to MuJoCo damping parameter
         self.tendon_damping = obj.get("damping", None)
@@ -1368,13 +1371,13 @@ class Muscle:
         actuator = {"@name": self.name}
         if self.is_muscle:
             actuator["@tendon"] = self.name + "_tendon"
-            actuator["@lengthrange"] = Utils.array_to_string(self.length_range)
+            #actuator["@lengthrange"] = Utils.array_to_string(self.length_range)
 
             # Set timeconst
             if np.all(np.isfinite(self.timeconst)):
                 actuator["@timeconst"] = Utils.array_to_string(self.timeconst)
         else:
-            actuator["@gear"] = self.optimal_force
+            #actuator["@gear"] = self.optimal_force
             actuator["@joint"] = self.coordinate
 
         # Set scale
