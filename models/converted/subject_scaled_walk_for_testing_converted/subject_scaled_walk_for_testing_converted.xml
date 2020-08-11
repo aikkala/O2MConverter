@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mujoco model="subject_scale_walk">
-  <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001"></compiler>
+  <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001">
+    <lengthrange inttotal="50"></lengthrange>
+  </compiler>
   <default>
     <joint limited="true" damping="0.5" armature="0.01" stiffness="0"></joint>
     <geom contype="1" conaffinity="1" condim="3" rgba="0.8 0.6 .4 1" margin="0.001" solref=".02 1" solimp=".8 .8 .01" material="geom"></geom>
     <site size="0.001"></site>
     <tendon width="0.001" rgba=".95 .3 .3 1" limited="false"></tendon>
     <muscle scale="400"></muscle>
+    <motor gear="20"></motor>
   </default>
   <option timestep="0.002" collision="predefined">
     <flag energy="enable"></flag>
@@ -1044,103 +1047,103 @@
     </spatial>
   </tendon>
   <actuator>
-    <motor name="lumbar_ext" gear="10" joint="lumbar_extension"></motor>
-    <motor name="lumbar_bend" gear="10" joint="lumbar_bending"></motor>
-    <motor name="lumbar_rot" gear="10" joint="lumbar_rotation"></motor>
-    <motor name="shoulder_flex_r" gear="10" joint="arm_flex_r"></motor>
-    <motor name="shoulder_add_r" gear="10" joint="arm_add_r"></motor>
-    <motor name="shoulder_rot_r" gear="10" joint="arm_rot_r"></motor>
-    <motor name="elbow_flex_r" gear="10" joint="elbow_flex_r"></motor>
-    <motor name="pro_sup_r" gear="10" joint="pro_sup_r"></motor>
-    <motor name="wrist_flex_r" gear="10" joint="wrist_flex_r"></motor>
-    <motor name="wrist_dev_r" gear="10" joint="wrist_dev_r"></motor>
-    <motor name="shoulder_flex_l" gear="10" joint="arm_flex_l"></motor>
-    <motor name="shoulder_add_l" gear="10" joint="arm_add_l"></motor>
-    <motor name="shoulder_rot_l" gear="10" joint="arm_rot_l"></motor>
-    <motor name="elbow_flex_l" gear="10" joint="elbow_flex_l"></motor>
-    <motor name="pro_sup_l" gear="10" joint="pro_sup_l"></motor>
-    <motor name="wrist_flex_l" gear="10" joint="wrist_flex_l"></motor>
-    <motor name="wrist_dev_l" gear="10" joint="wrist_dev_l"></motor>
-    <muscle name="addbrev_r" tendon="addbrev_r_tendon" lengthrange="0.000927344  1.48375"></muscle>
-    <muscle name="addlong_r" tendon="addlong_r_tendon" lengthrange="0.00324886  5.19818"></muscle>
-    <muscle name="addmagDist_r" tendon="addmagDist_r_tendon" lengthrange="0.00210333  3.36533"></muscle>
-    <muscle name="addmagIsch_r" tendon="addmagIsch_r_tendon" lengthrange="0.00516716  8.26745"></muscle>
-    <muscle name="addmagMid_r" tendon="addmagMid_r_tendon" lengthrange="0.00115901  1.85442"></muscle>
-    <muscle name="addmagProx_r" tendon="addmagProx_r_tendon" lengthrange="0.00109491  1.75186"></muscle>
-    <muscle name="bflh_r" tendon="bflh_r_tendon" lengthrange="0.00794933  12.7189"></muscle>
-    <muscle name="bfsh_r" tendon="bfsh_r_tendon" lengthrange="0.00262498  4.19998"></muscle>
-    <muscle name="edl_r" tendon="edl_r_tendon" lengthrange="0.0108376  17.3401"></muscle>
-    <muscle name="ehl_r" tendon="ehl_r_tendon" lengthrange="0.0095894   15.343"></muscle>
-    <muscle name="fdl_r" tendon="fdl_r_tendon" lengthrange="0.0113314  18.1302"></muscle>
-    <muscle name="fhl_r" tendon="fhl_r_tendon" lengthrange="0.0104759  16.7614"></muscle>
-    <muscle name="gaslat_r" tendon="gaslat_r_tendon" lengthrange="0.0108233  17.3173"></muscle>
-    <muscle name="gasmed_r" tendon="gasmed_r_tendon" lengthrange="0.0114311  18.2898"></muscle>
-    <muscle name="glmax1_r" tendon="glmax1_r_tendon" lengthrange="0.00125643  2.01029"></muscle>
-    <muscle name="glmax2_r" tendon="glmax2_r_tendon" lengthrange="0.00176688    2.827"></muscle>
-    <muscle name="glmax3_r" tendon="glmax3_r_tendon" lengthrange="0.00183379  2.93407"></muscle>
-    <muscle name="glmed1_r" tendon="glmed1_r_tendon" lengthrange="0.00138815  2.22104"></muscle>
-    <muscle name="glmed2_r" tendon="glmed2_r_tendon" lengthrange="0.0016342  2.61473"></muscle>
-    <muscle name="glmed3_r" tendon="glmed3_r_tendon" lengthrange="0.00119879  1.91807"></muscle>
-    <muscle name="glmin1_r" tendon="glmin1_r_tendon" lengthrange="0.000392334 0.627734"></muscle>
-    <muscle name="glmin2_r" tendon="glmin2_r_tendon" lengthrange="0.000629643  1.00743"></muscle>
-    <muscle name="glmin3_r" tendon="glmin3_r_tendon" lengthrange="0.00125783  2.01253"></muscle>
-    <muscle name="grac_r" tendon="grac_r_tendon" lengthrange="0.00425578  6.80925"></muscle>
-    <muscle name="iliacus_r" tendon="iliacus_r_tendon" lengthrange="0.00250768  4.01229"></muscle>
-    <muscle name="perbrev_r" tendon="perbrev_r_tendon" lengthrange="0.00445973  7.13557"></muscle>
-    <muscle name="perlong_r" tendon="perlong_r_tendon" lengthrange="0.0101292  16.2067"></muscle>
-    <muscle name="piri_r" tendon="piri_r_tendon" lengthrange="0.0031717  5.07472"></muscle>
-    <muscle name="psoas_r" tendon="psoas_r_tendon" lengthrange="0.00257492  4.11988"></muscle>
-    <muscle name="recfem_r" tendon="recfem_r_tendon" lengthrange="0.0109799  17.5679"></muscle>
-    <muscle name="sart_r" tendon="sart_r_tendon" lengthrange="0.00310408  4.96653"></muscle>
-    <muscle name="semimem_r" tendon="semimem_r_tendon" lengthrange="0.00845347  13.5256"></muscle>
-    <muscle name="semiten_r" tendon="semiten_r_tendon" lengthrange="0.00613688  9.81901"></muscle>
-    <muscle name="soleus_r" tendon="soleus_r_tendon" lengthrange="0.00806744  12.9079"></muscle>
-    <muscle name="tfl_r" tendon="tfl_r_tendon" lengthrange="0.0110097  17.6155"></muscle>
-    <muscle name="tibant_r" tendon="tibant_r_tendon" lengthrange="0.00714072  11.4252"></muscle>
-    <muscle name="tibpost_r" tendon="tibpost_r_tendon" lengthrange="0.00827974  13.2476"></muscle>
-    <muscle name="vasint_r" tendon="vasint_r_tendon" lengthrange="0.00501153  8.01845"></muscle>
-    <muscle name="vaslat_r" tendon="vaslat_r_tendon" lengthrange="0.00545823  8.73317"></muscle>
-    <muscle name="vasmed_r" tendon="vasmed_r_tendon" lengthrange="0.0049616  7.93856"></muscle>
-    <muscle name="addbrev_l" tendon="addbrev_l_tendon" lengthrange="0.000927344  1.48375"></muscle>
-    <muscle name="addlong_l" tendon="addlong_l_tendon" lengthrange="0.00324886  5.19818"></muscle>
-    <muscle name="addmagDist_l" tendon="addmagDist_l_tendon" lengthrange="0.00210333  3.36533"></muscle>
-    <muscle name="addmagIsch_l" tendon="addmagIsch_l_tendon" lengthrange="0.00516716  8.26745"></muscle>
-    <muscle name="addmagMid_l" tendon="addmagMid_l_tendon" lengthrange="0.00115901  1.85442"></muscle>
-    <muscle name="addmagProx_l" tendon="addmagProx_l_tendon" lengthrange="0.00109491  1.75186"></muscle>
-    <muscle name="bflh_l" tendon="bflh_l_tendon" lengthrange="0.00794933  12.7189"></muscle>
-    <muscle name="bfsh_l" tendon="bfsh_l_tendon" lengthrange="0.00262498  4.19998"></muscle>
-    <muscle name="edl_l" tendon="edl_l_tendon" lengthrange="0.0108376  17.3401"></muscle>
-    <muscle name="ehl_l" tendon="ehl_l_tendon" lengthrange="0.0095894   15.343"></muscle>
-    <muscle name="fdl_l" tendon="fdl_l_tendon" lengthrange="0.0113314  18.1302"></muscle>
-    <muscle name="fhl_l" tendon="fhl_l_tendon" lengthrange="0.0104759  16.7614"></muscle>
-    <muscle name="gaslat_l" tendon="gaslat_l_tendon" lengthrange="0.0108233  17.3173"></muscle>
-    <muscle name="gasmed_l" tendon="gasmed_l_tendon" lengthrange="0.0114311  18.2898"></muscle>
-    <muscle name="glmax1_l" tendon="glmax1_l_tendon" lengthrange="0.00125643  2.01029"></muscle>
-    <muscle name="glmax2_l" tendon="glmax2_l_tendon" lengthrange="0.00176688    2.827"></muscle>
-    <muscle name="glmax3_l" tendon="glmax3_l_tendon" lengthrange="0.00183379  2.93407"></muscle>
-    <muscle name="glmed1_l" tendon="glmed1_l_tendon" lengthrange="0.00138815  2.22104"></muscle>
-    <muscle name="glmed2_l" tendon="glmed2_l_tendon" lengthrange="0.0016342  2.61473"></muscle>
-    <muscle name="glmed3_l" tendon="glmed3_l_tendon" lengthrange="0.00119879  1.91807"></muscle>
-    <muscle name="glmin1_l" tendon="glmin1_l_tendon" lengthrange="0.000392334 0.627734"></muscle>
-    <muscle name="glmin2_l" tendon="glmin2_l_tendon" lengthrange="0.000629643  1.00743"></muscle>
-    <muscle name="glmin3_l" tendon="glmin3_l_tendon" lengthrange="0.00125783  2.01253"></muscle>
-    <muscle name="grac_l" tendon="grac_l_tendon" lengthrange="0.00425578  6.80925"></muscle>
-    <muscle name="iliacus_l" tendon="iliacus_l_tendon" lengthrange="0.00250768  4.01229"></muscle>
-    <muscle name="perbrev_l" tendon="perbrev_l_tendon" lengthrange="0.00445973  7.13557"></muscle>
-    <muscle name="perlong_l" tendon="perlong_l_tendon" lengthrange="0.0101292  16.2067"></muscle>
-    <muscle name="piri_l" tendon="piri_l_tendon" lengthrange="0.0031717  5.07472"></muscle>
-    <muscle name="psoas_l" tendon="psoas_l_tendon" lengthrange="0.00257492  4.11988"></muscle>
-    <muscle name="recfem_l" tendon="recfem_l_tendon" lengthrange="0.0109799  17.5679"></muscle>
-    <muscle name="sart_l" tendon="sart_l_tendon" lengthrange="0.00310408  4.96653"></muscle>
-    <muscle name="semimem_l" tendon="semimem_l_tendon" lengthrange="0.00845347  13.5256"></muscle>
-    <muscle name="semiten_l" tendon="semiten_l_tendon" lengthrange="0.00613688  9.81901"></muscle>
-    <muscle name="soleus_l" tendon="soleus_l_tendon" lengthrange="0.00806744  12.9079"></muscle>
-    <muscle name="tfl_l" tendon="tfl_l_tendon" lengthrange="0.0110097  17.6155"></muscle>
-    <muscle name="tibant_l" tendon="tibant_l_tendon" lengthrange="0.00714072  11.4252"></muscle>
-    <muscle name="tibpost_l" tendon="tibpost_l_tendon" lengthrange="0.00827974  13.2476"></muscle>
-    <muscle name="vasint_l" tendon="vasint_l_tendon" lengthrange="0.00501153  8.01845"></muscle>
-    <muscle name="vaslat_l" tendon="vaslat_l_tendon" lengthrange="0.00545823  8.73317"></muscle>
-    <muscle name="vasmed_l" tendon="vasmed_l_tendon" lengthrange="0.0049616  7.93856"></muscle>
+    <motor name="lumbar_ext" joint="lumbar_extension"></motor>
+    <motor name="lumbar_bend" joint="lumbar_bending"></motor>
+    <motor name="lumbar_rot" joint="lumbar_rotation"></motor>
+    <motor name="shoulder_flex_r" joint="arm_flex_r"></motor>
+    <motor name="shoulder_add_r" joint="arm_add_r"></motor>
+    <motor name="shoulder_rot_r" joint="arm_rot_r"></motor>
+    <motor name="elbow_flex_r" joint="elbow_flex_r"></motor>
+    <motor name="pro_sup_r" joint="pro_sup_r"></motor>
+    <motor name="wrist_flex_r" joint="wrist_flex_r"></motor>
+    <motor name="wrist_dev_r" joint="wrist_dev_r"></motor>
+    <motor name="shoulder_flex_l" joint="arm_flex_l"></motor>
+    <motor name="shoulder_add_l" joint="arm_add_l"></motor>
+    <motor name="shoulder_rot_l" joint="arm_rot_l"></motor>
+    <motor name="elbow_flex_l" joint="elbow_flex_l"></motor>
+    <motor name="pro_sup_l" joint="pro_sup_l"></motor>
+    <motor name="wrist_flex_l" joint="wrist_flex_l"></motor>
+    <motor name="wrist_dev_l" joint="wrist_dev_l"></motor>
+    <muscle name="addbrev_r" tendon="addbrev_r_tendon"></muscle>
+    <muscle name="addlong_r" tendon="addlong_r_tendon"></muscle>
+    <muscle name="addmagDist_r" tendon="addmagDist_r_tendon"></muscle>
+    <muscle name="addmagIsch_r" tendon="addmagIsch_r_tendon"></muscle>
+    <muscle name="addmagMid_r" tendon="addmagMid_r_tendon"></muscle>
+    <muscle name="addmagProx_r" tendon="addmagProx_r_tendon"></muscle>
+    <muscle name="bflh_r" tendon="bflh_r_tendon"></muscle>
+    <muscle name="bfsh_r" tendon="bfsh_r_tendon"></muscle>
+    <muscle name="edl_r" tendon="edl_r_tendon"></muscle>
+    <muscle name="ehl_r" tendon="ehl_r_tendon"></muscle>
+    <muscle name="fdl_r" tendon="fdl_r_tendon"></muscle>
+    <muscle name="fhl_r" tendon="fhl_r_tendon"></muscle>
+    <muscle name="gaslat_r" tendon="gaslat_r_tendon"></muscle>
+    <muscle name="gasmed_r" tendon="gasmed_r_tendon"></muscle>
+    <muscle name="glmax1_r" tendon="glmax1_r_tendon"></muscle>
+    <muscle name="glmax2_r" tendon="glmax2_r_tendon"></muscle>
+    <muscle name="glmax3_r" tendon="glmax3_r_tendon"></muscle>
+    <muscle name="glmed1_r" tendon="glmed1_r_tendon"></muscle>
+    <muscle name="glmed2_r" tendon="glmed2_r_tendon"></muscle>
+    <muscle name="glmed3_r" tendon="glmed3_r_tendon"></muscle>
+    <muscle name="glmin1_r" tendon="glmin1_r_tendon"></muscle>
+    <muscle name="glmin2_r" tendon="glmin2_r_tendon"></muscle>
+    <muscle name="glmin3_r" tendon="glmin3_r_tendon"></muscle>
+    <muscle name="grac_r" tendon="grac_r_tendon"></muscle>
+    <muscle name="iliacus_r" tendon="iliacus_r_tendon"></muscle>
+    <muscle name="perbrev_r" tendon="perbrev_r_tendon"></muscle>
+    <muscle name="perlong_r" tendon="perlong_r_tendon"></muscle>
+    <muscle name="piri_r" tendon="piri_r_tendon"></muscle>
+    <muscle name="psoas_r" tendon="psoas_r_tendon"></muscle>
+    <muscle name="recfem_r" tendon="recfem_r_tendon"></muscle>
+    <muscle name="sart_r" tendon="sart_r_tendon"></muscle>
+    <muscle name="semimem_r" tendon="semimem_r_tendon"></muscle>
+    <muscle name="semiten_r" tendon="semiten_r_tendon"></muscle>
+    <muscle name="soleus_r" tendon="soleus_r_tendon"></muscle>
+    <muscle name="tfl_r" tendon="tfl_r_tendon"></muscle>
+    <muscle name="tibant_r" tendon="tibant_r_tendon"></muscle>
+    <muscle name="tibpost_r" tendon="tibpost_r_tendon"></muscle>
+    <muscle name="vasint_r" tendon="vasint_r_tendon"></muscle>
+    <muscle name="vaslat_r" tendon="vaslat_r_tendon"></muscle>
+    <muscle name="vasmed_r" tendon="vasmed_r_tendon"></muscle>
+    <muscle name="addbrev_l" tendon="addbrev_l_tendon"></muscle>
+    <muscle name="addlong_l" tendon="addlong_l_tendon"></muscle>
+    <muscle name="addmagDist_l" tendon="addmagDist_l_tendon"></muscle>
+    <muscle name="addmagIsch_l" tendon="addmagIsch_l_tendon"></muscle>
+    <muscle name="addmagMid_l" tendon="addmagMid_l_tendon"></muscle>
+    <muscle name="addmagProx_l" tendon="addmagProx_l_tendon"></muscle>
+    <muscle name="bflh_l" tendon="bflh_l_tendon"></muscle>
+    <muscle name="bfsh_l" tendon="bfsh_l_tendon"></muscle>
+    <muscle name="edl_l" tendon="edl_l_tendon"></muscle>
+    <muscle name="ehl_l" tendon="ehl_l_tendon"></muscle>
+    <muscle name="fdl_l" tendon="fdl_l_tendon"></muscle>
+    <muscle name="fhl_l" tendon="fhl_l_tendon"></muscle>
+    <muscle name="gaslat_l" tendon="gaslat_l_tendon"></muscle>
+    <muscle name="gasmed_l" tendon="gasmed_l_tendon"></muscle>
+    <muscle name="glmax1_l" tendon="glmax1_l_tendon"></muscle>
+    <muscle name="glmax2_l" tendon="glmax2_l_tendon"></muscle>
+    <muscle name="glmax3_l" tendon="glmax3_l_tendon"></muscle>
+    <muscle name="glmed1_l" tendon="glmed1_l_tendon"></muscle>
+    <muscle name="glmed2_l" tendon="glmed2_l_tendon"></muscle>
+    <muscle name="glmed3_l" tendon="glmed3_l_tendon"></muscle>
+    <muscle name="glmin1_l" tendon="glmin1_l_tendon"></muscle>
+    <muscle name="glmin2_l" tendon="glmin2_l_tendon"></muscle>
+    <muscle name="glmin3_l" tendon="glmin3_l_tendon"></muscle>
+    <muscle name="grac_l" tendon="grac_l_tendon"></muscle>
+    <muscle name="iliacus_l" tendon="iliacus_l_tendon"></muscle>
+    <muscle name="perbrev_l" tendon="perbrev_l_tendon"></muscle>
+    <muscle name="perlong_l" tendon="perlong_l_tendon"></muscle>
+    <muscle name="piri_l" tendon="piri_l_tendon"></muscle>
+    <muscle name="psoas_l" tendon="psoas_l_tendon"></muscle>
+    <muscle name="recfem_l" tendon="recfem_l_tendon"></muscle>
+    <muscle name="sart_l" tendon="sart_l_tendon"></muscle>
+    <muscle name="semimem_l" tendon="semimem_l_tendon"></muscle>
+    <muscle name="semiten_l" tendon="semiten_l_tendon"></muscle>
+    <muscle name="soleus_l" tendon="soleus_l_tendon"></muscle>
+    <muscle name="tfl_l" tendon="tfl_l_tendon"></muscle>
+    <muscle name="tibant_l" tendon="tibant_l_tendon"></muscle>
+    <muscle name="tibpost_l" tendon="tibpost_l_tendon"></muscle>
+    <muscle name="vasint_l" tendon="vasint_l_tendon"></muscle>
+    <muscle name="vaslat_l" tendon="vaslat_l_tendon"></muscle>
+    <muscle name="vasmed_l" tendon="vasmed_l_tendon"></muscle>
   </actuator>
   <equality>
     <joint name="pelvis_tz_constraint" active="true" joint1="pelvis_tz" polycoef="       0        0        0        0        0"></joint>
