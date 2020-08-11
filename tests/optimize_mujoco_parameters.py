@@ -162,7 +162,7 @@ def do_optimization(env, data):
     assert len(set(model.actuator_trntype) - {0, 3}) == 0, "Unidentified actuators in model"
 
     # Get initial values for params
-    niter = 5
+    niter = 500
     sigma = 1.0
     params = Utils.Parameters(motor_idxs, muscle_idxs, joint_idxs, [1, 5, 1])
     #params = [5] * nmuscles + [1] * (2 * nmuscles + 2 * njoints)
