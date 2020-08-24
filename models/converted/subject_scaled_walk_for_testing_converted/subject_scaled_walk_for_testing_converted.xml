@@ -14,7 +14,7 @@
   <option timestep="0.002" collision="predefined">
     <flag energy="enable"></flag>
   </option>
-  <size nconmax="400" nuser_jnt="1"></size>
+  <size njmax="1000" nconmax="400" nuser_jnt="1"></size>
   <visual>
     <map fogstart="3" fogend="5" force="0.1"></map>
     <quality shadowsize="2048"></quality>
@@ -285,8 +285,8 @@
         <site name="vasmed_l-P1" pos="0.013412 -0.201084 -0.0180104"></site>
         <site name="vasmed_l-P2" pos="0.0341048 -0.26527 -0.0008622"></site>
         <joint name="hip_flexion_l" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range="-0.523599   2.0944" ref="0"></joint>
-        <joint name="hip_adduction_l" type="hinge" pos="0 0 0" axis="       1        0        0" limited="false" range="-0.872665 0.523599" ref="0"></joint>
-        <joint name="hip_rotation_l" type="hinge" pos="0 0 0" axis="       0        1        0" limited="false" range="-0.698132 0.698132" ref="0"></joint>
+        <joint name="hip_adduction_l" type="hinge" pos="0 0 0" axis="      -1       -0       -0" limited="false" range="-0.872665 0.523599" ref="0"></joint>
+        <joint name="hip_rotation_l" type="hinge" pos="0 0 0" axis="      -0       -1       -0" limited="false" range="-0.698132 0.698132" ref="0"></joint>
         <body name="tibia_l" pos="0.00154466 -0.386764 0.000928534" quat="1.0 -7.240636975890137e-18 9.456205735995121e-17 -2.960068750797159e-20">
           <geom name="l_tibia" type="mesh" mesh="l_tibia"></geom>
           <geom name="l_fibula" type="mesh" mesh="l_fibula"></geom>

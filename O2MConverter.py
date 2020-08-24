@@ -119,9 +119,9 @@ class Converter:
 
         # If we're building this model for testing we need to disable collisions, add a camera for recording, and
         # remove the floor
+        mujoco_model["mujoco"]["worldbody"]["camera"] = {"@name": "for_testing", "@pos": "0 0 0", "@euler": "0 0 0"}
         if for_testing:
             mujoco_model["mujoco"]["option"]["@collision"] = "predefined"
-            mujoco_model["mujoco"]["worldbody"]["camera"] = {"@name": "for_testing", "@pos": "0 0 0", "@euler": "0 0 0"}
             del mujoco_model["mujoco"]["worldbody"]["geom"]
 
         # Finally, save the MuJoCo model into XML file
@@ -363,7 +363,7 @@ class Converter:
             "muscle": {"@scale": "400"},
             "motor": {"@gear": "20"}}
         model["mujoco"]["option"] = {"@timestep": "0.002", "flag": {"@energy": "enable"}}
-        model["mujoco"]["size"] = {"@nconmax": "400", "@nuser_jnt": 1}
+        model["mujoco"]["size"] = {"@njmax": "1000", "@nconmax": "400", "@nuser_jnt": 1}
         model["mujoco"]["visual"] = {
             "map": {"@fogstart": "3", "@fogend": "5", "@force": "0.1"},
             "quality": {"@shadowsize": "2048"}}
@@ -764,7 +764,7 @@ class Joint:
         # it's likely to be incorrect
         transforms = ["rotation1", "rotation2", "rotation3", "translation1", "translation2", "translation3"]
         order = [5, 4, 3, 0, 1, 2]
-        #order = [5, 4, 3, 2, 1, 0]
+        #order = [0, 1, 2, 3, 4, 5]
         dof_designated = []
         for idx in order:
 
@@ -819,14 +819,17 @@ class Joint:
                         # Update range as min/max of the approximated range
                         params["range"] = np.array([min(y_fit), max(y_fit)])
 
+                        # Make this into an identity mapping
+                        t["function"] = dict({"LinearFunction": {"coefficients": '1 0'}})
+
                     elif Utils.is_nested_field(t, "LinearFunction", ["function"]):
-                        pass
+                        coefficients = np.array(t["function"]["LinearFunction"]["coefficients"].split(), dtype=float)
+                        assert abs(coefficients[0]) == 1 and coefficients[1] == 0, "Should we modify limits?"
 
                     else:
                         raise NotImplementedError
 
-                    # Make this into an identity mapping
-                    t["function"] = dict({"LinearFunction": {"coefficients": '1 0'}})
+                    # Mark this dof as designated
                     dof_designated.append(params["name"])
 
             elif params["name"] in dof_designated:
@@ -835,6 +838,7 @@ class Joint:
 
             # Handle a "Constant" transformation. We're not gonna create this joint
             # but we need the transformation information to properly align the joint
+            flip_axis = False
             if Utils.is_nested_field(t, "Constant", ["function"]) or \
                     Utils.is_nested_field(t, "Constant", ["function", "MultiplierFunction", "function"]):
 
@@ -965,9 +969,13 @@ class Joint:
             elif Utils.is_nested_field(t, "LinearFunction", ["function"]):
 
                 # I'm not sure how to handle a LinearFunction with coefficients != [1, 0] (the first one is slope,
-                # second intercept)
+                # second intercept), except for [-1, 0] when we can just flip the axis
                 coefficients = np.array(t["function"]["LinearFunction"]["coefficients"].split(), dtype=float)
-                assert coefficients[0] == 1 and coefficients[1] == 0, "How do we handle this linear function?"
+                assert abs(coefficients[0]) == 1 and coefficients[1] == 0, "How do we handle this linear function?"
+
+                # If first coefficient is negative, flip the joint axis
+                if coefficients[0] < 0:
+                    flip_axis = True
 
                 # Don't use transform_value here; we just want to use this joint as a mujoco joint
                 # NOTE! We do need the transform_value for weld constraint if this joint is locked
@@ -984,6 +992,8 @@ class Joint:
             axis = np.array(t["axis"].split(), dtype=float)
             new_axis = np.matmul(self.orientation.transformation_matrix, Utils.create_transformation_matrix(axis))[:3, 3]
             params["axis"] = new_axis
+            if flip_axis:
+                params["axis"] *= -1
 
             # Figure out whether this is rotation or translation
             if t["@name"].startswith('rotation'):
