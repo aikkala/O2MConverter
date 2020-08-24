@@ -282,6 +282,8 @@ def initialise_simulation(sim, timestep, initial_states=None):
             sim.data.qvel[:] = initial_states["qvel"]
         if "ctrl" in initial_states:
             sim.data.ctrl[:] = initial_states["ctrl"]
+        if "act" in initial_states:
+            sim.data.act[:] = initial_states["act"]
 
         # Go through equality constraints and
         #   1) Update those constraints where given initial state is different from the one defined in model
@@ -445,7 +447,10 @@ class Parameters:
         self.dof_damping = np.ones(self.njoints) * initial_values[2]
         self.jnt_solimp = np.ones(self.njoints) * initial_values[2]
 
-    def set_values_to_model(self, model, values):
+    def set_values_to_model(self, model, values=None):
+
+        if values is None:
+            values = self.get_values()
 
         # Set motor gears
         idx = 0
