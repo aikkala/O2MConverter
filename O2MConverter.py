@@ -359,9 +359,11 @@ class Converter:
             "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "3", "@rgba": "0.8 0.6 .4 1",
                      "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
             "site": {"@size": "0.001"},
-            "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"},
-            "muscle": {"@scale": "400"},
-            "motor": {"@gear": "20"}}
+            "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"}}
+        model["mujoco"]["default"]["default"] = [
+            {"@class": "muscle", "muscle": {"@ctrllimited": "true", "@ctrlrange": "0 1", "@scale": "400"}},
+            {"@class": "motor", "motor": {"@gear": "20"}}
+            ]
         model["mujoco"]["option"] = {"@timestep": "0.002", "flag": {"@energy": "enable"}}
         model["mujoco"]["size"] = {"@njmax": "1000", "@nconmax": "400", "@nuser_jnt": 1}
         model["mujoco"]["visual"] = {
@@ -1381,6 +1383,7 @@ class Muscle:
         actuator = {"@name": self.name}
         if self.is_muscle:
             actuator["@tendon"] = self.name + "_tendon"
+            actuator["@class"] = "muscle"
             #actuator["@lengthrange"] = Utils.array_to_string(self.length_range)
 
             # Set timeconst
@@ -1389,6 +1392,7 @@ class Muscle:
         else:
             #actuator["@gear"] = self.optimal_force
             actuator["@joint"] = self.coordinate
+            actuator["@class"] = "motor"
 
         # Set scale
         #if self.scale is not None:
