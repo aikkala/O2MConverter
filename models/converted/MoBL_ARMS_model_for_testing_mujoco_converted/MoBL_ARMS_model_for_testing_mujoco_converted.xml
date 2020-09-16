@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mujoco model="MoBL_ARMS_Upper_Limb_Model_OpenSim">
-  <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001"></compiler>
+  <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001">
+    <lengthrange inttotal="50"></lengthrange>
+  </compiler>
   <default>
     <joint limited="true" damping="0.5" armature="0.01" stiffness="0"></joint>
     <geom contype="1" conaffinity="1" condim="3" rgba="0.8 0.6 .4 1" margin="0.001" solref=".02 1" solimp=".8 .8 .01" material="geom"></geom>
     <site size="0.001"></site>
     <tendon width="0.001" rgba=".95 .3 .3 1" limited="false"></tendon>
-    <muscle scale="400"></muscle>
+    <default class="muscle">
+      <muscle ctrllimited="true" ctrlrange="0 1" scale="400"></muscle>
+    </default>
+    <default class="motor">
+      <motor gear="20"></motor>
+    </default>
   </default>
   <option timestep="0.002" collision="predefined">
     <flag energy="enable"></flag>
   </option>
-  <size nconmax="400" nuser_jnt="1"></size>
+  <size njmax="1000" nconmax="400" nuser_jnt="1"></size>
   <visual>
     <map fogstart="3" fogend="5" force="0.1"></map>
     <quality shadowsize="2048"></quality>
@@ -857,56 +864,56 @@
     </spatial>
   </tendon>
   <actuator>
-    <muscle name="DELT1" tendon="DELT1_tendon" lengthrange="0.002325     3.72" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="DELT2" tendon="DELT2_tendon" lengthrange="0.0027375     4.38" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="DELT3" tendon="DELT3_tendon" lengthrange=" 0.00095     1.52" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="SUPSP" tendon="SUPSP_tendon" lengthrange="0.0009875     1.58" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="INFSP" tendon="INFSP_tendon" lengthrange=" 0.00077    1.232" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="SUBSC" tendon="SUBSC_tendon" lengthrange="0.000825     1.32" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TMIN" tendon="TMIN_tendon" lengthrange="0.0017825    2.852" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TMAJ" tendon="TMAJ_tendon" lengthrange="  0.0005      0.8" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PECM1" tendon="PECM1_tendon" lengthrange="   7e-05    0.112" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PECM2" tendon="PECM2_tendon" lengthrange="0.002225     3.56" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PECM3" tendon="PECM3_tendon" lengthrange="  0.0033     5.28" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="LAT1" tendon="LAT1_tendon" lengthrange="   0.003      4.8" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="LAT2" tendon="LAT2_tendon" lengthrange="0.0044125     7.06" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="LAT3" tendon="LAT3_tendon" lengthrange="0.0035075    5.612" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="CORB" tendon="CORB_tendon" lengthrange="0.002425     3.88" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TRIlong" tendon="TRIlong_tendon" lengthrange="0.003575     5.72" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TRIlat" tendon="TRIlat_tendon" lengthrange=" 0.00245     3.92" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TRImed" tendon="TRImed_tendon" lengthrange=" 0.00227    3.632" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="ANC" tendon="ANC_tendon" lengthrange=" 0.00045     0.72" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="SUP" tendon="SUP_tendon" lengthrange="  0.0007     1.12" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="BIClong" tendon="BIClong_tendon" lengthrange="0.0068075   10.892" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="BICshort" tendon="BICshort_tendon" lengthrange="0.0048075    7.692" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="BRA" tendon="BRA_tendon" lengthrange="0.0013375     2.14" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="BRD" tendon="BRD_tendon" lengthrange="0.003325     5.32" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="ECRL" tendon="ECRL_tendon" lengthrange="  0.0061     9.76" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="ECRB" tendon="ECRB_tendon" lengthrange="0.0055575    8.892" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="ECU" tendon="ECU_tendon" lengthrange="0.0057125     9.14" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FCR" tendon="FCR_tendon" lengthrange="  0.0061     9.76" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FCU" tendon="FCU_tendon" lengthrange="0.006625     10.6" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PL" tendon="PL_tendon" lengthrange="0.006735   10.776" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PT" tendon="PT_tendon" lengthrange=" 0.00245     3.92" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PQ" tendon="PQ_tendon" lengthrange="0.000125      0.2" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDSL" tendon="FDSL_tendon" lengthrange="0.008465   13.544" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDSR" tendon="FDSR_tendon" lengthrange="  0.0082    13.12" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDSM" tendon="FDSM_tendon" lengthrange="0.007375     11.8" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDSI" tendon="FDSI_tendon" lengthrange="0.006875       11" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDPL" tendon="FDPL_tendon" lengthrange="0.0070475   11.276" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDPR" tendon="FDPR_tendon" lengthrange="0.0072875    11.66" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDPM" tendon="FDPM_tendon" lengthrange="0.007575    12.12" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDPI" tendon="FDPI_tendon" lengthrange="0.0075375    12.06" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDCL" tendon="EDCL_tendon" lengthrange="0.008375     13.4" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDCR" tendon="EDCR_tendon" lengthrange="0.009125     14.6" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDCM" tendon="EDCM_tendon" lengthrange="0.009125     14.6" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDCI" tendon="EDCI_tendon" lengthrange="0.009125     14.6" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDM" tendon="EDM_tendon" lengthrange="0.008375     13.4" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EIP" tendon="EIP_tendon" lengthrange=" 0.00525      8.4" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EPL" tendon="EPL_tendon" lengthrange="0.0057625     9.22" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EPB" tendon="EPB_tendon" lengthrange="0.0028875     4.62" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FPL" tendon="FPL_tendon" lengthrange="0.004925     7.88" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="APL" tendon="APL_tendon" lengthrange="0.0032375     5.18" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="DELT1" tendon="DELT1_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="DELT2" tendon="DELT2_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="DELT3" tendon="DELT3_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="SUPSP" tendon="SUPSP_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="INFSP" tendon="INFSP_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="SUBSC" tendon="SUBSC_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TMIN" tendon="TMIN_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TMAJ" tendon="TMAJ_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PECM1" tendon="PECM1_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PECM2" tendon="PECM2_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PECM3" tendon="PECM3_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="LAT1" tendon="LAT1_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="LAT2" tendon="LAT2_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="LAT3" tendon="LAT3_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="CORB" tendon="CORB_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TRIlong" tendon="TRIlong_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TRIlat" tendon="TRIlat_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TRImed" tendon="TRImed_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="ANC" tendon="ANC_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="SUP" tendon="SUP_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="BIClong" tendon="BIClong_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="BICshort" tendon="BICshort_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="BRA" tendon="BRA_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="BRD" tendon="BRD_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="ECRL" tendon="ECRL_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="ECRB" tendon="ECRB_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="ECU" tendon="ECU_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FCR" tendon="FCR_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FCU" tendon="FCU_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PL" tendon="PL_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PT" tendon="PT_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PQ" tendon="PQ_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDSL" tendon="FDSL_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDSR" tendon="FDSR_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDSM" tendon="FDSM_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDSI" tendon="FDSI_tendon" class="muscle" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDPL" tendon="FDPL_tendon" class="muscle" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDPR" tendon="FDPR_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDPM" tendon="FDPM_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDPI" tendon="FDPI_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDCL" tendon="EDCL_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDCR" tendon="EDCR_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDCM" tendon="EDCM_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDCI" tendon="EDCI_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDM" tendon="EDM_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EIP" tendon="EIP_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EPL" tendon="EPL_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EPB" tendon="EPB_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FPL" tendon="FPL_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="APL" tendon="APL_tendon" class="muscle" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
   </actuator>
   <equality>
     <joint name="sternoclavicular_r2_con" joint1="sternoclavicular_r2" joint2="shoulder_elv" active="true" polycoef="1.11022e-16 -0.242001        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
