@@ -1,6 +1,6 @@
 import Utils
 import numpy as np
-from osim.env.osim import OsimEnv
+#from osim.env.osim import OsimEnv
 import pathlib
 import os
 
@@ -62,7 +62,7 @@ class EnvFactory:
                         self.initial_states["joints"][state_name] = {}
                     self.initial_states["joints"][state_name]["qpos"] = states[state_name][0]
 
-    MoBL_ARMS = EnvTemplate("mobl_arms",
+    mobl_arms = EnvTemplate("mobl_arms",
         0.002,
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/setup_fd.xml',
         'tests/mobl_arms/forward_dynamics',
@@ -140,99 +140,100 @@ class EnvFactory:
         return getattr(EnvFactory, env_name.lower())
 
 
-class OsimWrapper(OsimEnv):
+if False:
+    class OsimWrapper(OsimEnv):
 
-    def __init__(self, env, visualize=True, integrator_accuracy=5e-5, report=None):
-        self.model_path = env.opensim_model_file
-        self.env = env
+        def __init__(self, env, visualize=True, integrator_accuracy=5e-5, report=None):
+            self.model_path = env.opensim_model_file
+            self.env = env
 
-        # Load model
-        super(OsimWrapper, self).__init__(visualize=visualize, integrator_accuracy=integrator_accuracy)
+            # Load model
+            super(OsimWrapper, self).__init__(visualize=visualize, integrator_accuracy=integrator_accuracy)
 
-        # Set timestep
-        self.osim_model.stepsize = 0.002
+            # Set timestep
+            self.osim_model.stepsize = 0.002
 
-        # initialize state
-        state = self.osim_model.model.initializeState()
-        self.osim_model.set_state(state)
+            # initialize state
+            state = self.osim_model.model.initializeState()
+            self.osim_model.set_state(state)
 
-        # Get joint names
-        self.joint_names = self.get_observation_names()
+            # Get joint names
+            self.joint_names = self.get_observation_names()
 
-        # Get muscle names, this is the order control values should be in when input to step method
-        self.muscle_names = [muscle.getName() for muscle in self.osim_model.muscleSet]
-        #self.muscle_mapping = {muscle: self.muscle_names.index(muscle) for muscle in self.muscle_names}
+            # Get muscle names, this is the order control values should be in when input to step method
+            self.muscle_names = [muscle.getName() for muscle in self.osim_model.muscleSet]
+            #self.muscle_mapping = {muscle: self.muscle_names.index(muscle) for muscle in self.muscle_names}
 
-        # Check if we want to save simulated states
-        if report:
-            bufsize = 0
-            self.observations_file = open('%s-obs.csv' % (report,), 'w', bufsize)
-            self.actions_file = open('%s-act.csv' % (report,), 'w', bufsize)
-            self.get_headers()
+            # Check if we want to save simulated states
+            if report:
+                bufsize = 0
+                self.observations_file = open('%s-obs.csv' % (report,), 'w', bufsize)
+                self.actions_file = open('%s-act.csv' % (report,), 'w', bufsize)
+                self.get_headers()
 
-    def reset(self, project=True, obs_as_dict=True):
+        def reset(self, project=True, obs_as_dict=True):
 
-        # initialize state
-        state = self.osim_model.model.initializeState()
+            # initialize state
+            state = self.osim_model.model.initializeState()
 
-        # Get joint positions and velocities
-        Q = state.getQ()
-        QDot = state.getQDot()
+            # Get joint positions and velocities
+            Q = state.getQ()
+            QDot = state.getQDot()
 
-        # Set joint positions
-        for joint_idx, joint_name in enumerate(self.joint_names):
-            Q[joint_idx] = self.env.initial_states["joints"][joint_name]["qpos"]
-            QDot[joint_idx] = self.env.initial_states["joints"][joint_name]["qvel"]
+            # Set joint positions
+            for joint_idx, joint_name in enumerate(self.joint_names):
+                Q[joint_idx] = self.env.initial_states["joints"][joint_name]["qpos"]
+                QDot[joint_idx] = self.env.initial_states["joints"][joint_name]["qvel"]
 
-        # How to set initial muscle activations? Are they even used since we overwrite them instantly?
+            # How to set initial muscle activations? Are they even used since we overwrite them instantly?
 
-        # Set joint positions and velocities
-        state.setQ(Q)
-        state.setU(QDot)
-        self.osim_model.set_state(state)
-        self.osim_model.model.equilibrateMuscles(self.osim_model.state)
+            # Set joint positions and velocities
+            state.setQ(Q)
+            state.setU(QDot)
+            self.osim_model.set_state(state)
+            self.osim_model.model.equilibrateMuscles(self.osim_model.state)
 
-        # Set time to zero
-        self.osim_model.state.setTime(0)
-        self.osim_model.istep = 0
-        self.t = 0
+            # Set time to zero
+            self.osim_model.state.setTime(0)
+            self.osim_model.istep = 0
+            self.t = 0
 
-        self.osim_model.reset_manager()
+            self.osim_model.reset_manager()
 
-        return self.get_observation()
+            return self.get_observation()
 
-    def load_model(self, model_path=None):
-        super(OsimWrapper, self).load_model(model_path)
+        def load_model(self, model_path=None):
+            super(OsimWrapper, self).load_model(model_path)
 
-    def step(self, action):
+        def step(self, action):
 
-        obs, reward, done, info = super(OsimWrapper, self).step(action, project=True, obs_as_dict=False)
-        self.t += self.osim_model.stepsize
+            obs, reward, done, info = super(OsimWrapper, self).step(action, project=True, obs_as_dict=False)
+            self.t += self.osim_model.stepsize
 
-        return obs, reward, done, info
+            return obs, reward, done, info
 
-    def is_done(self):
-        return False
+        def is_done(self):
+            return False
 
-    def get_observation_dict(self):
+        def get_observation_dict(self):
 
-        # Return only joint positions
-        states = self.get_state_desc()
-        obs = {}
-        for joint_name, mapping in self.env.osim_mapping.items():
-            obs[joint_name] = states["joint_pos"][mapping[0]][mapping[1]]
+            # Return only joint positions
+            states = self.get_state_desc()
+            obs = {}
+            for joint_name, mapping in self.env.osim_mapping.items():
+                obs[joint_name] = states["joint_pos"][mapping[0]][mapping[1]]
 
-        return obs
+            return obs
 
-    def get_observation(self):
-        return np.fromiter(self.get_observation_dict().values(), dtype=float)
+        def get_observation(self):
+            return np.fromiter(self.get_observation_dict().values(), dtype=float)
 
-    def get_observation_names(self):
-        return list(self.get_observation_dict().keys())
+        def get_observation_names(self):
+            return list(self.get_observation_dict().keys())
 
-    def get_state_desc(self):
-        d = super(OsimWrapper, self).get_state_desc()
-        return d
+        def get_state_desc(self):
+            d = super(OsimWrapper, self).get_state_desc()
+            return d
 
-    def get_reward(self):
-        return 0
+        def get_reward(self):
+            return 0
