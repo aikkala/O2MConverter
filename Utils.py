@@ -6,6 +6,7 @@ import matplotlib.pyplot as pp
 import skvideo.io
 import os
 import pickle
+from copy import deepcopy
 
 
 def is_nested_field(d, field, nested_fields):
@@ -264,10 +265,11 @@ def get_initial_states(model, env):
     return initial_states
 
 
-def initialise_simulation(sim, timestep, initial_states=None):
+def initialise_simulation(sim, initial_states=None, timestep=None):
 
-    # Set timestep
-    sim.model.opt.timestep = timestep
+    if timestep is not None:
+        # Set timestep
+        sim.model.opt.timestep = timestep
 
     # Reset sim
     sim.reset()
@@ -277,63 +279,63 @@ def initialise_simulation(sim, timestep, initial_states=None):
 
         # Set given joint position and velocity values, and control values
         if "qpos" in initial_states:
-            sim.data.qpos[:] = initial_states["qpos"]
+            sim.data.qpos[:] = deepcopy(initial_states["qpos"])
+            initialise_full_qpos(sim)
         if "qvel" in initial_states:
-            sim.data.qvel[:] = initial_states["qvel"]
+            sim.data.qvel[:] = deepcopy(initial_states["qvel"])
         if "ctrl" in initial_states:
-            sim.data.ctrl[:] = initial_states["ctrl"]
+            sim.data.ctrl[:] = deepcopy(initial_states["ctrl"])
         if "act" in initial_states:
-            sim.data.act[:] = initial_states["act"]
-
-        # Go through equality constraints and
-        #   1) Update those constraints where given initial state is different from the one defined in model
-        #   2) Update joint values that depend on other joints (even if they were given in initial_states)
-        # if qpos was given
-        if "qpos" in initial_states:
-
-            # Get joint equality constraint ids
-            eq_ids = np.where(sim.model.eq_type==2)[0]
-
-            # Go through these constraints
-            for eq_id in eq_ids:
-
-                # Skip if this constraint is inactive
-                if not sim.model.eq_active[eq_id]:
-                    continue
-
-                # Check if this is case 1) or case 2)
-                if sim.model.eq_obj2id[eq_id] == -1:
-                    # Case 1)
-
-                    # Get joint id
-                    joint_id = sim.model.eq_obj1id[eq_id]
-
-                    # Get joint value
-                    value = initial_states["qpos"][joint_id]
-
-                    # Update constraint
-                    sim.model.eq_data[eq_id, 0] = value
-
-                else:
-                    # Case 2)
-
-                    # Get independent and dependent joint ids
-                    x_joint_id = sim.model.eq_obj2id[eq_id]
-                    y_joint_id = sim.model.eq_obj1id[eq_id]
-
-                    # Get the quartic function and value of independent joint
-                    quartic_fn = np.polynomial.polynomial.Polynomial(sim.model.eq_data[eq_id, :5])
-                    x = initial_states["qpos"][x_joint_id]
-
-                    # Update qpos for this joint
-                    sim.data.qpos[y_joint_id] = quartic_fn(x)
+            sim.data.act[:] = deepcopy(initial_states["act"])
 
         # We might need to call forward to make sure everything is set properly after setting
         # qpos (not sure if required)
         sim.forward()
 
+def initialise_full_qpos(sim):
 
-def run_simulation(sim, controls, viewer=None, output_video_file=None):
+    # Go through equality constraints and
+    #   1) Update those constraints where given initial state is different from the one defined in model
+    #   2) Update joint values that depend on other joints (even if they were given in initial_states)
+    # Get joint equality constraint ids
+    eq_ids = np.where(sim.model.eq_type == 2)[0]
+
+    # Go through these constraints
+    for eq_id in eq_ids:
+
+        # Skip if this constraint is inactive
+        if not sim.model.eq_active[eq_id]:
+            continue
+
+        # Check if this is case 1) or case 2)
+        if sim.model.eq_obj2id[eq_id] == -1:
+            # Case 1)
+
+            # Get joint id
+            joint_id = sim.model.eq_obj1id[eq_id]
+
+            # Get joint value
+            value = sim.data.qpos[joint_id]
+
+            # Update constraint
+            sim.model.eq_data[eq_id, 0] = value
+
+        else:
+            # Case 2)
+
+            # Get independent and dependent joint ids
+            x_joint_id = sim.model.eq_obj2id[eq_id]
+            y_joint_id = sim.model.eq_obj1id[eq_id]
+
+            # Get the quartic function and value of independent joint
+            quartic_fn = np.polynomial.polynomial.Polynomial(sim.model.eq_data[eq_id, :5])
+            x = sim.data.qpos[x_joint_id]
+
+            # Update qpos for this joint
+            sim.data.qpos[y_joint_id] = quartic_fn(x)
+
+
+def run_simulation(sim, controls, viewer=None, output_video_file=None, frame_skip=1):
 
     qpos = np.empty((len(controls), len(sim.model.joint_names)))
     qvel = np.empty((len(controls), len(sim.model.joint_names)))
@@ -365,7 +367,8 @@ def run_simulation(sim, controls, viewer=None, output_video_file=None):
         sim.data.ctrl[:] = controls[t, :]
 
         # Forward the simulation
-        sim.step()
+        for _ in range(frame_skip):
+            sim.step()
 
         # Get joint positions, joint velocities, and actuator forces
         qpos[t, :] = sim.data.qpos
@@ -424,6 +427,15 @@ def find_outliers(data, k=1.5):
     iqr = quartiles[1] - quartiles[0]
     return (data > quartiles[1] + k*iqr) | (data < quartiles[0] - k*iqr)
 
+def get_target_states(model, unordered_states, target_states, target_state_indices, num_states, in_degrees=False):
+    x = np.zeros((num_states,))
+    for idx, target_state in enumerate(target_states):
+        value = unordered_states.loc[target_state]
+        # Convert angles to radians
+        if in_degrees and model.jnt_type[target_state_indices[idx]] == 3:
+            value *= np.pi / 180
+        x[target_state_indices[idx]] = value
+    return x
 
 class Parameters:
 
