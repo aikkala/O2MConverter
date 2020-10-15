@@ -437,6 +437,19 @@ def get_target_states(model, unordered_states, target_states, target_state_indic
         x[target_state_indices[idx]] = value
     return x
 
+def get_xpos(sim, targets, type="dict"):
+
+  # Get xyz positions and rotations for pelvis, right/left hand and feet
+  xpos = {}
+  if "body" in targets:
+    for target in targets["body"]:
+      xpos[target] = deepcopy(sim.data.body_xpos[sim.model._body_name2id[target]])
+  if "geom" in targets:
+    for target in targets["geom"]:
+      xpos[target] = deepcopy(sim.data.geom_xpos[sim.model._geom_name2id[target]])
+
+  return xpos
+
 class Parameters:
 
     def __init__(self, motor_idxs, muscle_idxs, joint_idxs, initial_values=[1, 1, 1]):
