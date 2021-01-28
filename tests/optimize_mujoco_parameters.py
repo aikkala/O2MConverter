@@ -247,8 +247,8 @@ def do_optimization(env, data):
             params.set_values(np.exp(optimizer.result.xfavorite))
             with open(env.params_file, 'wb') as f:
                 pickle.dump([params, history], f)
-            fig1.savefig(os.path.join(env.output_folder, 'percentage.png'))
-            fig2.savefig(os.path.join(env.output_folder, 'history.png'))
+            fig1.savefig(os.path.join(os.path.dirname(env.params_file), 'percentage.png'))
+            fig2.savefig(os.path.join(os.path.dirname(env.params_file), 'history.png'))
 
     # One last save
     params.set_values(np.exp(optimizer.result.xfavorite))
