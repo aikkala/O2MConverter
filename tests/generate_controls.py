@@ -15,8 +15,16 @@ def generate_controls(t, nactuators):
     max_amplitude = 1.0
     max_frequency = 1.0
 
+    # Use random walk generated controls
+    #ctrl = np.random.rand(nactuators)
+
     # Initialise array
     controls = np.zeros((len(t), nactuators))
+
+    #for step in range(len(t)):
+    #    ctrl += (np.random.rand(nactuators) - 0.5) * 0.1
+    #    ctrl = np.clip(ctrl, 0, 1)
+    #    controls[step, :] = ctrl
 
     # Generate a sine wave for each actuator
     for i in range(nactuators):
@@ -25,10 +33,7 @@ def generate_controls(t, nactuators):
         freq = np.random.rand() * max_frequency
         amp = min_amplitude + np.random.rand() * (max_amplitude - min_amplitude)
         phase = np.random.rand() * 2*math.pi
-        #phase = 0
         controls[:, i] = min_amplitude + (amp-min_amplitude)/2 * (np.sin(2*math.pi*freq*t + phase)+1)
-        #controls[:, i] = (np.random.rand() * max_amplitude) * np.abs(np.sin(2 * math.pi * freq * t + phase))
-        #controls[:, i] = np.linspace(0, (np.random.rand() * max_amplitude), controls.shape[0])
 
     return controls
 
