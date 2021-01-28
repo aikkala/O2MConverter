@@ -9,7 +9,7 @@ class EnvFactory:
 
     class EnvTemplate:
         def __init__(self, model_name, timestep, opensim_setup_file, forward_dynamics_folder, mujoco_model_file, data_file,
-                     output_folder, camera_pos, opensim_model_file, initial_states_file, target_states,
+                     params_file, output_folder, camera_pos, opensim_model_file, initial_states_file, target_states,
                      param_optim_pop_size, control_optim_pop_size, control_optim_diag, opensim_timestep=None):
 
             # Get project path
@@ -23,6 +23,7 @@ class EnvFactory:
             self.forward_dynamics_folder = os.path.join(self.project_path, forward_dynamics_folder)
             self.mujoco_model_file = os.path.join(self.project_path, mujoco_model_file)
             self.data_file = os.path.join(self.project_path, data_file)
+            self.params_file = os.path.join(self.project_path, params_file)
             self.output_folder = os.path.join(self.project_path, output_folder)
             self.camera_pos = camera_pos
             self.opensim_model_file = os.path.join(self.project_path, opensim_model_file)
@@ -68,11 +69,12 @@ class EnvFactory:
         'tests/mobl_arms/forward_dynamics',
         'models/converted/MoBL_ARMS_model_for_testing_mujoco_converted/MoBL_ARMS_model_for_testing_mujoco_converted.xml',
         'tests/mobl_arms/output/data.pckl',
+        'tests/mobl_arms/output/params.pckl',
         'tests/mobl_arms/output/simulations',
         np.array([1.8, -0.1, 0.7, np.pi/2, np.pi/2, 0]),
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/MoBL_ARMS_model_for_testing_opensim.osim',
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/initial_states.sto',
-        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"], 64, 32, True
+        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"], 16, 32, True
     )
 
     MoBL_ARMS_no_wrap = EnvTemplate("mobl_arms_no_wrap",
@@ -81,6 +83,7 @@ class EnvFactory:
         'tests/mobl_arms_no_wrap/forward_dynamics',
         'models/converted/MoBL_ARMS_model_for_testing_mujoco_converted/MoBL_ARMS_model_for_testing_mujoco_converted.xml',
         'tests/mobl_arms_no_wrap/output/data.pckl',
+        'tests/mobl_arms_no_wrap/output/params.pckl',
         'tests/mobl_arms_no_wrap/output/simulations',
         np.array([1.8, -0.1, 0.7, np.pi/2, np.pi/2, 0]),
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/MoBL_ARMS_model_for_testing_opensim_no_wrapobjects.osim',
@@ -95,6 +98,7 @@ class EnvFactory:
         'tests/gait2392/forward_dynamics',
         'models/converted/gait2392_millard2012muscle_for_testing_converted/gait2392_millard2012muscle_for_testing_converted.xml',
         'tests/gait2392/output/data.pckl',
+        'tests/gait2392/output/params.pckl',
         'tests/gait2392/output/simulations',
         np.array([2, -2, 1, np.pi/2, np.pi/4, 0]),
         'models/opensim/Gait2392_Simbody/gait2392_millard2012muscle_for_testing.osim',
@@ -109,6 +113,7 @@ class EnvFactory:
         'tests/gait10dof18musc/forward_dynamics',
         'models/converted/gait10dof18musc_for_testing_converted/gait10dof18musc_for_testing_converted.xml',
         'tests/gait10dof18musc/output/data.pckl',
+        'tests/gait10dof18musc/output/params.pckl',
         'tests/gait10dof18musc/output/simulations',
         np.array([2, -2, 1, np.pi/2, np.pi/4, 0]),
         'models/opensim/Gait10dof18musc/gait10dof18musc_for_testing.osim',
@@ -125,6 +130,7 @@ class EnvFactory:
         'tests/rajagopal_walk/forward_dynamics',
         'models/converted/subject_scaled_walk_for_testing_converted/subject_scaled_walk_for_testing_converted.xml',
         'tests/rajagopal_walk/output/data.pckl',
+        'tests/rajagopal_walk/output/params.pckl',
         'tests/rajagopal_walk/output/simulations',
         np.array([2, -2, 1, np.pi/2, np.pi/4, 0]),
         'models/opensim/rajagopal_walking/subject_scaled_walk_for_testing.osim',
