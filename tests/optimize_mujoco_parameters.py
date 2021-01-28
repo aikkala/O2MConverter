@@ -33,33 +33,19 @@ def collect_data_from_runs(env):
     data = []
     for run in runs:
 
-        # Get controls
+        # Get run folder
         run_folder = os.path.join(env.forward_dynamics_folder, run)
+
+        # Make sure both controls and states exist
+        if not os.path.exists(os.path.join(run_folder, 'controls.sto')) \
+            or not os.path.exists(os.path.join(run_folder, 'FDS_states.sto')):
+            continue
+
+        # Get controls
         controls, ctrl_hdr = Utils.parse_sto_file(os.path.join(run_folder, "controls.sto"))
-
-        # Check timesteps
-        #timesteps = np.diff(controls.index.values)
-        #if not is_unique(timesteps):
-        #    raise ValueError("Check timesteps in the control file of run {}".format(run_folder))
-        #if timesteps[0] > 0.01:
-        #    raise ValueError("This timestep might be too big")
-        #timestep = timesteps[0]
-
-        # Check if this run was successful
-        #run_info = get_run_info(run_folder)
-
-        # Don't process states if run was unsuccessful
-        #if not run_info["success"][0]:
-        #    success = 0
-
-        #else:
 
         # Get states
         states, state_hdr = Utils.parse_sto_file(os.path.join(run_folder, "FDS_states.sto"))
-
-        # Make sure OpenSim simulation was long enough (should be if it didn't fail, just double-checking)
-        #if states.index[-1] < controls.index[-2]:
-        #    raise ValueError("Did this run fail?\n  {}".format(run_folder))
 
         # We're interested only in a subset of states
         state_names = list(states)
@@ -92,7 +78,7 @@ def collect_data_from_runs(env):
         num_evals = len(states) - 1
 
         # Reindex controls if they were generated with a different timestep
-        if env.opensim_timestep != env.timestep:
+        if env.opensim_timestep is not None and env.opensim_timestep != env.timestep:
             controls = Utils.reindex_dataframe(controls, np.arange(0, controls.index.values[-1], env.timestep))
 
         # Reindex states
@@ -145,7 +131,7 @@ def do_optimization(env, data):
         timestep = data[run_idx]["timestep"]
 
         # Initialise sim
-        Utils.initialise_simulation(sim, timestep, initial_states)
+        Utils.initialise_simulation(sim, initial_states, timestep)
 
         # Run simulation
         sim_states = Utils.run_simulation(sim, controls)
@@ -162,16 +148,16 @@ def do_optimization(env, data):
     assert len(set(model.actuator_trntype) - {0, 3}) == 0, "Unidentified actuators in model"
 
     # Get initial values for params
-    niter = 500
-    sigma = 1.0
-    params = Utils.Parameters(motor_idxs, muscle_idxs, joint_idxs, [1, 5, 1])
+    niter = 200
+    sigma = 0.5
+    params = Utils.Parameters(motor_idxs, muscle_idxs, joint_idxs, [1, 6, 0.5])
     #params = [5] * nmuscles + [1] * (2 * nmuscles + 2 * njoints)
 
     # Initialise optimizer
     opts = {"popsize": env.param_optim_pop_size, "maxiter": niter, "CMA_diagonal": True}
     optimizer = cma.CMAEvolutionStrategy(params.get_values(), sigma, opts)
-    nbatch = len(data)
-    highest_error_so_far = 1e4
+    nbatch = 20#len(data)
+    highest_error_so_far = 1e6
 
     # Keep track of errors
     history = np.empty((niter,))
@@ -204,7 +190,7 @@ def do_optimization(env, data):
             #params = np.exp(solution)
             #Utils.set_parameters(model, params, np.arange(nmuscles), joint_idxs)
             params.set_values_to_model(model, np.exp(solution))
-            params_cost[solution_idx] = 1e-3 * params.get_cost(solution, np.exp)
+            params_cost[solution_idx] = params.get_cost(solution, np.exp)
 
             # Go through all simulations in batch
             for idx, run_idx in enumerate(batch_idxs):
@@ -213,7 +199,7 @@ def do_optimization(env, data):
                 timestep = data[run_idx]["timestep"]
 
                 # Initialise sim
-                Utils.initialise_simulation(sim, timestep, initial_states)
+                Utils.initialise_simulation(sim, initial_states, timestep)
 
                 # Run simulation
                 sim_success = True
@@ -229,11 +215,11 @@ def do_optimization(env, data):
                     if errors[idx, solution_idx] > highest_error_so_far:
                         highest_error_so_far = errors[idx, solution_idx]
                 else:
-                    errors[idx, solution_idx] = 1.5*highest_error_so_far
+                    errors[idx, solution_idx] = 2*highest_error_so_far
 
 
         # Use sum of errors over runs as fitness, and calculate mean error for each run
-        fitness = errors.sum(axis=0) + params_cost
+        fitness = errors.mean(axis=0) +  0.001*params_cost
         avg_run_error = np.mean(errors, axis=1)
 
         # Plot mean error per run as a percentage of default error
