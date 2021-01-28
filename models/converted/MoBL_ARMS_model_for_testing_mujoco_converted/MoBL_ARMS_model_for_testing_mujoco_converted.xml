@@ -93,10 +93,10 @@
               <joint name="unrothum_r2" type="hinge" pos="0 0 0" axis="0.157095 0.947269 -0.279291" limited="false" range="-99999.9  99999.9" ref="0"></joint>
               <body name="humphant" pos="       0        0        0" quat="1.0 0.0 0.0 0.0">
                 <inertial pos="       0        0        0" mass="0.0001" fullinertia="       1        1        1        0        0        0"></inertial>
-                <joint name="elv_angle" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="true" range=" -1.5708  2.26893" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.523599      0.5        1" user="1"></joint>
+                <joint name="elv_angle" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="true" range=" -1.5708  2.26893" ref="0" user="1"></joint>
                 <body name="humphant1" pos="       0        0        0" quat="1.0 0.0 0.0 0.0">
                   <inertial pos="       0        0        0" mass="0.0001" fullinertia="       1        1        1        0        0        0"></inertial>
-                  <joint name="shoulder_elv" type="hinge" pos="0 0 0" axis="-0.998261   0.0023 0.058898" limited="true" range="       0  3.14159" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.523599      0.5        1" user="1"></joint>
+                  <joint name="shoulder_elv" type="hinge" pos="0 0 0" axis="-0.998261   0.0023 0.058898" limited="true" range="       0  3.14159" ref="0" user="1"></joint>
                   <joint name="shoulder1_r2" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="false" range="-99999.9  99999.9" ref="0"></joint>
                   <body name="humerus" pos="       0        0        0" quat="1.0 0.0 0.0 0.0">
                     <geom name="humerus" type="mesh" mesh="humerus"></geom>
@@ -157,7 +157,7 @@
                     <site name="EDCM-P1" pos="0.00051 -0.28984 0.01949"></site>
                     <site name="EDCI-P1" pos="0.00065 -0.28898 0.01869"></site>
                     <site name="EDM-P1" pos="0.00089 -0.28919 0.01847"></site>
-                    <joint name="shoulder_rot" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="true" range=" -1.5708 0.349066" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.523599      0.5        1" user="1"></joint>
+                    <joint name="shoulder_rot" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="true" range=" -1.5708 0.349066" ref="0" user="1"></joint>
                     <body name="ulna" pos="  0.0061  -0.2904  -0.0123" quat="1.0 0.0 0.0 0.0">
                       <geom name="ulna" type="mesh" mesh="ulna"></geom>
                       <inertial pos="0.00971783 -0.0959509 0.024286" mass="1.1053" fullinertia="0.00541309 0.00115318 0.00494361 0.00031686 -7.615e-05 0.00109169"></inertial>
@@ -184,7 +184,7 @@
                       <site name="EIP-P1" pos="-0.00394 -0.16652 0.03682"></site>
                       <site name="EIP-P2" pos="0.00171 -0.17469 0.04049"></site>
                       <site name="EPL-P1" pos="-0.01412 -0.09706 0.02952"></site>
-                      <joint name="elbow_flexion" type="hinge" pos="0 0 0" axis="  0.0494   0.0366 0.998108" limited="true" range="       0  2.26893" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.514872      0.5        1" user="1"></joint>
+                      <joint name="elbow_flexion" type="hinge" pos="0 0 0" axis="  0.0494   0.0366 0.998108" limited="true" range="       0  2.26893" ref="0" user="1"></joint>
                       <body name="radius" pos="  0.0004 -0.011503 0.019999" quat="1.0 0.0 0.0 0.0">
                         <geom name="radius" type="mesh" mesh="radius"></geom>
                         <inertial pos="0.0336341 -0.181559   0.0156" mass="0.23359" fullinertia="0.00043855 8.859e-05 0.00040258 3.014e-05 -4.24e-06 6.418e-05"></inertial>
@@ -242,15 +242,15 @@
                         <site name="APL-P3" pos="0.03993 -0.16072 0.034"></site>
                         <site name="APL-P4" pos="0.04397 -0.17845 0.03134"></site>
                         <site name="APL-P5" pos="0.05505 -0.23084 0.02368"></site>
-                        <joint name="pro_sup" type="hinge" pos="0 0 0" axis="-0.017161 0.992666 -0.119668" limited="true" range=" -1.5708   1.5708" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.523599      0.5        1" user="1"></joint>
+                        <joint name="pro_sup" type="hinge" pos="0 0 0" axis="-0.017161 0.992666 -0.119668" limited="true" range=" -1.5708   1.5708" ref="0" user="1"></joint>
                         <body name="proximal_row" pos="   0.018   -0.242    0.025" quat="1.0 0.0 0.0 0.0">
                           <geom name="lunate" type="mesh" mesh="lunate"></geom>
                           <geom name="sdfastSCAPHOIDw" type="mesh" mesh="sdfastSCAPHOIDw"></geom>
                           <geom name="sdfastPISIFORMw" type="mesh" mesh="sdfastPISIFORMw"></geom>
                           <geom name="sdfastTRIQUETRALw" type="mesh" mesh="sdfastTRIQUETRALw"></geom>
                           <inertial pos="       0        0        0" mass="0.0001" fullinertia="   1e-05    1e-05    1e-05        0        0        0"></inertial>
-                          <joint name="deviation" type="hinge" pos="0 0 0" axis="-0.819064 -0.135611 -0.557444" limited="true" range="-0.174533 0.436332" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.0785397      0.5        1" user="1"></joint>
-                          <joint name="flexion" type="hinge" pos="0 0 0" axis="0.956427 -0.252207 0.147104" limited="true" range="-0.785398 0.785398" ref="0" damping="7.615395125226858e-06" solimplimit="  0.0001     0.99    0.001      0.5        1" user="1"></joint>
+                          <joint name="deviation" type="hinge" pos="0 0 0" axis="-0.819064 -0.135611 -0.557444" limited="true" range="-0.174533 0.436332" ref="0" user="1"></joint>
+                          <joint name="flexion" type="hinge" pos="0 0 0" axis="0.956427 -0.252207 0.147104" limited="true" range="-0.785398 0.785398" ref="0" user="1"></joint>
                           <body name="hand" pos="0.003992 -0.015054 0.002327" quat="1.0 0.0 0.0 0.0">
                             <geom name="sdfast_1seg_hand_fr_c_5mc" type="mesh" mesh="sdfast_1seg_hand_fr_c_5mc"></geom>
                             <geom name="sdfast_1seg_hand_fr_c_4mc" type="mesh" mesh="sdfast_1seg_hand_fr_c_4mc"></geom>

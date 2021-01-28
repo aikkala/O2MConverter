@@ -284,6 +284,13 @@ class Converter:
             # Check if joint was found
             assert target is not None, "Cannot set CoordinateLimitForce params, couldn't find the joint"
 
+            # TODO for now let's ignore these forces -- they are too difficult to implement and optimize
+            # Let's just switch the joint limit on if it's defined; mark this so it won't be unclamped later
+            if "range" in target and target["range"][0] != target["range"][1]:
+                target["limited"] = True
+                target["user"] = 1
+            continue
+
             # Take the average of stiffness
             stiffness = 0.5*(float(force["upper_stiffness"]) + float(force["lower_stiffness"]))
 
@@ -353,7 +360,7 @@ class Converter:
         # (that contain incorrect inertial properties or massless moving bodies)
         model["mujoco"]["compiler"] = {"@inertiafromgeom": "auto", "@angle": "radian", "@balanceinertia": "true",
                                        "@boundmass": "0.001", "@boundinertia": "0.001"}
-        model["mujoco"]["compiler"]["lengthrange"] = {"@inttotal": "50"}
+        model["mujoco"]["compiler"]["lengthrange"] = {"@inttotal": "500"}
         model["mujoco"]["default"] = {
             "joint": {"@limited": "true", "@damping": "0.5", "@armature": "0.01", "@stiffness": "0"},
             "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "3", "@rgba": "0.8 0.6 .4 1",

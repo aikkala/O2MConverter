@@ -470,7 +470,7 @@ class Parameters:
         self.joint_idxs = joint_idxs
         self.njoints = len(joint_idxs)
         self.dof_damping = np.ones(self.njoints) * initial_values[2]
-        self.jnt_solimp = np.ones(self.njoints) * initial_values[2]
+#        self.jnt_solimp = np.ones(self.njoints) * initial_values[2]
 
     def set_values_to_model(self, model, values=None):
 
@@ -498,23 +498,23 @@ class Parameters:
             model.tendon_damping[tendon_idx] = values[idx]
             idx += 1
 
-        # Set joint damping and damping
+        # Set joint damping
         for joint_idx in self.joint_idxs:
             model.dof_damping[joint_idx] = values[idx]
             idx += 1
 
         # Set joint solimp
-        for joint_idx in self.joint_idxs:
-            model.jnt_solimp[joint_idx, 2] = values[idx]
-            idx += 1
+#        for joint_idx in self.joint_idxs:
+#            model.jnt_solimp[joint_idx, 2] = values[idx]
+#            idx += 1
 
     def get_values(self):
         return np.concatenate((self.gear, self.scale, self.tendon_stiffness, self.tendon_damping,
-                               self.dof_damping, self.jnt_solimp))
+                               self.dof_damping))
 
     def get_cost(self, values, f):
         # Return sum of all parameters except jnt_solimp after transforming with function f
-        return np.sum(f(values[:-self.njoints]))
+        return np.sum(f(values))
 
     def set_values(self, values):
         last_idx = self.nmotors
@@ -531,5 +531,5 @@ class Parameters:
         first_idx = last_idx
         last_idx += self.njoints
         self.dof_damping = values[first_idx:last_idx]
-        first_idx = last_idx
-        self.jnt_solimp = values[first_idx:]
+        #first_idx = last_idx
+        #self.jnt_solimp = values[first_idx:]
