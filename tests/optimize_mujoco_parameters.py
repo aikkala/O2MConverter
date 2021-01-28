@@ -148,7 +148,7 @@ def do_optimization(env, data):
     assert len(set(model.actuator_trntype) - {0, 3}) == 0, "Unidentified actuators in model"
 
     # Get initial values for params
-    niter = 200
+    niter = 20000
     sigma = 0.5
     params = Utils.Parameters(motor_idxs, muscle_idxs, joint_idxs, [1, 6, 0.5])
     #params = [5] * nmuscles + [1] * (2 * nmuscles + 2 * njoints)
@@ -156,7 +156,7 @@ def do_optimization(env, data):
     # Initialise optimizer
     opts = {"popsize": env.param_optim_pop_size, "maxiter": niter, "CMA_diagonal": True}
     optimizer = cma.CMAEvolutionStrategy(params.get_values(), sigma, opts)
-    nbatch = 20#len(data)
+    nbatch = 40#len(data)
     highest_error_so_far = 1e6
 
     # Keep track of errors
@@ -242,11 +242,18 @@ def do_optimization(env, data):
         optimizer.tell(solutions, fitness)
         optimizer.disp()
 
-    # Return found solution
+        # Save every now and then
+        if optimizer.countiter % 200 == 0:
+            params.set_values(np.exp(optimizer.result.xfavorite))
+            with open(env.params_file, 'wb') as f:
+                pickle.dump([params, history], f)
+            fig1.savefig(os.path.join(env.output_folder, 'percentage.png'))
+            fig2.savefig(os.path.join(env.output_folder, 'history.png'))
+
+    # One last save
     params.set_values(np.exp(optimizer.result.xfavorite))
-    return {"parameters": params, "history": history}
-            #"joint_idxs": joint_idxs, "muscle_idxs": np.arange(len(model.actuator_names)),
-            #"history": history}
+    with open(env.params_file, 'wb') as f:
+        pickle.dump([params, history], f)
 
 
 def main(model_name, data_file=None):
@@ -277,15 +284,13 @@ def main(model_name, data_file=None):
     # Get training data
     train_set = [data[idx] for idx in train_idxs]
 
-    # Do optimization with CMA-ES
-    output = do_optimization(env, train_set)
-
     # Make sure output folder exists
     os.makedirs(os.path.dirname(env.data_file), exist_ok=True)
-
-    # Save parameters, data, and indices
     with open(env.data_file, 'wb') as f:
-        pickle.dump([output, data, train_idxs, test_idxs], f)
+        pickle.dump([data, train_idxs, test_idxs], f)
+
+    # Do optimization with CMA-ES
+    do_optimization(env, train_set)
 
 
 if __name__ == "__main__":
