@@ -74,7 +74,7 @@ class EnvFactory:
         np.array([1.8, -0.1, 0.7, np.pi/2, np.pi/2, 0]),
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/MoBL_ARMS_model_for_testing_opensim.osim',
         'models/opensim/MoBL_ARMS_OpenSim_tutorial_33/initial_states.sto',
-        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"], 16, 32, True
+        ["elv_angle", "shoulder_elv", "shoulder_rot", "elbow_flexion", "pro_sup", "deviation", "flexion"], 32, 32, True
     )
 
     MoBL_ARMS_no_wrap = EnvTemplate("mobl_arms_no_wrap",

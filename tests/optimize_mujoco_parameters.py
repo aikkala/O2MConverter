@@ -54,10 +54,13 @@ def collect_data_from_runs(env):
         parsed_state_names = []
         for state_name in state_names:
             p = state_name.split("/")
-            if p[-1] != "value":
-                parsed_state_names.append(state_name)
-            else:
+            if p[-1] == "value":
                 parsed_state_names.append(p[1])
+            elif p[-1] == "speed":
+                parsed_state_names.append(f"{p[1]}_speed")
+            else:
+                parsed_state_names.append(state_name)
+
 
         # Rename states
         states.columns = parsed_state_names
@@ -71,33 +74,46 @@ def collect_data_from_runs(env):
                     raise ValueError(f"Initial states do not match for state {state_name}: {states[state_name][0]} vs {env.initial_states['joints'][state_name]['qpos']}")
 
         # Filter and reorder states
-        states = states.filter(items=env.target_states)
-        states = states[env.target_states]
+        qpos = states.filter(items=env.target_states)
+        qpos = qpos[env.target_states]
+
+        # Filter, reorder, and rename states
+        qvel = states.filter(items=[f"{x}_speed" for x in env.target_states])
+        qvel = qvel[[f"{x}_speed" for x in env.target_states]]
+        qvel.columns = env.target_states
+
+        # Convert into radians if needed
+        if state_hdr["inDegrees"] == "yes":
+            qvel.values *= np.pi/180
+
 
         # Get number of evaluations (forward steps); note that the last timestep isn't simulated
-        num_evals = len(states) - 1
+        num_evals = len(qpos) - 1
 
         # Reindex controls if they were generated with a different timestep
         if env.opensim_timestep is not None and env.opensim_timestep != env.timestep:
             controls = Utils.reindex_dataframe(controls, np.arange(0, controls.index.values[-1], env.timestep))
 
-        # Reindex states
-        states = Utils.reindex_dataframe(states, np.arange(env.timestep, controls.index.values[-1]+2*env.timestep, env.timestep))
+        # Reindex qpos and qvel
+        qpos = Utils.reindex_dataframe(qpos, np.arange(env.timestep, controls.index.values[-1]+2*env.timestep, env.timestep))
+        qvel = Utils.reindex_dataframe(qvel, np.arange(env.timestep, controls.index.values[-1]+2*env.timestep, env.timestep))
 
         # Get state values and state names
-        state_values = states.values
-        state_names = list(states)
+        qpos_values = qpos.values
+        qvel_values = qvel.values
+        state_names = env.target_states
 
         # Don't use this data if there were nan states
-        if np.any(np.isnan(state_values)):
+        if np.any(np.isnan(qpos)) or np.any(np.isnan(qvel)):
             success = 0
-            state_values = []
+            qpos_values = []
+            qvel_values = []
             state_names = []
             num_evals = 0
         else:
             success = 1
 
-        data.append({"states": state_values, "controls": controls.values,
+        data.append({"qpos": qpos_values, "qvel": qvel_values, "controls": controls.values,
                      "state_names": state_names, "muscle_names": list(controls),
                      "timestep": env.timestep, "success": success, "run": run, "num_evals": num_evals})
 
@@ -124,9 +140,11 @@ def do_optimization(env, data):
     #viewer = mujoco_py.MjViewer(sim)
 
     # Go through training data once to calculate error with default parameters
-    default_error = np.zeros((len(data),))
+    default_error_qpos = np.zeros((len(data),))
+    default_error_qvel = np.zeros_like(default_error_qpos)
     for run_idx in range(len(data)):
-        states = data[run_idx]["states"]
+        qpos = data[run_idx]["qpos"]
+        qvel = data[run_idx]["qvel"]
         controls = data[run_idx]["controls"]
         timestep = data[run_idx]["timestep"]
 
@@ -137,7 +155,8 @@ def do_optimization(env, data):
         sim_states = Utils.run_simulation(sim, controls)
 
         # Calculate joint errors
-        default_error[run_idx] = np.sum(Utils.estimate_error(states, sim_states["qpos"][:, target_state_indices]))
+        default_error_qpos[run_idx] = np.sum(Utils.estimate_error(qpos, sim_states["qpos"][:, target_state_indices]))
+        default_error_qvel[run_idx] = np.sum(Utils.estimate_error(qvel, sim_states["qvel"][:, target_state_indices]))
 
     # Optimize damping and solimp width for all joints that don't depend on another joint or aren't locked, regardless
     # of whether they are limited or not (if they're not limited then solimp width can take any values)
@@ -149,7 +168,7 @@ def do_optimization(env, data):
 
     # Get initial values for params
     niter = 20000
-    sigma = 0.5
+    sigma = 1.0
     params = Utils.Parameters(motor_idxs, muscle_idxs, joint_idxs, [1, 6, 0.5])
     #params = [5] * nmuscles + [1] * (2 * nmuscles + 2 * njoints)
 
@@ -167,13 +186,19 @@ def do_optimization(env, data):
     pp.ion()
     fig1 = pp.figure(1, figsize=(10, 5))
     fig1.gca().plot([0, len(data)], [1, 1], 'k--')
-    bars = fig1.gca().bar(np.arange(len(data)), [0]*len(data))
+    bars_qpos = fig1.gca().bar(np.arange(len(data)), [0]*len(data))
     fig1.gca().axis([0, len(data), 0, 1.2])
 
     fig2 = pp.figure(2, figsize=(10, 5))
-    fig2.gca().plot([0, niter], [default_error.sum(), default_error.sum()], 'k--')
-    line, = fig2.gca().plot(np.arange(niter), [0]*niter)
-    fig2.gca().axis([0, niter, 0, 1.1*default_error.sum()])
+    fig2.gca().plot([0, len(data)], [1, 1], 'k--')
+    bars_qvel = fig2.gca().bar(np.arange(len(data)), [0]*len(data))
+    fig2.gca().axis([0, len(data), 0, 1.2])
+
+    fig3 = pp.figure(3, figsize=(10, 5))
+    fig3.gca().plot([0, niter], [default_error_qpos.sum(), default_error_qpos.sum()], 'k--')
+    line, = fig3.gca().plot(np.arange(niter), [0]*niter)
+    fig3.gca().axis([0, niter, 0, 1.1*default_error_qpos.sum()])
+
 
     while not optimizer.stop():
         solutions = optimizer.ask()
@@ -182,19 +207,19 @@ def do_optimization(env, data):
         batch_idxs = random.sample(list(np.arange(len(data))), nbatch)
 
         errors = np.zeros((len(batch_idxs), len(solutions)))
+        errors_qpos = np.zeros_like(errors)
+        errors_qvel = np.zeros_like(errors)
         params_cost = np.zeros((len(solutions)))
         for solution_idx, solution in enumerate(solutions):
 
             # Set parameters
-            #params = np.concatenate((np.exp(solution[:nmuscles]), np.maximum(solution[nmuscles:], 0)))
-            #params = np.exp(solution)
-            #Utils.set_parameters(model, params, np.arange(nmuscles), joint_idxs)
             params.set_values_to_model(model, np.exp(solution))
             params_cost[solution_idx] = params.get_cost(solution, np.exp)
 
             # Go through all simulations in batch
             for idx, run_idx in enumerate(batch_idxs):
-                states = data[run_idx]["states"]
+                qpos = data[run_idx]["qpos"]
+                qvel = data[run_idx]["qvel"]
                 controls = data[run_idx]["controls"]
                 timestep = data[run_idx]["timestep"]
 
@@ -211,30 +236,39 @@ def do_optimization(env, data):
 
                 if sim_success:
                     # Calculate joint errors
-                    errors[idx, solution_idx] = np.sum(Utils.estimate_error(states, sim_states["qpos"][:, target_state_indices]))
+                    errors_qpos[idx, solution_idx] = np.sum(Utils.estimate_error(qpos, sim_states["qpos"][:, target_state_indices]))
+                    errors_qvel[idx, solution_idx] = np.sum(Utils.estimate_error(qvel, sim_states["qvel"][:, target_state_indices]))
+                    errors[idx, solution_idx] = errors_qpos[idx, solution_idx] + 0.1*errors_qvel[idx, solution_idx]
                     if errors[idx, solution_idx] > highest_error_so_far:
                         highest_error_so_far = errors[idx, solution_idx]
                 else:
-                    errors[idx, solution_idx] = 2*highest_error_so_far
+                    errors_qpos[idx, solution_idx] = 2*highest_error_so_far
+                    errors_qvel[idx, solution_idx] = 2*highest_error_so_far
+                    errors[idx, solution_idx] = errors_qpos[idx, solution_idx] + 0.1*errors_qvel[idx, solution_idx]
 
 
         # Use sum of errors over runs as fitness, and calculate mean error for each run
         fitness = errors.mean(axis=0) +  0.001*params_cost
-        avg_run_error = np.mean(errors, axis=1)
 
         # Plot mean error per run as a percentage of default error
-        prc = avg_run_error / default_error[batch_idxs]
+        prc = np.mean(errors_qpos, axis=1) / default_error_qpos[batch_idxs]
         for bar_idx, y in zip(batch_idxs, prc):
-            bars[bar_idx].set_height(y)
+            bars_qpos[bar_idx].set_height(y)
         fig1.canvas.draw()
         fig1.canvas.flush_events()
+
+        prc = np.mean(errors_qvel, axis=1) / default_error_qvel[batch_idxs]
+        for bar_idx, y in zip(batch_idxs, prc):
+            bars_qvel[bar_idx].set_height(y)
+        fig2.canvas.draw()
+        fig2.canvas.flush_events()
 
         # Plot history of mean fitness
         history[optimizer.countiter] = np.mean(fitness)
         line.set_ydata(history)
-        fig2.gca().axis([0, optimizer.countiter, 0, 1.1*max(history)])
-        fig2.canvas.draw()
-        fig2.canvas.flush_events()
+        fig3.gca().axis([0, optimizer.countiter, 0, 1.1*max(history)])
+        fig3.canvas.draw()
+        fig3.canvas.flush_events()
 
         # Ignore failed runs / solutions
         #valid_idxs = np.where(np.isfinite(fitness))[0]
@@ -243,7 +277,7 @@ def do_optimization(env, data):
         optimizer.disp()
 
         # Save every now and then
-        if optimizer.countiter % 200 == 0:
+        if optimizer.countiter % 100 == 0:
             params.set_values(np.exp(optimizer.result.xfavorite))
             with open(env.params_file, 'wb') as f:
                 pickle.dump([params, history], f)
