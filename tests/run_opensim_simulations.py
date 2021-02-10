@@ -166,8 +166,9 @@ def run_forward_dynamics(env, runs, visualise=False):
         print("Processing {}".format(run))
 
         # Skip this if FDS_states.sto file already exists
-        if os.path.isfile(os.path.join(run_folder, "FDS_states.sto")):
+        if not visualise and os.path.isfile(os.path.join(run_folder, "FDS_states.sto")):
             continue
+            #pass
 
         # Edit settings
         setup["OpenSimDocument"]["ForwardTool"]["@name"] = "tool"
@@ -202,8 +203,8 @@ def run_forward_dynamics(env, runs, visualise=False):
 
             # Skip this run if the video already exists
             if os.path.isfile(output_video_file):
-                #continue
-                pass
+                continue
+                #pass
 
             # Create the output_folder if it doesn't exist
             os.makedirs(output_folder, exist_ok=True)

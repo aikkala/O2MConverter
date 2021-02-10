@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mujoco model="subject_scale_walk">
   <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001">
-    <lengthrange inttotal="50"></lengthrange>
+    <lengthrange inttotal="500"></lengthrange>
   </compiler>
   <default>
     <joint limited="true" damping="0.5" armature="0.01" stiffness="0"></joint>
@@ -12,10 +12,10 @@
       <muscle ctrllimited="true" ctrlrange="0 1" scale="400"></muscle>
     </default>
     <default class="motor">
-      <motor gear="20" ctrllimited="true" ctrlrange="-5 5"></motor>
+      <motor gear="20"></motor>
     </default>
   </default>
-  <option timestep="0.002" collision="predefined">
+  <option timestep="0.002">
     <flag energy="enable"></flag>
   </option>
   <size njmax="1000" nconmax="400" nuser_jnt="1"></size>
@@ -512,7 +512,7 @@
         </body>
       </body>
     </body>
-    <camera name="for_testing" pos="2 -6 1" euler="1.57 0 0"></camera>
+    <camera name="for_testing" pos="0 0 0" euler="0 0 0"></camera>
   </worldbody>
   <asset>
     <mesh name="r_pelvis" file="Geometry/r_pelvis.stl" scale=" 1.24463  1.00167  1.19736"></mesh>
@@ -1175,10 +1175,4 @@
     <joint name="wrist_dev_l_constraint" active="true" joint1="wrist_dev_l" polycoef="       0        0        0        0        0"></joint>
     <weld name="origin_to_worldbody" body1="pelvis" active="false"></weld>
   </equality>
-  <contact>
-    <pair geom1="floor" geom2="r_foot"></pair>
-    <pair geom1="floor" geom2="r_bofoot"></pair>
-    <pair geom1="floor" geom2="l_foot"></pair>
-    <pair geom1="floor" geom2="l_bofoot"></pair>
-  </contact>
 </mujoco>
