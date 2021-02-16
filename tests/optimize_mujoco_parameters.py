@@ -11,6 +11,8 @@ import skvideo
 import pickle
 import matplotlib.pyplot as pp
 import sys
+from multiprocessing import Queue, Process
+from copy import deepcopy
 
 
 def get_run_info(run_folder):
@@ -119,6 +121,84 @@ def collect_data_from_runs(env):
 
     return data
 
+class Worker:
+
+    def __init__(self, model_path, input, output, data, params, target_state_indices, initial_states):
+
+        # Initialise MuJoCo with the converted model
+        model = mujoco_py.load_model_from_path(model_path)
+
+        # Initialise simulation
+        self.sim = mujoco_py.MjSim(model)
+
+        # Check muscle order
+        Utils.check_muscle_order(model, data)
+        self.data = data
+
+        self.params = params
+
+        # Get indices of target states
+        self.target_state_indices = target_state_indices
+
+        # Get initial states
+        self.initial_states = initial_states
+
+        self.input = input
+        self.output = output
+
+    def process(self):
+        while True:
+
+            inp = self.input.get()
+            if inp is None:
+                break
+            else:
+                out = self.run_simulation(parameters=inp[1], batch_idxs=inp[2], highest_error_so_far=inp[3])
+                self.output.put((inp[0], out))
+
+    def run_simulation(self, parameters, batch_idxs, highest_error_so_far):
+
+        # Set parameters
+        self.params.set_values_to_model(self.sim.model, np.exp(parameters))
+        params_cost = self.params.get_cost(parameters, np.exp)
+
+        # Go through all simulations in batch
+        error = np.zeros((len(batch_idxs),))
+        error_qpos = np.zeros_like(error)
+        error_qvel = np.zeros_like(error)
+        for idx, run_idx in enumerate(batch_idxs):
+            qpos = self.data[run_idx]["qpos"]
+            qvel = self.data[run_idx]["qvel"]
+            controls = self.data[run_idx]["controls"]
+            timestep = self.data[run_idx]["timestep"]
+
+            # Initialise sim
+            Utils.initialise_simulation(self.sim, self.initial_states, timestep)
+
+            # Run simulation
+            sim_success = True
+            try:
+                sim_states = Utils.run_simulation(self.sim, controls)
+            except mujoco_py.builder.MujocoException:
+                # Simulation failed
+                sim_success = False
+
+            if sim_success:
+                # Calculate joint errors
+                error_qpos[idx] = np.sum(Utils.estimate_error(qpos, sim_states["qpos"][:, self.target_state_indices]))
+                error_qvel[idx] = np.sum(Utils.estimate_error(qvel, sim_states["qvel"][:, self.target_state_indices]))
+                error[idx] = error_qpos[idx] + 0.1 * error_qvel[idx]
+                if error[idx] > highest_error_so_far:
+                    highest_error_so_far = error[idx]
+            else:
+                error_qpos[idx] = 2 * highest_error_so_far
+                error_qvel[idx] = 2 * highest_error_so_far
+                error[idx] = error_qpos[idx] + 0.1 * error_qvel[idx]
+
+        return {"errors_qpos": error_qpos, "errors_qvel": error_qvel, "errors": error,
+                "highest_error_so_far": highest_error_so_far, "params_cost": params_cost}
+
+
 
 def do_optimization(env, data):
 
@@ -199,6 +279,17 @@ def do_optimization(env, data):
     line, = fig3.gca().plot(np.arange(niter), [0]*niter)
     fig3.gca().axis([0, niter, 0, 1.1*default_error_qpos.sum()])
 
+    num_workers = 3
+    procs = []
+    input_queue = Queue()
+    output_queue = Queue()
+    for _ in range(num_workers):
+        new_worker = Worker(env.mujoco_model_file, input_queue, output_queue, data, deepcopy(params),
+                            target_state_indices, initial_states)
+        procs.append(Process(target=new_worker.process))
+
+    for proc in procs:
+        proc.start()
 
     while not optimizer.stop():
         solutions = optimizer.ask()
@@ -210,42 +301,20 @@ def do_optimization(env, data):
         errors_qpos = np.zeros_like(errors)
         errors_qvel = np.zeros_like(errors)
         params_cost = np.zeros((len(solutions)))
-        for solution_idx, solution in enumerate(solutions):
 
-            # Set parameters
-            params.set_values_to_model(model, np.exp(solution))
-            params_cost[solution_idx] = params.get_cost(solution, np.exp)
+        for idx, solution in enumerate(solutions):
+            input_queue.put((idx, solution, batch_idxs, highest_error_so_far))
 
-            # Go through all simulations in batch
-            for idx, run_idx in enumerate(batch_idxs):
-                qpos = data[run_idx]["qpos"]
-                qvel = data[run_idx]["qvel"]
-                controls = data[run_idx]["controls"]
-                timestep = data[run_idx]["timestep"]
-
-                # Initialise sim
-                Utils.initialise_simulation(sim, initial_states, timestep)
-
-                # Run simulation
-                sim_success = True
-                try:
-                    sim_states = Utils.run_simulation(sim, controls)
-                except mujoco_py.builder.MujocoException:
-                    # Simulation failed
-                    sim_success = False
-
-                if sim_success:
-                    # Calculate joint errors
-                    errors_qpos[idx, solution_idx] = np.sum(Utils.estimate_error(qpos, sim_states["qpos"][:, target_state_indices]))
-                    errors_qvel[idx, solution_idx] = np.sum(Utils.estimate_error(qvel, sim_states["qvel"][:, target_state_indices]))
-                    errors[idx, solution_idx] = errors_qpos[idx, solution_idx] + 0.1*errors_qvel[idx, solution_idx]
-                    if errors[idx, solution_idx] > highest_error_so_far:
-                        highest_error_so_far = errors[idx, solution_idx]
-                else:
-                    errors_qpos[idx, solution_idx] = 2*highest_error_so_far
-                    errors_qvel[idx, solution_idx] = 2*highest_error_so_far
-                    errors[idx, solution_idx] = errors_qpos[idx, solution_idx] + 0.1*errors_qvel[idx, solution_idx]
-
+        order = []
+        while len(order) < opts["popsize"]:
+            c = output_queue.get()
+            errors[:, c[0]] = c[1]["errors"]
+            errors_qpos[:, c[0]] = c[1]["errors_qpos"]
+            errors_qvel[:, c[0]] = c[1]["errors_qvel"]
+            params_cost[c[0]] = c[1]["params_cost"]
+            if c[1]["highest_error_so_far"] > highest_error_so_far:
+                highest_error_so_far = c[1]["highest_error_so_far"]
+            order.append(c[0])
 
         # Use sum of errors over runs as fitness, and calculate mean error for each run
         fitness = errors.mean(axis=0) +  0.001*params_cost
@@ -284,10 +353,17 @@ def do_optimization(env, data):
             fig1.savefig(os.path.join(os.path.dirname(env.params_file), 'percentage.png'))
             fig2.savefig(os.path.join(os.path.dirname(env.params_file), 'history.png'))
 
+    for _ in range(num_workers):
+        input_queue.put(None)
+    for proc in procs:
+        proc.join()
+
     # One last save
     params.set_values(np.exp(optimizer.result.xfavorite))
     with open(env.params_file, 'wb') as f:
         pickle.dump([params, history], f)
+    fig1.savefig(os.path.join(os.path.dirname(env.params_file), 'percentage.png'))
+    fig2.savefig(os.path.join(os.path.dirname(env.params_file), 'history.png'))
 
 
 def main(model_name, data_file=None):

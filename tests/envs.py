@@ -138,7 +138,7 @@ class EnvFactory:
         [dof + "r" for dof in rajagopal_leg_dof] + [dof + "l" for dof in rajagopal_leg_dof] +
         [dof + "r" for dof in rajagopal_arm_dof] + [dof + "l" for dof in rajagopal_arm_dof] +
         ["lumbar_extension", "lumbar_bending", "lumbar_rotation"],
-        64, 64, False, opensim_timestep=0.0002)
+        1000, 64, False, opensim_timestep=0.0002)
 
     @staticmethod
     def get(env_name):
