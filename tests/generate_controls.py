@@ -8,11 +8,11 @@ from datetime import datetime
 from tests.envs import EnvFactory
 
 
-def generate_controls(t, nactuators):
+def generate_controls(t, nactuators, max_amplitude):
     # Generating completely random controls probably isn't the best idea, maybe slow sine waves with some added noise?
     # Modulate amplitude (with max 1), frequency, and phase
     min_amplitude = 0.02
-    max_amplitude = 1.0
+#    max_amplitude = 1.0
     max_frequency = 1.0
 
     # Use random walk generated controls
@@ -66,7 +66,7 @@ def get_epochtime_ms():
     return round(datetime.utcnow().timestamp() * 1000)
 
 
-def main(model_name, N):
+def main(model_name, N, max_amplitude):
     """Generate a set of controls (for both OpenSim and MuJoCo) for given MuJoCo model"""
 
     # Get env
@@ -89,7 +89,7 @@ def main(model_name, N):
     for i in range(N):
 
         # Generate controls
-        controls = generate_controls(t, len(actuators))
+        controls = generate_controls(t, len(actuators), max_amplitude)
 
         # Create a folder and write to a file
         sub_folder = os.path.join(env.forward_dynamics_folder, "run_{}".format(get_epochtime_ms()))
