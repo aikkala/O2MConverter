@@ -106,7 +106,8 @@ def collect_data_from_runs(env):
         state_names = env.target_states
 
         # Don't use this data if there were nan states
-        if np.any(np.isnan(qpos)) or np.any(np.isnan(qvel)):
+        if np.any(np.isnan(qpos.values)) or np.any(np.isnan(qvel.values)) \
+            or np.max(qpos.values) > 20 or np.min(qpos.values) < -20:
             success = 0
             qpos_values = []
             qvel_values = []
@@ -187,13 +188,13 @@ class Worker:
                 # Calculate joint errors
                 error_qpos[idx] = np.sum(Utils.estimate_error(qpos, sim_states["qpos"][:, self.target_state_indices]))
                 error_qvel[idx] = np.sum(Utils.estimate_error(qvel, sim_states["qvel"][:, self.target_state_indices]))
-                error[idx] = error_qpos[idx] + 0.1 * error_qvel[idx]
+                error[idx] = error_qpos[idx] + 0.01 * error_qvel[idx]
                 if error[idx] > highest_error_so_far:
                     highest_error_so_far = error[idx]
             else:
                 error_qpos[idx] = 2 * highest_error_so_far
                 error_qvel[idx] = 2 * highest_error_so_far
-                error[idx] = error_qpos[idx] + 0.1 * error_qvel[idx]
+                error[idx] = error_qpos[idx] + 0.01 * error_qvel[idx]
 
         return {"errors_qpos": error_qpos, "errors_qvel": error_qvel, "errors": error,
                 "highest_error_so_far": highest_error_so_far, "params_cost": params_cost}
@@ -279,7 +280,7 @@ def do_optimization(env, data):
     line, = fig3.gca().plot(np.arange(niter), [0]*niter)
     fig3.gca().axis([0, niter, 0, 1.1*default_error_qpos.sum()])
 
-    num_workers = 3
+    num_workers = 1
     procs = []
     input_queue = Queue()
     output_queue = Queue()
