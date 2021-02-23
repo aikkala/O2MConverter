@@ -153,7 +153,7 @@ class EnvFactory:
         'models/opensim/crouch/c1/initial_states.sto',
         [dof + "r" for dof in rajagopal_leg_dof] + [dof + "l" for dof in rajagopal_leg_dof] +
         ["lumbar_extension", "lumbar_bending", "lumbar_rotation"],
-        32, 64, False, opensim_timestep=0.002)
+        32, 64, False, opensim_timestep=0.0002)
 
 
     @staticmethod
