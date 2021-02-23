@@ -138,7 +138,23 @@ class EnvFactory:
         [dof + "r" for dof in rajagopal_leg_dof] + [dof + "l" for dof in rajagopal_leg_dof] +
         [dof + "r" for dof in rajagopal_arm_dof] + [dof + "l" for dof in rajagopal_arm_dof] +
         ["lumbar_extension", "lumbar_bending", "lumbar_rotation"],
-        1000, 64, False, opensim_timestep=0.0002)
+        32, 64, False, opensim_timestep=0.0002)
+
+    crouch_c1 = EnvTemplate("crouch_c1",
+        0.002,
+        'models/opensim/crouch/c1/setup_fd.xml',
+        'tests/crouch/c1/forward_dynamics',
+        'models/converted/C1_model2392_osim33_for_testing_converted/C1_model2392_osim33_for_testing_converted.xml',
+        'tests/crouch/c1/output/data.pckl',
+        'tests/crouch/c1/output/params.pckl',
+        'tests/crouch/c1/output/simulations',
+        np.array([2, -2, 1, np.pi/2, np.pi/4, 0]),
+        'models/opensim/crouch/c1/C1_model2392_osim33_for_testing.osim',
+        'models/opensim/crouch/c1/initial_states.sto',
+        [dof + "r" for dof in rajagopal_leg_dof] + [dof + "l" for dof in rajagopal_leg_dof] +
+        ["lumbar_extension", "lumbar_bending", "lumbar_rotation"],
+        32, 64, False, opensim_timestep=0.002)
+
 
     @staticmethod
     def get(env_name):
