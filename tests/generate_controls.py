@@ -72,6 +72,7 @@ def main(model_name, N, max_amplitude):
     # Get env
     env = EnvFactory.get(model_name)
     N = int(N)
+    max_amplitude = float(max_amplitude)
 
     if env.opensim_timestep is not None:
         timestep = env.opensim_timestep
