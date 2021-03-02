@@ -270,10 +270,10 @@ def run_forward_dynamics(env, runs, visualise=False):
         # Open manager, set parameters
         manager = opensim.Manager(model)
         manager.setIntegratorAccuracy(integrator_accuracy)
-        manager.setUseSpecifiedDT(True)
+        #manager.setUseSpecifiedDT(True)
         L = math.ceil(tf/timestep)
-        manager.setDTArray(opensim.Vector([timestep]*L))
-        manager.setPerformAnalyses(True)
+        #manager.setDTArray(opensim.Vector([timestep]*L))
+        #manager.setPerformAnalyses(True)
 
         # Equilibrate muscles once initial state is set
         if equilibrate:
