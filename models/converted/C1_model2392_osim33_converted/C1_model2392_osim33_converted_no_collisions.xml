@@ -399,9 +399,9 @@
         <site name="intobl_l-P2" pos="0.0511 0.1168 -0.01095"></site>
         <site name="extobl_r-P2" pos="0.04745 0.0803 0.0803"></site>
         <site name="extobl_l-P2" pos="0.04745 0.0803 -0.0803"></site>
-        <joint name="lumbar_extension" type="hinge" pos="0 0 0" axis="       0        0        1" limited="true" range=" -1.5708   1.5708" ref="0"></joint>
-        <joint name="lumbar_bending" type="hinge" pos="0 0 0" axis="       1        0        0" limited="true" range=" -1.5708   1.5708" ref="0"></joint>
-        <joint name="lumbar_rotation" type="hinge" pos="0 0 0" axis="       0        1        0" limited="true" range=" -1.5708   1.5708" ref="0"></joint>
+        <joint name="lumbar_extension" stiffness="50" type="hinge" pos="0 0 0" axis="       0        0        1" limited="true" range=" -1.5708   1.5708" ref="0"></joint>
+        <joint name="lumbar_bending" stiffness="50" type="hinge" pos="0 0 0" axis="       1        0        0" limited="true" range=" -1.5708   1.5708" ref="0"></joint>
+        <joint name="lumbar_rotation" stiffness="50" type="hinge" pos="0 0 0" axis="       0        1        0" limited="true" range=" -1.5708   1.5708" ref="0"></joint>
       </body>
     </body>
     <camera name="for_testing" pos="0 0 0" euler="0 0 0"></camera>
