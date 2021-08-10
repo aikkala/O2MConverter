@@ -12,7 +12,7 @@
       <muscle ctrllimited="true" ctrlrange="0 1" scale="400"></muscle>
     </default>
     <default class="motor">
-      <motor gear="5" ctrllimited="false" forcelimited="false"></motor>
+      <motor gear="10" ctrllimited="false" forcelimited="false"></motor>
     </default>
   </default>
   <option timestep="0.002">
