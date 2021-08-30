@@ -283,6 +283,8 @@ def initialise_simulation(sim, initial_states=None, timestep=None):
             initialise_full_qpos(sim)
         if "qvel" in initial_states:
             sim.data.qvel[:] = deepcopy(initial_states["qvel"])
+        if "qacc" in initial_states:
+            sim.data.qacc[:] = deepcopy(initial_states["qacc"])
         if "ctrl" in initial_states:
             sim.data.ctrl[:] = deepcopy(initial_states["ctrl"])
         if "act" in initial_states:
