@@ -265,7 +265,7 @@ def get_initial_states(model, env):
     return initial_states
 
 
-def initialise_simulation(sim, initial_states=None, timestep=None):
+def initialise_simulation(sim, initial_states=None, timestep=None, calculate_dependent_qpos=False):
 
     if timestep is not None:
         # Set timestep
@@ -280,7 +280,8 @@ def initialise_simulation(sim, initial_states=None, timestep=None):
         # Set given joint position and velocity values, and control values
         if "qpos" in initial_states:
             sim.data.qpos[:] = deepcopy(initial_states["qpos"])
-            initialise_full_qpos(sim)
+            if calculate_dependent_qpos:
+                initialise_full_qpos(sim)
         if "qvel" in initial_states:
             sim.data.qvel[:] = deepcopy(initial_states["qvel"])
         if "qacc" in initial_states:
@@ -289,6 +290,8 @@ def initialise_simulation(sim, initial_states=None, timestep=None):
             sim.data.ctrl[:] = deepcopy(initial_states["ctrl"])
         if "act" in initial_states:
             sim.data.act[:] = deepcopy(initial_states["act"])
+        if "qacc_warmstart" in initial_states:
+            sim.data.qacc_warmstart[:] = deepcopy(initial_states["qacc_warmstart"])
 
         # We might need to call forward to make sure everything is set properly after setting
         # qpos (not sure if required)
