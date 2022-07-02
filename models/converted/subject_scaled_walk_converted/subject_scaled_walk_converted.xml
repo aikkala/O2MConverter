@@ -1,32 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mujoco model="subject_scale_walk">
   <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001">
-    <lengthrange inttotal="500"></lengthrange>
+    <lengthrange inttotal="50" useexisting="true"></lengthrange>
   </compiler>
   <default>
-    <joint limited="true" damping="0.5" armature="0.01" stiffness="0"></joint>
-    <geom contype="1" conaffinity="1" condim="3" rgba="0.8 0.6 .4 1" margin="0.001" solref=".02 1" solimp=".8 .8 .01" material="geom"></geom>
+    <joint limited="true" damping="0.5" armature="0.1" stiffness="0"></joint>
+    <geom rgba="0.8 0.6 .4 1" margin="0.001"></geom>
     <site size="0.001"></site>
     <tendon width="0.001" rgba=".95 .3 .3 1" limited="false"></tendon>
     <default class="muscle">
-      <muscle ctrllimited="true" ctrlrange="0 1" scale="400"></muscle>
+      <muscle ctrllimited="true" ctrlrange="0 1" scale="200"></muscle>
     </default>
     <default class="motor">
-      <motor gear="20"></motor>
+      <general gainprm="5 0 0 0 0 0 0 0 0 0"></general>
     </default>
   </default>
-  <option timestep="0.002">
-    <flag energy="enable"></flag>
-  </option>
+  <option timestep="0.002"></option>
   <size njmax="1000" nconmax="400" nuser_jnt="1"></size>
-  <visual>
-    <map fogstart="3" fogend="5" force="0.1"></map>
-    <quality shadowsize="2048"></quality>
-  </visual>
   <worldbody>
     <geom name="floor" pos="0 0 0" size="10 10 0.125" type="plane" material="MatPlane" condim="3"></geom>
-    <body name="pelvis" pos="       0        0        0" quat="0.7071067811865475 0.7071067811865475 0.0 0.0">
-      <light mode="trackcom" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1"></light>
+    <body name="pelvis" pos="       0 6.73556e-17      1.1" quat="0.7071067811865475 0.7071067811865475 0.0 0.0">
+      <light mode="trackcom" directional="false" pos="0 0 4.0" dir="0 0 -1"></light>
       <geom name="r_pelvis" type="mesh" mesh="r_pelvis"></geom>
       <geom name="l_pelvis" type="mesh" mesh="l_pelvis"></geom>
       <geom name="sacrum" type="mesh" mesh="sacrum"></geom>
@@ -597,45 +591,43 @@
     <mesh name="thumb_proximal_lvs" file="Geometry/thumb_proximal_lvs.stl" scale="    0.85     0.85     0.85"></mesh>
     <mesh name="thumb_distal_lvs" file="Geometry/thumb_distal_lvs.stl" scale="    0.85     0.85     0.85"></mesh>
     <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="100" height="100"></texture>
-    <texture name="texgeom" type="cube" builtin="flat" mark="cross" width="127" height="1278" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1" random="0.01"></texture>
-    <material name="MatPlane" reflectance="0.5" texture="texplane" texrepeat="1 1" texuniform="true"></material>
-    <material name="geom" texture="texgeom" texuniform="true"></material>
+    <material name="MatPlane" reflectance="0.0" texture="texplane" texrepeat="1 1" texuniform="true"></material>
   </asset>
   <tendon>
-    <spatial name="addbrev_r_tendon" springlength="0.0370937429626135">
+    <spatial name="addbrev_r_tendon">
       <site site="addbrev_r-P1"></site>
       <site site="addbrev_r-P2"></site>
     </spatial>
-    <spatial name="addlong_r_tendon" springlength="0.129954595305518">
+    <spatial name="addlong_r_tendon">
       <site site="addlong_r-P1"></site>
       <site site="addlong_r-P2"></site>
     </spatial>
-    <spatial name="addmagDist_r_tendon" springlength="0.0841331499793584">
+    <spatial name="addmagDist_r_tendon">
       <site site="addmagDist_r-P1"></site>
       <site site="addmagDist_r-P2"></site>
     </spatial>
-    <spatial name="addmagIsch_r_tendon" springlength="0.206686373520462">
+    <spatial name="addmagIsch_r_tendon">
       <site site="addmagIsch_r-P1"></site>
       <site site="addmagIsch_r-P2"></site>
     </spatial>
-    <spatial name="addmagMid_r_tendon" springlength="0.0463603828169607">
+    <spatial name="addmagMid_r_tendon">
       <site site="addmagMid_r-P1"></site>
       <site site="addmagMid_r-P2"></site>
     </spatial>
-    <spatial name="addmagProx_r_tendon" springlength="0.0437965520067692">
+    <spatial name="addmagProx_r_tendon">
       <site site="addmagProx_r-P1"></site>
       <site site="addmagProx_r-P2"></site>
     </spatial>
-    <spatial name="bflh_r_tendon" springlength="0.317973138456945">
+    <spatial name="bflh_r_tendon">
       <site site="bflh_r-P1"></site>
       <site site="bflh_r-P2"></site>
       <site site="bflh_r-P3"></site>
     </spatial>
-    <spatial name="bfsh_r_tendon" springlength="0.104999391749968">
+    <spatial name="bfsh_r_tendon">
       <site site="bfsh_r-P1"></site>
       <site site="bfsh_r-P2"></site>
     </spatial>
-    <spatial name="edl_r_tendon" springlength="0.433502648789404">
+    <spatial name="edl_r_tendon">
       <site site="edl_r-P1"></site>
       <site site="edl_r-P2"></site>
       <site site="edl_r-P3"></site>
@@ -643,7 +635,7 @@
       <site site="edl_r-P5"></site>
       <site site="edl_r-P6"></site>
     </spatial>
-    <spatial name="ehl_r_tendon" springlength="0.38357596620851">
+    <spatial name="ehl_r_tendon">
       <site site="ehl_r-P1"></site>
       <site site="ehl_r-P2"></site>
       <site site="ehl_r-P3"></site>
@@ -653,7 +645,7 @@
       <site site="ehl_r-P7"></site>
       <site site="ehl_r-P8"></site>
     </spatial>
-    <spatial name="fdl_r_tendon" springlength="0.453254244993566">
+    <spatial name="fdl_r_tendon">
       <site site="fdl_r-P1"></site>
       <site site="fdl_r-P2"></site>
       <site site="fdl_r-P3"></site>
@@ -663,7 +655,7 @@
       <site site="fdl_r-P7"></site>
       <site site="fdl_r-P8"></site>
     </spatial>
-    <spatial name="fhl_r_tendon" springlength="0.419036028873917">
+    <spatial name="fhl_r_tendon">
       <site site="fhl_r-P1"></site>
       <site site="fhl_r-P2"></site>
       <site site="fhl_r-P3"></site>
@@ -672,75 +664,75 @@
       <site site="fhl_r-P6"></site>
       <site site="fhl_r-P7"></site>
     </spatial>
-    <spatial name="gaslat_r_tendon" springlength="0.432933644697155">
+    <spatial name="gaslat_r_tendon">
       <site site="gaslat_r-P1"></site>
       <site site="gaslat_r-P2"></site>
     </spatial>
-    <spatial name="gasmed_r_tendon" springlength="0.457245426429789">
+    <spatial name="gasmed_r_tendon">
       <site site="gasmed_r-P1"></site>
       <site site="gasmed_r-P2"></site>
     </spatial>
-    <spatial name="glmax1_r_tendon" springlength="0.0502572756716958">
+    <spatial name="glmax1_r_tendon">
       <site site="glmax1_r-P1"></site>
       <site site="glmax1_r-P2"></site>
       <site site="glmax1_r-P3"></site>
       <site site="glmax1_r-P4"></site>
     </spatial>
-    <spatial name="glmax2_r_tendon" springlength="0.0706750751581437">
+    <spatial name="glmax2_r_tendon">
       <site site="glmax2_r-P1"></site>
       <site site="glmax2_r-P2"></site>
       <site site="glmax2_r-P3"></site>
       <site site="glmax2_r-P4"></site>
     </spatial>
-    <spatial name="glmax3_r_tendon" springlength="0.0733517122611879">
+    <spatial name="glmax3_r_tendon">
       <site site="glmax3_r-P1"></site>
       <site site="glmax3_r-P2"></site>
       <site site="glmax3_r-P3"></site>
       <site site="glmax3_r-P4"></site>
     </spatial>
-    <spatial name="glmed1_r_tendon" springlength="0.0555260541659806">
+    <spatial name="glmed1_r_tendon">
       <site site="glmed1_r-P1"></site>
       <site site="glmed1_r-P2"></site>
     </spatial>
-    <spatial name="glmed2_r_tendon" springlength="0.0653681831624419">
+    <spatial name="glmed2_r_tendon">
       <site site="glmed2_r-P1"></site>
       <site site="glmed2_r-P2"></site>
     </spatial>
-    <spatial name="glmed3_r_tendon" springlength="0.0479517879227386">
+    <spatial name="glmed3_r_tendon">
       <site site="glmed3_r-P1"></site>
       <site site="glmed3_r-P2"></site>
     </spatial>
-    <spatial name="glmin1_r_tendon" springlength="0.0156933594283538">
+    <spatial name="glmin1_r_tendon">
       <site site="glmin1_r-P1"></site>
       <site site="glmin1_r-P2"></site>
     </spatial>
-    <spatial name="glmin2_r_tendon" springlength="0.0251857000581717">
+    <spatial name="glmin2_r_tendon">
       <site site="glmin2_r-P1"></site>
       <site site="glmin2_r-P2"></site>
     </spatial>
-    <spatial name="glmin3_r_tendon" springlength="0.0503131390924412">
+    <spatial name="glmin3_r_tendon">
       <site site="glmin3_r-P1"></site>
       <site site="glmin3_r-P2"></site>
     </spatial>
-    <spatial name="grac_r_tendon" springlength="0.170231216191756">
+    <spatial name="grac_r_tendon">
       <site site="grac_r-P1"></site>
       <site site="grac_r-P2"></site>
       <site site="grac_r-P3"></site>
     </spatial>
-    <spatial name="iliacus_r_tendon" springlength="0.100307351406767">
+    <spatial name="iliacus_r_tendon">
       <site site="iliacus_r-P1"></site>
       <site site="iliacus_r-P2"></site>
       <site site="iliacus_r-P3"></site>
       <site site="iliacus_r-P4"></site>
     </spatial>
-    <spatial name="perbrev_r_tendon" springlength="0.178389310627884">
+    <spatial name="perbrev_r_tendon">
       <site site="perbrev_r-P1"></site>
       <site site="perbrev_r-P2"></site>
       <site site="perbrev_r-P3"></site>
       <site site="perbrev_r-P4"></site>
       <site site="perbrev_r-P5"></site>
     </spatial>
-    <spatial name="perlong_r_tendon" springlength="0.405168481415927">
+    <spatial name="perlong_r_tendon">
       <site site="perlong_r-P1"></site>
       <site site="perlong_r-P2"></site>
       <site site="perlong_r-P3"></site>
@@ -749,117 +741,117 @@
       <site site="perlong_r-P6"></site>
       <site site="perlong_r-P7"></site>
     </spatial>
-    <spatial name="piri_r_tendon" springlength="0.126867911316939">
+    <spatial name="piri_r_tendon">
       <site site="piri_r-P1"></site>
       <site site="piri_r-P2"></site>
       <site site="piri_r-P3"></site>
     </spatial>
-    <spatial name="psoas_r_tendon" springlength="0.102996929320297">
+    <spatial name="psoas_r_tendon">
       <site site="psoas_r-P1"></site>
       <site site="psoas_r-P2"></site>
       <site site="psoas_r-P3"></site>
       <site site="psoas_r-P4"></site>
     </spatial>
-    <spatial name="recfem_r_tendon" springlength="0.439197380996707">
+    <spatial name="recfem_r_tendon">
       <site site="recfem_r-P1"></site>
       <site site="recfem_r-P2"></site>
       <site site="recfem_r-P3"></site>
       <site site="recfem_r-P4"></site>
       <site site="recfem_r-P5"></site>
     </spatial>
-    <spatial name="sart_r_tendon" springlength="0.12416313820155">
+    <spatial name="sart_r_tendon">
       <site site="sart_r-P1"></site>
       <site site="sart_r-P2"></site>
       <site site="sart_r-P3"></site>
       <site site="sart_r-P4"></site>
       <site site="sart_r-P5"></site>
     </spatial>
-    <spatial name="semimem_r_tendon" springlength="0.338138883764534">
+    <spatial name="semimem_r_tendon">
       <site site="semimem_r-P1"></site>
       <site site="semimem_r-P2"></site>
     </spatial>
-    <spatial name="semiten_r_tendon" springlength="0.245475137444266">
+    <spatial name="semiten_r_tendon">
       <site site="semiten_r-P1"></site>
       <site site="semiten_r-P2"></site>
       <site site="semiten_r-P3"></site>
     </spatial>
-    <spatial name="soleus_r_tendon" springlength="0.322697438372892">
+    <spatial name="soleus_r_tendon">
       <site site="soleus_r-P1"></site>
       <site site="soleus_r-P2"></site>
     </spatial>
-    <spatial name="tfl_r_tendon" springlength="0.440386647634486">
+    <spatial name="tfl_r_tendon">
       <site site="tfl_r-P1"></site>
       <site site="tfl_r-P2"></site>
       <site site="tfl_r-P3"></site>
       <site site="tfl_r-P4"></site>
     </spatial>
-    <spatial name="tibant_r_tendon" springlength="0.285628922764771">
+    <spatial name="tibant_r_tendon">
       <site site="tibant_r-P1"></site>
       <site site="tibant_r-P2"></site>
       <site site="tibant_r-P3"></site>
       <site site="tibant_r-P4"></site>
     </spatial>
-    <spatial name="tibpost_r_tendon" springlength="0.331189550283312">
+    <spatial name="tibpost_r_tendon">
       <site site="tibpost_r-P1"></site>
       <site site="tibpost_r-P2"></site>
       <site site="tibpost_r-P3"></site>
       <site site="tibpost_r-P4"></site>
     </spatial>
-    <spatial name="vasint_r_tendon" springlength="0.200461315829028">
+    <spatial name="vasint_r_tendon">
       <site site="vasint_r-P1"></site>
       <site site="vasint_r-P2"></site>
       <site site="vasint_r-P3"></site>
       <site site="vasint_r-P4"></site>
       <site site="vasint_r-P5"></site>
     </spatial>
-    <spatial name="vaslat_r_tendon" springlength="0.218329273203307">
+    <spatial name="vaslat_r_tendon">
       <site site="vaslat_r-P1"></site>
       <site site="vaslat_r-P2"></site>
       <site site="vaslat_r-P3"></site>
       <site site="vaslat_r-P4"></site>
       <site site="vaslat_r-P5"></site>
     </spatial>
-    <spatial name="vasmed_r_tendon" springlength="0.19846393006048">
+    <spatial name="vasmed_r_tendon">
       <site site="vasmed_r-P1"></site>
       <site site="vasmed_r-P2"></site>
       <site site="vasmed_r-P3"></site>
       <site site="vasmed_r-P4"></site>
       <site site="vasmed_r-P5"></site>
     </spatial>
-    <spatial name="addbrev_l_tendon" springlength="0.0370937429626135">
+    <spatial name="addbrev_l_tendon">
       <site site="addbrev_l-P1"></site>
       <site site="addbrev_l-P2"></site>
     </spatial>
-    <spatial name="addlong_l_tendon" springlength="0.129954595305518">
+    <spatial name="addlong_l_tendon">
       <site site="addlong_l-P1"></site>
       <site site="addlong_l-P2"></site>
     </spatial>
-    <spatial name="addmagDist_l_tendon" springlength="0.0841331499793585">
+    <spatial name="addmagDist_l_tendon">
       <site site="addmagDist_l-P1"></site>
       <site site="addmagDist_l-P2"></site>
     </spatial>
-    <spatial name="addmagIsch_l_tendon" springlength="0.206686373520462">
+    <spatial name="addmagIsch_l_tendon">
       <site site="addmagIsch_l-P1"></site>
       <site site="addmagIsch_l-P2"></site>
     </spatial>
-    <spatial name="addmagMid_l_tendon" springlength="0.0463603828169607">
+    <spatial name="addmagMid_l_tendon">
       <site site="addmagMid_l-P1"></site>
       <site site="addmagMid_l-P2"></site>
     </spatial>
-    <spatial name="addmagProx_l_tendon" springlength="0.0437965520067692">
+    <spatial name="addmagProx_l_tendon">
       <site site="addmagProx_l-P1"></site>
       <site site="addmagProx_l-P2"></site>
     </spatial>
-    <spatial name="bflh_l_tendon" springlength="0.317973138456945">
+    <spatial name="bflh_l_tendon">
       <site site="bflh_l-P1"></site>
       <site site="bflh_l-P2"></site>
       <site site="bflh_l-P3"></site>
     </spatial>
-    <spatial name="bfsh_l_tendon" springlength="0.104999391749968">
+    <spatial name="bfsh_l_tendon">
       <site site="bfsh_l-P1"></site>
       <site site="bfsh_l-P2"></site>
     </spatial>
-    <spatial name="edl_l_tendon" springlength="0.433502648789404">
+    <spatial name="edl_l_tendon">
       <site site="edl_l-P1"></site>
       <site site="edl_l-P2"></site>
       <site site="edl_l-P3"></site>
@@ -867,7 +859,7 @@
       <site site="edl_l-P5"></site>
       <site site="edl_l-P6"></site>
     </spatial>
-    <spatial name="ehl_l_tendon" springlength="0.38357596620851">
+    <spatial name="ehl_l_tendon">
       <site site="ehl_l-P1"></site>
       <site site="ehl_l-P2"></site>
       <site site="ehl_l-P3"></site>
@@ -877,7 +869,7 @@
       <site site="ehl_l-P7"></site>
       <site site="ehl_l-P8"></site>
     </spatial>
-    <spatial name="fdl_l_tendon" springlength="0.453254244993566">
+    <spatial name="fdl_l_tendon">
       <site site="fdl_l-P1"></site>
       <site site="fdl_l-P2"></site>
       <site site="fdl_l-P3"></site>
@@ -887,7 +879,7 @@
       <site site="fdl_l-P7"></site>
       <site site="fdl_l-P8"></site>
     </spatial>
-    <spatial name="fhl_l_tendon" springlength="0.419036028873917">
+    <spatial name="fhl_l_tendon">
       <site site="fhl_l-P1"></site>
       <site site="fhl_l-P2"></site>
       <site site="fhl_l-P3"></site>
@@ -896,75 +888,75 @@
       <site site="fhl_l-P6"></site>
       <site site="fhl_l-P7"></site>
     </spatial>
-    <spatial name="gaslat_l_tendon" springlength="0.432933644697155">
+    <spatial name="gaslat_l_tendon">
       <site site="gaslat_l-P1"></site>
       <site site="gaslat_l-P2"></site>
     </spatial>
-    <spatial name="gasmed_l_tendon" springlength="0.457245426429789">
+    <spatial name="gasmed_l_tendon">
       <site site="gasmed_l-P1"></site>
       <site site="gasmed_l-P2"></site>
     </spatial>
-    <spatial name="glmax1_l_tendon" springlength="0.0502572756716958">
+    <spatial name="glmax1_l_tendon">
       <site site="glmax1_l-P1"></site>
       <site site="glmax1_l-P2"></site>
       <site site="glmax1_l-P3"></site>
       <site site="glmax1_l-P4"></site>
     </spatial>
-    <spatial name="glmax2_l_tendon" springlength="0.0706750751581437">
+    <spatial name="glmax2_l_tendon">
       <site site="glmax2_l-P1"></site>
       <site site="glmax2_l-P2"></site>
       <site site="glmax2_l-P3"></site>
       <site site="glmax2_l-P4"></site>
     </spatial>
-    <spatial name="glmax3_l_tendon" springlength="0.0733517122611879">
+    <spatial name="glmax3_l_tendon">
       <site site="glmax3_l-P1"></site>
       <site site="glmax3_l-P2"></site>
       <site site="glmax3_l-P3"></site>
       <site site="glmax3_l-P4"></site>
     </spatial>
-    <spatial name="glmed1_l_tendon" springlength="0.0555260541659806">
+    <spatial name="glmed1_l_tendon">
       <site site="glmed1_l-P1"></site>
       <site site="glmed1_l-P2"></site>
     </spatial>
-    <spatial name="glmed2_l_tendon" springlength="0.0653681831624419">
+    <spatial name="glmed2_l_tendon">
       <site site="glmed2_l-P1"></site>
       <site site="glmed2_l-P2"></site>
     </spatial>
-    <spatial name="glmed3_l_tendon" springlength="0.0479517879227386">
+    <spatial name="glmed3_l_tendon">
       <site site="glmed3_l-P1"></site>
       <site site="glmed3_l-P2"></site>
     </spatial>
-    <spatial name="glmin1_l_tendon" springlength="0.0156933594283538">
+    <spatial name="glmin1_l_tendon">
       <site site="glmin1_l-P1"></site>
       <site site="glmin1_l-P2"></site>
     </spatial>
-    <spatial name="glmin2_l_tendon" springlength="0.0251857000581717">
+    <spatial name="glmin2_l_tendon">
       <site site="glmin2_l-P1"></site>
       <site site="glmin2_l-P2"></site>
     </spatial>
-    <spatial name="glmin3_l_tendon" springlength="0.0503131390924412">
+    <spatial name="glmin3_l_tendon">
       <site site="glmin3_l-P1"></site>
       <site site="glmin3_l-P2"></site>
     </spatial>
-    <spatial name="grac_l_tendon" springlength="0.170231216191756">
+    <spatial name="grac_l_tendon">
       <site site="grac_l-P1"></site>
       <site site="grac_l-P2"></site>
       <site site="grac_l-P3"></site>
     </spatial>
-    <spatial name="iliacus_l_tendon" springlength="0.100307351406767">
+    <spatial name="iliacus_l_tendon">
       <site site="iliacus_l-P1"></site>
       <site site="iliacus_l-P2"></site>
       <site site="iliacus_l-P3"></site>
       <site site="iliacus_l-P4"></site>
     </spatial>
-    <spatial name="perbrev_l_tendon" springlength="0.178389310627884">
+    <spatial name="perbrev_l_tendon">
       <site site="perbrev_l-P1"></site>
       <site site="perbrev_l-P2"></site>
       <site site="perbrev_l-P3"></site>
       <site site="perbrev_l-P4"></site>
       <site site="perbrev_l-P5"></site>
     </spatial>
-    <spatial name="perlong_l_tendon" springlength="0.405168481415927">
+    <spatial name="perlong_l_tendon">
       <site site="perlong_l-P1"></site>
       <site site="perlong_l-P2"></site>
       <site site="perlong_l-P3"></site>
@@ -973,77 +965,77 @@
       <site site="perlong_l-P6"></site>
       <site site="perlong_l-P7"></site>
     </spatial>
-    <spatial name="piri_l_tendon" springlength="0.126867911316939">
+    <spatial name="piri_l_tendon">
       <site site="piri_l-P1"></site>
       <site site="piri_l-P2"></site>
       <site site="piri_l-P3"></site>
     </spatial>
-    <spatial name="psoas_l_tendon" springlength="0.102996929320297">
+    <spatial name="psoas_l_tendon">
       <site site="psoas_l-P1"></site>
       <site site="psoas_l-P2"></site>
       <site site="psoas_l-P3"></site>
       <site site="psoas_l-P4"></site>
     </spatial>
-    <spatial name="recfem_l_tendon" springlength="0.439197380996707">
+    <spatial name="recfem_l_tendon">
       <site site="recfem_l-P1"></site>
       <site site="recfem_l-P2"></site>
       <site site="recfem_l-P3"></site>
       <site site="recfem_l-P4"></site>
       <site site="recfem_l-P5"></site>
     </spatial>
-    <spatial name="sart_l_tendon" springlength="0.12416313820155">
+    <spatial name="sart_l_tendon">
       <site site="sart_l-P1"></site>
       <site site="sart_l-P2"></site>
       <site site="sart_l-P3"></site>
       <site site="sart_l-P4"></site>
       <site site="sart_l-P5"></site>
     </spatial>
-    <spatial name="semimem_l_tendon" springlength="0.338138883764534">
+    <spatial name="semimem_l_tendon">
       <site site="semimem_l-P1"></site>
       <site site="semimem_l-P2"></site>
     </spatial>
-    <spatial name="semiten_l_tendon" springlength="0.245475137444266">
+    <spatial name="semiten_l_tendon">
       <site site="semiten_l-P1"></site>
       <site site="semiten_l-P2"></site>
       <site site="semiten_l-P3"></site>
     </spatial>
-    <spatial name="soleus_l_tendon" springlength="0.322697438372892">
+    <spatial name="soleus_l_tendon">
       <site site="soleus_l-P1"></site>
       <site site="soleus_l-P2"></site>
     </spatial>
-    <spatial name="tfl_l_tendon" springlength="0.440386647634486">
+    <spatial name="tfl_l_tendon">
       <site site="tfl_l-P1"></site>
       <site site="tfl_l-P2"></site>
       <site site="tfl_l-P3"></site>
       <site site="tfl_l-P4"></site>
     </spatial>
-    <spatial name="tibant_l_tendon" springlength="0.285628922764771">
+    <spatial name="tibant_l_tendon">
       <site site="tibant_l-P1"></site>
       <site site="tibant_l-P2"></site>
       <site site="tibant_l-P3"></site>
       <site site="tibant_l-P4"></site>
     </spatial>
-    <spatial name="tibpost_l_tendon" springlength="0.331189550283312">
+    <spatial name="tibpost_l_tendon">
       <site site="tibpost_l-P1"></site>
       <site site="tibpost_l-P2"></site>
       <site site="tibpost_l-P3"></site>
       <site site="tibpost_l-P4"></site>
     </spatial>
-    <spatial name="vasint_l_tendon" springlength="0.200461315829028">
+    <spatial name="vasint_l_tendon">
       <site site="vasint_l-P1"></site>
       <site site="vasint_l-P2"></site>
       <site site="vasint_l-P3"></site>
       <site site="vasint_l-P4"></site>
       <site site="vasint_l-P5"></site>
     </spatial>
-    <spatial name="vaslat_l_tendon" springlength="0.218329273203307">
+    <spatial name="vaslat_l_tendon">
       <site site="vaslat_l-P1"></site>
       <site site="vaslat_l-P2"></site>
       <site site="vaslat_l-P3"></site>
       <site site="vaslat_l-P4"></site>
       <site site="vaslat_l-P5"></site>
     </spatial>
-    <spatial name="vasmed_l_tendon" springlength="0.19846393006048">
+    <spatial name="vasmed_l_tendon">
       <site site="vasmed_l-P1"></site>
       <site site="vasmed_l-P2"></site>
       <site site="vasmed_l-P3"></site>
@@ -1052,103 +1044,103 @@
     </spatial>
   </tendon>
   <actuator>
-    <motor name="lumbar_ext" joint="lumbar_extension" class="motor"></motor>
-    <motor name="lumbar_bend" joint="lumbar_bending" class="motor"></motor>
-    <motor name="lumbar_rot" joint="lumbar_rotation" class="motor"></motor>
-    <motor name="shoulder_flex_r" joint="arm_flex_r" class="motor"></motor>
-    <motor name="shoulder_add_r" joint="arm_add_r" class="motor"></motor>
-    <motor name="shoulder_rot_r" joint="arm_rot_r" class="motor"></motor>
-    <motor name="elbow_flex_r" joint="elbow_flex_r" class="motor"></motor>
-    <motor name="pro_sup_r" joint="pro_sup_r" class="motor"></motor>
-    <motor name="wrist_flex_r" joint="wrist_flex_r" class="motor"></motor>
-    <motor name="wrist_dev_r" joint="wrist_dev_r" class="motor"></motor>
-    <motor name="shoulder_flex_l" joint="arm_flex_l" class="motor"></motor>
-    <motor name="shoulder_add_l" joint="arm_add_l" class="motor"></motor>
-    <motor name="shoulder_rot_l" joint="arm_rot_l" class="motor"></motor>
-    <motor name="elbow_flex_l" joint="elbow_flex_l" class="motor"></motor>
-    <motor name="pro_sup_l" joint="pro_sup_l" class="motor"></motor>
-    <motor name="wrist_flex_l" joint="wrist_flex_l" class="motor"></motor>
-    <motor name="wrist_dev_l" joint="wrist_dev_l" class="motor"></motor>
-    <muscle name="addbrev_r" tendon="addbrev_r_tendon" class="muscle"></muscle>
-    <muscle name="addlong_r" tendon="addlong_r_tendon" class="muscle"></muscle>
-    <muscle name="addmagDist_r" tendon="addmagDist_r_tendon" class="muscle"></muscle>
-    <muscle name="addmagIsch_r" tendon="addmagIsch_r_tendon" class="muscle"></muscle>
-    <muscle name="addmagMid_r" tendon="addmagMid_r_tendon" class="muscle"></muscle>
-    <muscle name="addmagProx_r" tendon="addmagProx_r_tendon" class="muscle"></muscle>
-    <muscle name="bflh_r" tendon="bflh_r_tendon" class="muscle"></muscle>
-    <muscle name="bfsh_r" tendon="bfsh_r_tendon" class="muscle"></muscle>
-    <muscle name="edl_r" tendon="edl_r_tendon" class="muscle"></muscle>
-    <muscle name="ehl_r" tendon="ehl_r_tendon" class="muscle"></muscle>
-    <muscle name="fdl_r" tendon="fdl_r_tendon" class="muscle"></muscle>
-    <muscle name="fhl_r" tendon="fhl_r_tendon" class="muscle"></muscle>
-    <muscle name="gaslat_r" tendon="gaslat_r_tendon" class="muscle"></muscle>
-    <muscle name="gasmed_r" tendon="gasmed_r_tendon" class="muscle"></muscle>
-    <muscle name="glmax1_r" tendon="glmax1_r_tendon" class="muscle"></muscle>
-    <muscle name="glmax2_r" tendon="glmax2_r_tendon" class="muscle"></muscle>
-    <muscle name="glmax3_r" tendon="glmax3_r_tendon" class="muscle"></muscle>
-    <muscle name="glmed1_r" tendon="glmed1_r_tendon" class="muscle"></muscle>
-    <muscle name="glmed2_r" tendon="glmed2_r_tendon" class="muscle"></muscle>
-    <muscle name="glmed3_r" tendon="glmed3_r_tendon" class="muscle"></muscle>
-    <muscle name="glmin1_r" tendon="glmin1_r_tendon" class="muscle"></muscle>
-    <muscle name="glmin2_r" tendon="glmin2_r_tendon" class="muscle"></muscle>
-    <muscle name="glmin3_r" tendon="glmin3_r_tendon" class="muscle"></muscle>
-    <muscle name="grac_r" tendon="grac_r_tendon" class="muscle"></muscle>
-    <muscle name="iliacus_r" tendon="iliacus_r_tendon" class="muscle"></muscle>
-    <muscle name="perbrev_r" tendon="perbrev_r_tendon" class="muscle"></muscle>
-    <muscle name="perlong_r" tendon="perlong_r_tendon" class="muscle"></muscle>
-    <muscle name="piri_r" tendon="piri_r_tendon" class="muscle"></muscle>
-    <muscle name="psoas_r" tendon="psoas_r_tendon" class="muscle"></muscle>
-    <muscle name="recfem_r" tendon="recfem_r_tendon" class="muscle"></muscle>
-    <muscle name="sart_r" tendon="sart_r_tendon" class="muscle"></muscle>
-    <muscle name="semimem_r" tendon="semimem_r_tendon" class="muscle"></muscle>
-    <muscle name="semiten_r" tendon="semiten_r_tendon" class="muscle"></muscle>
-    <muscle name="soleus_r" tendon="soleus_r_tendon" class="muscle"></muscle>
-    <muscle name="tfl_r" tendon="tfl_r_tendon" class="muscle"></muscle>
-    <muscle name="tibant_r" tendon="tibant_r_tendon" class="muscle"></muscle>
-    <muscle name="tibpost_r" tendon="tibpost_r_tendon" class="muscle"></muscle>
-    <muscle name="vasint_r" tendon="vasint_r_tendon" class="muscle"></muscle>
-    <muscle name="vaslat_r" tendon="vaslat_r_tendon" class="muscle"></muscle>
-    <muscle name="vasmed_r" tendon="vasmed_r_tendon" class="muscle"></muscle>
-    <muscle name="addbrev_l" tendon="addbrev_l_tendon" class="muscle"></muscle>
-    <muscle name="addlong_l" tendon="addlong_l_tendon" class="muscle"></muscle>
-    <muscle name="addmagDist_l" tendon="addmagDist_l_tendon" class="muscle"></muscle>
-    <muscle name="addmagIsch_l" tendon="addmagIsch_l_tendon" class="muscle"></muscle>
-    <muscle name="addmagMid_l" tendon="addmagMid_l_tendon" class="muscle"></muscle>
-    <muscle name="addmagProx_l" tendon="addmagProx_l_tendon" class="muscle"></muscle>
-    <muscle name="bflh_l" tendon="bflh_l_tendon" class="muscle"></muscle>
-    <muscle name="bfsh_l" tendon="bfsh_l_tendon" class="muscle"></muscle>
-    <muscle name="edl_l" tendon="edl_l_tendon" class="muscle"></muscle>
-    <muscle name="ehl_l" tendon="ehl_l_tendon" class="muscle"></muscle>
-    <muscle name="fdl_l" tendon="fdl_l_tendon" class="muscle"></muscle>
-    <muscle name="fhl_l" tendon="fhl_l_tendon" class="muscle"></muscle>
-    <muscle name="gaslat_l" tendon="gaslat_l_tendon" class="muscle"></muscle>
-    <muscle name="gasmed_l" tendon="gasmed_l_tendon" class="muscle"></muscle>
-    <muscle name="glmax1_l" tendon="glmax1_l_tendon" class="muscle"></muscle>
-    <muscle name="glmax2_l" tendon="glmax2_l_tendon" class="muscle"></muscle>
-    <muscle name="glmax3_l" tendon="glmax3_l_tendon" class="muscle"></muscle>
-    <muscle name="glmed1_l" tendon="glmed1_l_tendon" class="muscle"></muscle>
-    <muscle name="glmed2_l" tendon="glmed2_l_tendon" class="muscle"></muscle>
-    <muscle name="glmed3_l" tendon="glmed3_l_tendon" class="muscle"></muscle>
-    <muscle name="glmin1_l" tendon="glmin1_l_tendon" class="muscle"></muscle>
-    <muscle name="glmin2_l" tendon="glmin2_l_tendon" class="muscle"></muscle>
-    <muscle name="glmin3_l" tendon="glmin3_l_tendon" class="muscle"></muscle>
-    <muscle name="grac_l" tendon="grac_l_tendon" class="muscle"></muscle>
-    <muscle name="iliacus_l" tendon="iliacus_l_tendon" class="muscle"></muscle>
-    <muscle name="perbrev_l" tendon="perbrev_l_tendon" class="muscle"></muscle>
-    <muscle name="perlong_l" tendon="perlong_l_tendon" class="muscle"></muscle>
-    <muscle name="piri_l" tendon="piri_l_tendon" class="muscle"></muscle>
-    <muscle name="psoas_l" tendon="psoas_l_tendon" class="muscle"></muscle>
-    <muscle name="recfem_l" tendon="recfem_l_tendon" class="muscle"></muscle>
-    <muscle name="sart_l" tendon="sart_l_tendon" class="muscle"></muscle>
-    <muscle name="semimem_l" tendon="semimem_l_tendon" class="muscle"></muscle>
-    <muscle name="semiten_l" tendon="semiten_l_tendon" class="muscle"></muscle>
-    <muscle name="soleus_l" tendon="soleus_l_tendon" class="muscle"></muscle>
-    <muscle name="tfl_l" tendon="tfl_l_tendon" class="muscle"></muscle>
-    <muscle name="tibant_l" tendon="tibant_l_tendon" class="muscle"></muscle>
-    <muscle name="tibpost_l" tendon="tibpost_l_tendon" class="muscle"></muscle>
-    <muscle name="vasint_l" tendon="vasint_l_tendon" class="muscle"></muscle>
-    <muscle name="vaslat_l" tendon="vaslat_l_tendon" class="muscle"></muscle>
-    <muscle name="vasmed_l" tendon="vasmed_l_tendon" class="muscle"></muscle>
+    <general name="lumbar_ext" joint="lumbar_extension" class="motor"></general>
+    <general name="lumbar_bend" joint="lumbar_bending" class="motor"></general>
+    <general name="lumbar_rot" joint="lumbar_rotation" class="motor"></general>
+    <general name="shoulder_flex_r" joint="arm_flex_r" class="motor"></general>
+    <general name="shoulder_add_r" joint="arm_add_r" class="motor"></general>
+    <general name="shoulder_rot_r" joint="arm_rot_r" class="motor"></general>
+    <general name="elbow_flex_r" joint="elbow_flex_r" class="motor"></general>
+    <general name="pro_sup_r" joint="pro_sup_r" class="motor"></general>
+    <general name="wrist_flex_r" joint="wrist_flex_r" class="motor"></general>
+    <general name="wrist_dev_r" joint="wrist_dev_r" class="motor"></general>
+    <general name="shoulder_flex_l" joint="arm_flex_l" class="motor"></general>
+    <general name="shoulder_add_l" joint="arm_add_l" class="motor"></general>
+    <general name="shoulder_rot_l" joint="arm_rot_l" class="motor"></general>
+    <general name="elbow_flex_l" joint="elbow_flex_l" class="motor"></general>
+    <general name="pro_sup_l" joint="pro_sup_l" class="motor"></general>
+    <general name="wrist_flex_l" joint="wrist_flex_l" class="motor"></general>
+    <general name="wrist_dev_l" joint="wrist_dev_l" class="motor"></general>
+    <muscle name="addbrev_r" tendon="addbrev_r_tendon" class="muscle" force="625.819672131148" lengthrange="0.0906786 0.197848"></muscle>
+    <muscle name="addlong_r" tendon="addlong_r_tendon" class="muscle" force="916.8" lengthrange="0.182792 0.288467"></muscle>
+    <muscle name="addmagDist_r" tendon="addmagDist_r_tendon" class="muscle" force="597.295081967214" lengthrange="0.167828 0.335219"></muscle>
+    <muscle name="addmagIsch_r" tendon="addmagIsch_r_tendon" class="muscle" force="597.295081967214" lengthrange="0.280249 0.427375"></muscle>
+    <muscle name="addmagMid_r" tendon="addmagMid_r_tendon" class="muscle" force="597.295081967214" lengthrange=" 0.11335 0.247329"></muscle>
+    <muscle name="addmagProx_r" tendon="addmagProx_r_tendon" class="muscle" force="597.295081967214" lengthrange="0.0983838 0.207558"></muscle>
+    <muscle name="bflh_r" tendon="bflh_r_tendon" class="muscle" force="1313.18360655738" lengthrange="0.364948 0.458899"></muscle>
+    <muscle name="bfsh_r" tendon="bfsh_r_tendon" class="muscle" force="557.11475409836" lengthrange="0.157824 0.263473"></muscle>
+    <muscle name="edl_r" tendon="edl_r_tendon" class="muscle" force="603.4981556" lengthrange="0.473257 0.552767"></muscle>
+    <muscle name="ehl_r" tendon="ehl_r_tendon" class="muscle" force="285.8675474" lengthrange="0.426623 0.512717"></muscle>
+    <muscle name="fdl_r" tendon="fdl_r_tendon" class="muscle" force="423.177049180328" lengthrange="0.479268 0.531294"></muscle>
+    <muscle name="fhl_r" tendon="fhl_r_tendon" class="muscle" force="907.839344262294" lengthrange="0.449165 0.509424"></muscle>
+    <muscle name="gaslat_r" tendon="gaslat_r_tendon" class="muscle" force="1575.05901639344" lengthrange="0.466034 0.532234"></muscle>
+    <muscle name="gasmed_r" tendon="gasmed_r_tendon" class="muscle" force="3115.51475409836" lengthrange="0.486088 0.543774"></muscle>
+    <muscle name="glmax1_r" tendon="glmax1_r_tendon" class="muscle" force="983.783606557378" lengthrange="0.121199 0.263082"></muscle>
+    <muscle name="glmax2_r" tendon="glmax2_r_tendon" class="muscle" force="1406.04590163935" lengthrange="0.146945 0.299486"></muscle>
+    <muscle name="glmax3_r" tendon="glmax3_r_tendon" class="muscle" force="947.754098360656" lengthrange="0.154859 0.317875"></muscle>
+    <muscle name="glmed1_r" tendon="glmed1_r_tendon" class="muscle" force="1093.4667688" lengthrange="0.0900317 0.159043"></muscle>
+    <muscle name="glmed2_r" tendon="glmed2_r_tendon" class="muscle" force="765.0916616" lengthrange="0.100118 0.169618"></muscle>
+    <muscle name="glmed3_r" tendon="glmed3_r_tendon" class="muscle" force="871.1992642" lengthrange="0.0847232 0.158266"></muscle>
+    <muscle name="glmin1_r" tendon="glmin1_r_tendon" class="muscle" force="374.045901639344" lengthrange="0.0482547 0.113377"></muscle>
+    <muscle name="glmin2_r" tendon="glmin2_r_tendon" class="muscle" force="394.819672131148" lengthrange="0.0522058 0.106246"></muscle>
+    <muscle name="glmin3_r" tendon="glmin3_r_tendon" class="muscle" force="446.773770491804" lengthrange="0.0691013 0.106678"></muscle>
+    <muscle name="grac_r" tendon="grac_r_tendon" class="muscle" force="281.311475409836" lengthrange="0.281288   0.5034"></muscle>
+    <muscle name="iliacus_r" tendon="iliacus_r_tendon" class="muscle" force="1021.14098360656" lengthrange="0.153764 0.260677"></muscle>
+    <muscle name="perbrev_r" tendon="perbrev_r_tendon" class="muscle" force="521.2015988" lengthrange="0.205262 0.259007"></muscle>
+    <muscle name="perlong_r" tendon="perlong_r_tendon" class="muscle" force="1115.3714214" lengthrange="0.435198 0.495258"></muscle>
+    <muscle name="piri_r" tendon="piri_r_tendon" class="muscle" force="1029.7868852459" lengthrange="0.141003 0.169274"></muscle>
+    <muscle name="psoas_r" tendon="psoas_r_tendon" class="muscle" force="1426.79016393443" lengthrange="0.162076 0.280233"></muscle>
+    <muscle name="recfem_r" tendon="recfem_r_tendon" class="muscle" force="2191.74098360656" lengthrange="0.475489 0.548072"></muscle>
+    <muscle name="sart_r" tendon="sart_r_tendon" class="muscle" force="249.413114754098" lengthrange=" 0.32586 0.729252"></muscle>
+    <muscle name="semimem_r" tendon="semimem_r_tendon" class="muscle" force="2200.9868852459" lengthrange=" 0.37062 0.435581"></muscle>
+    <muscle name="semiten_r" tendon="semiten_r_tendon" class="muscle" force="591.295081967214" lengthrange="0.338526 0.524628"></muscle>
+    <muscle name="soleus_r" tendon="soleus_r_tendon" class="muscle" force="6194.84262295082" lengthrange="0.346506 0.394123"></muscle>
+    <muscle name="tfl_r" tendon="tfl_r_tendon" class="muscle" force="411.20655737705" lengthrange=" 0.48686 0.579807"></muscle>
+    <muscle name="tibant_r" tendon="tibant_r_tendon" class="muscle" force="1227.45245901639" lengthrange="0.325423 0.405012"></muscle>
+    <muscle name="tibpost_r" tendon="tibpost_r_tendon" class="muscle" force="1730.15409836065" lengthrange="0.352913 0.396361"></muscle>
+    <muscle name="vasint_r" tendon="vasint_r_tendon" class="muscle" force="1697.36065573771" lengthrange="0.249584 0.347829"></muscle>
+    <muscle name="vaslat_r" tendon="vaslat_r_tendon" class="muscle" force="5148.76721311476" lengthrange="0.265953 0.361201"></muscle>
+    <muscle name="vasmed_r" tendon="vasmed_r_tendon" class="muscle" force="2747.82295081966" lengthrange="0.242295 0.329958"></muscle>
+    <muscle name="addbrev_l" tendon="addbrev_l_tendon" class="muscle" force="625.819672131148" lengthrange="0.0906786 0.197848"></muscle>
+    <muscle name="addlong_l" tendon="addlong_l_tendon" class="muscle" force="916.8" lengthrange="0.182792 0.288467"></muscle>
+    <muscle name="addmagDist_l" tendon="addmagDist_l_tendon" class="muscle" force="597.295081967214" lengthrange="0.167828 0.335219"></muscle>
+    <muscle name="addmagIsch_l" tendon="addmagIsch_l_tendon" class="muscle" force="597.295081967214" lengthrange="0.280249 0.427375"></muscle>
+    <muscle name="addmagMid_l" tendon="addmagMid_l_tendon" class="muscle" force="597.295081967214" lengthrange=" 0.11335 0.247329"></muscle>
+    <muscle name="addmagProx_l" tendon="addmagProx_l_tendon" class="muscle" force="597.295081967214" lengthrange="0.0983838 0.207558"></muscle>
+    <muscle name="bflh_l" tendon="bflh_l_tendon" class="muscle" force="1313.18360655738" lengthrange="0.364948 0.458899"></muscle>
+    <muscle name="bfsh_l" tendon="bfsh_l_tendon" class="muscle" force="557.11475409836" lengthrange="0.157824 0.263473"></muscle>
+    <muscle name="edl_l" tendon="edl_l_tendon" class="muscle" force="603.4981556" lengthrange="0.473257 0.552767"></muscle>
+    <muscle name="ehl_l" tendon="ehl_l_tendon" class="muscle" force="285.8675474" lengthrange="0.426623 0.512717"></muscle>
+    <muscle name="fdl_l" tendon="fdl_l_tendon" class="muscle" force="423.177049180328" lengthrange="0.479268 0.531294"></muscle>
+    <muscle name="fhl_l" tendon="fhl_l_tendon" class="muscle" force="907.839344262294" lengthrange="0.449165 0.509424"></muscle>
+    <muscle name="gaslat_l" tendon="gaslat_l_tendon" class="muscle" force="1575.05901639344" lengthrange="0.466034 0.532234"></muscle>
+    <muscle name="gasmed_l" tendon="gasmed_l_tendon" class="muscle" force="3115.51475409836" lengthrange="0.486088 0.543774"></muscle>
+    <muscle name="glmax1_l" tendon="glmax1_l_tendon" class="muscle" force="983.783606557378" lengthrange="0.121199 0.263082"></muscle>
+    <muscle name="glmax2_l" tendon="glmax2_l_tendon" class="muscle" force="1406.04590163935" lengthrange="0.146945 0.299486"></muscle>
+    <muscle name="glmax3_l" tendon="glmax3_l_tendon" class="muscle" force="947.754098360656" lengthrange="0.154859 0.317875"></muscle>
+    <muscle name="glmed1_l" tendon="glmed1_l_tendon" class="muscle" force="1093.4667688" lengthrange="0.0900317 0.159043"></muscle>
+    <muscle name="glmed2_l" tendon="glmed2_l_tendon" class="muscle" force="765.0916616" lengthrange="0.100118 0.169618"></muscle>
+    <muscle name="glmed3_l" tendon="glmed3_l_tendon" class="muscle" force="871.1992642" lengthrange="0.0847232 0.158266"></muscle>
+    <muscle name="glmin1_l" tendon="glmin1_l_tendon" class="muscle" force="374.045901639344" lengthrange="0.0482547 0.113377"></muscle>
+    <muscle name="glmin2_l" tendon="glmin2_l_tendon" class="muscle" force="394.819672131148" lengthrange="0.0522058 0.106246"></muscle>
+    <muscle name="glmin3_l" tendon="glmin3_l_tendon" class="muscle" force="446.773770491804" lengthrange="0.0691013 0.106678"></muscle>
+    <muscle name="grac_l" tendon="grac_l_tendon" class="muscle" force="281.311475409836" lengthrange="0.281288   0.5034"></muscle>
+    <muscle name="iliacus_l" tendon="iliacus_l_tendon" class="muscle" force="1021.14098360656" lengthrange="0.153764 0.260677"></muscle>
+    <muscle name="perbrev_l" tendon="perbrev_l_tendon" class="muscle" force="521.2015988" lengthrange="0.205262 0.259007"></muscle>
+    <muscle name="perlong_l" tendon="perlong_l_tendon" class="muscle" force="1115.3714214" lengthrange="0.435198 0.495258"></muscle>
+    <muscle name="piri_l" tendon="piri_l_tendon" class="muscle" force="1029.7868852459" lengthrange="0.141003 0.169274"></muscle>
+    <muscle name="psoas_l" tendon="psoas_l_tendon" class="muscle" force="1426.79016393443" lengthrange="0.162076 0.280233"></muscle>
+    <muscle name="recfem_l" tendon="recfem_l_tendon" class="muscle" force="2191.74098360656" lengthrange="0.475489 0.548072"></muscle>
+    <muscle name="sart_l" tendon="sart_l_tendon" class="muscle" force="249.413114754098" lengthrange=" 0.32586 0.729252"></muscle>
+    <muscle name="semimem_l" tendon="semimem_l_tendon" class="muscle" force="2200.9868852459" lengthrange=" 0.37062 0.435581"></muscle>
+    <muscle name="semiten_l" tendon="semiten_l_tendon" class="muscle" force="591.295081967214" lengthrange="0.338526 0.524628"></muscle>
+    <muscle name="soleus_l" tendon="soleus_l_tendon" class="muscle" force="6194.84262295082" lengthrange="0.346506 0.394123"></muscle>
+    <muscle name="tfl_l" tendon="tfl_l_tendon" class="muscle" force="411.20655737705" lengthrange=" 0.48686 0.579807"></muscle>
+    <muscle name="tibant_l" tendon="tibant_l_tendon" class="muscle" force="1227.45245901639" lengthrange="0.325423 0.405012"></muscle>
+    <muscle name="tibpost_l" tendon="tibpost_l_tendon" class="muscle" force="1730.15409836065" lengthrange="0.352913 0.396361"></muscle>
+    <muscle name="vasint_l" tendon="vasint_l_tendon" class="muscle" force="1697.36065573771" lengthrange="0.249584 0.347829"></muscle>
+    <muscle name="vaslat_l" tendon="vaslat_l_tendon" class="muscle" force="5148.76721311476" lengthrange="0.265953 0.361201"></muscle>
+    <muscle name="vasmed_l" tendon="vasmed_l_tendon" class="muscle" force="2747.82295081966" lengthrange="0.242295 0.329958"></muscle>
   </actuator>
   <equality>
     <joint name="knee_angle_r_translation2_constraint" active="true" joint1="knee_angle_r_translation2" joint2="knee_angle_r" polycoef="7.69254e-11 0.00587971 -0.00125622 -2.61846e-06 6.24355e-07" solimp="0.9999 0.9999 0.001 0.5 2"></joint>

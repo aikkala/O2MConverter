@@ -1,11 +1,16 @@
+Rajagopal2015.osim:
+  - set ground_pelvis/location_in_parent to (0,1.1,0)
+
 Rajagopal2015_for_testing.osim:
   - set all pelvis degrees of freedom as locked
 
 subject_scaled_walk.osim:
   - changed "l_pat.vtp" to "l_patella.vtp" (there is no "l_pat.vtp" file)
+  - set ground_pelvis/location_in_parent to (0,1.1,0)
 
 subject_scaled_run.osim:
   - changed "l_pat.vtp" to "l_patella.vtp" (there is no "l_pat.vtp" file)
+  - set ground_pelvis/location_in_parent to (0,1.1,0)
 
 subject_scaled_walk_for_testing.osim:
   - changed "l_pat.vtp" to "l_patella.vtp" (there is no "l_pat.vtp" file)

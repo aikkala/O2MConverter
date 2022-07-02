@@ -169,7 +169,7 @@
 								</TransformAxis>
 							</SpatialTransform>
 							<parent_body>ground</parent_body>
-							<location_in_parent> 0 0 0</location_in_parent>
+							<location_in_parent> 0 1.1 0</location_in_parent>
 							<orientation_in_parent> 0 0 0</orientation_in_parent>
 							<location> 0 0 0</location>
 							<orientation> 0 0 0</orientation>

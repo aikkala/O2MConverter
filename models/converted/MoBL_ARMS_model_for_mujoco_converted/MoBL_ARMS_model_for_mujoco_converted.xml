@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mujoco model="MoBL_ARMS_Upper_Limb_Model_OpenSim">
-  <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001"></compiler>
+  <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001">
+    <lengthrange inttotal="50" useexisting="true"></lengthrange>
+  </compiler>
   <default>
-    <joint limited="true" damping="0.5" armature="0.01" stiffness="0"></joint>
-    <geom contype="1" conaffinity="1" condim="3" rgba="0.8 0.6 .4 1" margin="0.001" solref=".02 1" solimp=".8 .8 .01" material="geom"></geom>
+    <joint limited="true" damping="0.5" armature="0.1" stiffness="0"></joint>
+    <geom rgba="0.8 0.6 .4 1" margin="0.001"></geom>
     <site size="0.001"></site>
     <tendon width="0.001" rgba=".95 .3 .3 1" limited="false"></tendon>
-    <muscle scale="400"></muscle>
+    <default class="muscle">
+      <muscle ctrllimited="true" ctrlrange="0 1" scale="200"></muscle>
+    </default>
+    <default class="motor">
+      <general gainprm="5 0 0 0 0 0 0 0 0 0"></general>
+    </default>
   </default>
-  <option timestep="0.002">
-    <flag energy="enable"></flag>
-  </option>
-  <size nconmax="400" nuser_jnt="1"></size>
-  <visual>
-    <map fogstart="3" fogend="5" force="0.1"></map>
-    <quality shadowsize="2048"></quality>
-  </visual>
+  <option timestep="0.002"></option>
+  <size njmax="1000" nconmax="400" nuser_jnt="1"></size>
   <worldbody>
     <geom name="floor" pos="0 0 0" size="10 10 0.125" type="plane" material="MatPlane" condim="3"></geom>
     <body name="thorax" pos="       0 6.12323e-17        1" quat="0.7071067811865475 0.7071067811865475 0.0 0.0">
-      <light mode="trackcom" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1"></light>
+      <light mode="trackcom" directional="false" pos="0 0 4.0" dir="0 0 -1"></light>
       <geom name="thorax" type="mesh" mesh="thorax"></geom>
       <site name="PECM1-P3" pos="  -7e-05  0.00821  0.10454"></site>
       <site name="PECM2-P4" pos="0.03091 -0.03922 0.09705"></site>
@@ -87,10 +88,10 @@
               <joint name="unrothum_r2" type="hinge" pos="0 0 0" axis="0.157095 0.947269 -0.279291" limited="false" range="-99999.9  99999.9" ref="0"></joint>
               <body name="humphant" pos="       0        0        0" quat="1.0 0.0 0.0 0.0">
                 <inertial pos="       0        0        0" mass="0.0001" fullinertia="       1        1        1        0        0        0"></inertial>
-                <joint name="elv_angle" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="true" range=" -1.5708  2.26893" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.523599      0.5        1" user="1"></joint>
+                <joint name="elv_angle" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="true" range=" -1.5708  2.26893" ref="0" user="1"></joint>
                 <body name="humphant1" pos="       0        0        0" quat="1.0 0.0 0.0 0.0">
                   <inertial pos="       0        0        0" mass="0.0001" fullinertia="       1        1        1        0        0        0"></inertial>
-                  <joint name="shoulder_elv" type="hinge" pos="0 0 0" axis="-0.998261   0.0023 0.058898" limited="true" range="       0  3.14159" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.523599      0.5        1" user="1"></joint>
+                  <joint name="shoulder_elv" type="hinge" pos="0 0 0" axis="-0.998261   0.0023 0.058898" limited="true" range="       0  3.14159" ref="0" user="1"></joint>
                   <joint name="shoulder1_r2" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="false" range="-99999.9  99999.9" ref="0"></joint>
                   <body name="humerus" pos="       0        0        0" quat="1.0 0.0 0.0 0.0">
                     <geom name="humerus" type="mesh" mesh="humerus"></geom>
@@ -136,6 +137,7 @@
                     <site name="BICshort-P4" pos="0.01703 -0.12125 -0.01079"></site>
                     <site name="BICshort-P5" pos="0.0228 -0.1754 -0.0063"></site>
                     <site name="BRA-P1" pos="0.0068 -0.1739 -0.0036"></site>
+                    <site name="BRA-P2" pos="0.01894 -0.28559 -0.01105"></site>
                     <site name="BRD-P1" pos="-0.0098 -0.19963 0.00223"></site>
                     <site name="ECRL-P1" pos="-0.0073 -0.2609 0.0091"></site>
                     <site name="ECRB-P1" pos="0.01349 -0.29048 0.01698"></site>
@@ -151,7 +153,7 @@
                     <site name="EDCM-P1" pos="0.00051 -0.28984 0.01949"></site>
                     <site name="EDCI-P1" pos="0.00065 -0.28898 0.01869"></site>
                     <site name="EDM-P1" pos="0.00089 -0.28919 0.01847"></site>
-                    <joint name="shoulder_rot" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="true" range=" -1.5708 0.349066" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.523599      0.5        1" user="1"></joint>
+                    <joint name="shoulder_rot" type="hinge" pos="0 0 0" axis="  0.0048 0.999089   0.0424" limited="true" range=" -1.5708 0.349066" ref="0" user="1"></joint>
                     <body name="ulna" pos="  0.0061  -0.2904  -0.0123" quat="1.0 0.0 0.0 0.0">
                       <geom name="ulna" type="mesh" mesh="ulna"></geom>
                       <inertial pos="0.00971783 -0.0959509 0.024286" mass="1.1053" fullinertia="0.00541309 0.00115318 0.00494361 0.00031686 -7.615e-05 0.00109169"></inertial>
@@ -161,6 +163,7 @@
                       <site name="ANC-P2" pos="-0.02532 -0.00124 0.006"></site>
                       <site name="SUP-P3" pos="-0.0136 -0.03384 0.02013"></site>
                       <site name="BRA-P4" pos="-0.0032 -0.0239 0.0009"></site>
+                      <site name="BRA-P3" pos="0.00498 -0.01463 0.00128"></site>
                       <site name="ECU-P2" pos="-0.01391 -0.03201 0.02947"></site>
                       <site name="ECU-P3" pos="-0.01705 -0.05428 0.02868"></site>
                       <site name="ECU-P4" pos="-0.01793 -0.09573 0.03278"></site>
@@ -178,7 +181,7 @@
                       <site name="EIP-P1" pos="-0.00394 -0.16652 0.03682"></site>
                       <site name="EIP-P2" pos="0.00171 -0.17469 0.04049"></site>
                       <site name="EPL-P1" pos="-0.01412 -0.09706 0.02952"></site>
-                      <joint name="elbow_flexion" type="hinge" pos="0 0 0" axis="  0.0494   0.0366 0.998108" limited="true" range="       0  2.26893" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.514872      0.5        1" user="1"></joint>
+                      <joint name="elbow_flexion" type="hinge" pos="0 0 0" axis="  0.0494   0.0366 0.998108" limited="true" range="       0  2.26893" ref="0" user="1"></joint>
                       <body name="radius" pos="  0.0004 -0.011503 0.019999" quat="1.0 0.0 0.0 0.0">
                         <geom name="radius" type="mesh" mesh="radius"></geom>
                         <inertial pos="0.0336341 -0.181559   0.0156" mass="0.23359" fullinertia="0.00043855 8.859e-05 0.00040258 3.014e-05 -4.24e-06 6.418e-05"></inertial>
@@ -200,6 +203,7 @@
                         <site name="FCU-P2" pos="0.0101156 -0.183524 0.00202653"></site>
                         <site name="PL-P2" pos="0.02531 -0.23915 -0.00276"></site>
                         <site name="PT-P5" pos="0.0254 -0.1088 0.0198"></site>
+                        <site name="PT-P4" pos="0.0236 -0.0934 0.0094"></site>
                         <site name="PQ-P1" pos="0.03245 -0.19998 0.01962"></site>
                         <site name="FDSL-P2" pos="0.01377 -0.18718 0.00205"></site>
                         <site name="FDSR-P2" pos="0.01571 -0.18666 0.00267"></site>
@@ -236,15 +240,15 @@
                         <site name="APL-P3" pos="0.03993 -0.16072 0.034"></site>
                         <site name="APL-P4" pos="0.04397 -0.17845 0.03134"></site>
                         <site name="APL-P5" pos="0.05505 -0.23084 0.02368"></site>
-                        <joint name="pro_sup" type="hinge" pos="0 0 0" axis="-0.017161 0.992666 -0.119668" limited="true" range=" -1.5708   1.5708" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.523599      0.5        1" user="1"></joint>
+                        <joint name="pro_sup" type="hinge" pos="0 0 0" axis="-0.017161 0.992666 -0.119668" limited="true" range=" -1.5708   1.5708" ref="0" user="1"></joint>
                         <body name="proximal_row" pos="   0.018   -0.242    0.025" quat="1.0 0.0 0.0 0.0">
                           <geom name="lunate" type="mesh" mesh="lunate"></geom>
                           <geom name="sdfastSCAPHOIDw" type="mesh" mesh="sdfastSCAPHOIDw"></geom>
                           <geom name="sdfastPISIFORMw" type="mesh" mesh="sdfastPISIFORMw"></geom>
                           <geom name="sdfastTRIQUETRALw" type="mesh" mesh="sdfastTRIQUETRALw"></geom>
                           <inertial pos="       0        0        0" mass="0.0001" fullinertia="   1e-05    1e-05    1e-05        0        0        0"></inertial>
-                          <joint name="deviation" type="hinge" pos="0 0 0" axis="-0.819064 -0.135611 -0.557444" limited="true" range="-0.174533 0.436332" ref="0" damping="3.045599544730105e-05" solimplimit="  0.0001     0.99 0.0785397      0.5        1" user="1"></joint>
-                          <joint name="flexion" type="hinge" pos="0 0 0" axis="0.956427 -0.252207 0.147104" limited="true" range="-0.785398 0.785398" ref="0" damping="7.615395125226858e-06" solimplimit="  0.0001     0.99    0.001      0.5        1" user="1"></joint>
+                          <joint name="deviation" type="hinge" pos="0 0 0" axis="-0.819064 -0.135611 -0.557444" limited="true" range="-0.174533 0.436332" ref="0" user="1"></joint>
+                          <joint name="flexion" type="hinge" pos="0 0 0" axis="0.956427 -0.252207 0.147104" limited="true" range="-0.610864 0.610864" ref="0" user="1"></joint>
                           <body name="hand" pos="0.003992 -0.015054 0.002327" quat="1.0 0.0 0.0 0.0">
                             <geom name="sdfast_1seg_hand_fr_c_5mc" type="mesh" mesh="sdfast_1seg_hand_fr_c_5mc"></geom>
                             <geom name="sdfast_1seg_hand_fr_c_4mc" type="mesh" mesh="sdfast_1seg_hand_fr_c_4mc"></geom>
@@ -411,6 +415,7 @@
         </body>
       </body>
     </body>
+    <camera name="for_testing" pos="0 0 0" euler="0 0 0"></camera>
   </worldbody>
   <asset>
     <mesh name="thorax" file="Geometry/thorax.stl" scale="       1        1        1"></mesh>
@@ -447,129 +452,127 @@
     <mesh name="hand_thumbdist" file="Geometry/hand_thumbdist.stl" scale="       1        1        1"></mesh>
     <mesh name="hand_1mc" file="Geometry/hand_1mc.stl" scale="       1        1        1"></mesh>
     <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="100" height="100"></texture>
-    <texture name="texgeom" type="cube" builtin="flat" mark="cross" width="127" height="1278" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1" random="0.01"></texture>
-    <material name="MatPlane" reflectance="0.5" texture="texplane" texrepeat="1 1" texuniform="true"></material>
-    <material name="geom" texture="texgeom" texuniform="true"></material>
+    <material name="MatPlane" reflectance="0.0" texture="texplane" texrepeat="1 1" texuniform="true"></material>
   </asset>
   <tendon>
-    <spatial name="DELT1_tendon" springlength="0.093" damping="0.017">
+    <spatial name="DELT1_tendon">
       <site site="DELT1-P1"></site>
       <site site="DELT1-P2"></site>
       <site site="DELT1-P3"></site>
       <site site="DELT1-P4"></site>
     </spatial>
-    <spatial name="DELT2_tendon" springlength="0.1095" damping="0.017">
+    <spatial name="DELT2_tendon">
       <site site="DELT2-P1"></site>
       <site site="DELT2-P2"></site>
       <site site="DELT2-P3"></site>
       <site site="DELT2-P4"></site>
     </spatial>
-    <spatial name="DELT3_tendon" springlength="0.038" damping="0.017">
+    <spatial name="DELT3_tendon">
       <site site="DELT3-P1"></site>
       <site site="DELT3-P2"></site>
       <site site="DELT3-P3"></site>
     </spatial>
-    <spatial name="SUPSP_tendon" springlength="0.0395" damping="0.017">
+    <spatial name="SUPSP_tendon">
       <site site="SUPSP-P1"></site>
       <site site="SUPSP-P2"></site>
       <site site="SUPSP-P3"></site>
     </spatial>
-    <spatial name="INFSP_tendon" springlength="0.0308" damping="0.017">
+    <spatial name="INFSP_tendon">
       <site site="INFSP-P1"></site>
       <site site="INFSP-P2"></site>
     </spatial>
-    <spatial name="SUBSC_tendon" springlength="0.033" damping="0.017">
+    <spatial name="SUBSC_tendon">
       <site site="SUBSC-P1"></site>
       <site site="SUBSC-P2"></site>
       <site site="SUBSC-P3"></site>
     </spatial>
-    <spatial name="TMIN_tendon" springlength="0.0713" damping="0.017">
+    <spatial name="TMIN_tendon">
       <site site="TMIN-P1"></site>
       <site site="TMIN-P2"></site>
       <site site="TMIN-P3"></site>
     </spatial>
-    <spatial name="TMAJ_tendon" springlength="0.02" damping="0.017">
+    <spatial name="TMAJ_tendon">
       <site site="TMAJ-P1"></site>
       <site site="TMAJ-P2"></site>
       <site site="TMAJ-P3"></site>
     </spatial>
-    <spatial name="PECM1_tendon" springlength="0.0028" damping="0.017">
+    <spatial name="PECM1_tendon">
       <site site="PECM1-P1"></site>
       <site site="PECM1-P2"></site>
       <site site="PECM1-P3"></site>
       <site site="PECM1-P4"></site>
     </spatial>
-    <spatial name="PECM2_tendon" springlength="0.089" damping="0.017">
+    <spatial name="PECM2_tendon">
       <site site="PECM2-P1"></site>
       <site site="PECM2-P2"></site>
       <site site="PECM2-P3"></site>
       <site site="PECM2-P4"></site>
       <site site="PECM2-P5"></site>
     </spatial>
-    <spatial name="PECM3_tendon" springlength="0.132" damping="0.017">
+    <spatial name="PECM3_tendon">
       <site site="PECM3-P1"></site>
       <site site="PECM3-P2"></site>
       <site site="PECM3-P3"></site>
       <site site="PECM3-P4"></site>
       <site site="PECM3-P5"></site>
     </spatial>
-    <spatial name="LAT1_tendon" springlength="0.12" damping="0.017">
+    <spatial name="LAT1_tendon">
       <site site="LAT1-P1"></site>
       <site site="LAT1-P2"></site>
       <site site="LAT1-P3"></site>
       <site site="LAT1-P4"></site>
       <site site="LAT1-P5"></site>
     </spatial>
-    <spatial name="LAT2_tendon" springlength="0.1765" damping="0.017">
+    <spatial name="LAT2_tendon">
       <site site="LAT2-P1"></site>
       <site site="LAT2-P2"></site>
       <site site="LAT2-P3"></site>
       <site site="LAT2-P4"></site>
       <site site="LAT2-P5"></site>
     </spatial>
-    <spatial name="LAT3_tendon" springlength="0.1403" damping="0.017">
+    <spatial name="LAT3_tendon">
       <site site="LAT3-P1"></site>
       <site site="LAT3-P2"></site>
       <site site="LAT3-P3"></site>
       <site site="LAT3-P4"></site>
       <site site="LAT3-P5"></site>
     </spatial>
-    <spatial name="CORB_tendon" springlength="0.097" damping="0.017">
+    <spatial name="CORB_tendon">
       <site site="CORB-P1"></site>
       <site site="CORB-P2"></site>
       <site site="CORB-P3"></site>
     </spatial>
-    <spatial name="TRIlong_tendon" springlength="0.143" damping="0.017">
+    <spatial name="TRIlong_tendon">
       <site site="TRIlong-P1"></site>
       <site site="TRIlong-P2"></site>
       <site site="TRIlong-P3"></site>
       <site site="TRIlong-P4"></site>
       <site site="TRIlong-P5"></site>
     </spatial>
-    <spatial name="TRIlat_tendon" springlength="0.098" damping="0.017">
+    <spatial name="TRIlat_tendon">
       <site site="TRIlat-P1"></site>
       <site site="TRIlat-P2"></site>
       <site site="TRIlat-P3"></site>
       <site site="TRIlat-P4"></site>
       <site site="TRIlat-P5"></site>
     </spatial>
-    <spatial name="TRImed_tendon" springlength="0.0908" damping="0.017">
+    <spatial name="TRImed_tendon">
       <site site="TRImed-P1"></site>
       <site site="TRImed-P2"></site>
       <site site="TRImed-P3"></site>
       <site site="TRImed-P4"></site>
       <site site="TRImed-P5"></site>
     </spatial>
-    <spatial name="ANC_tendon" springlength="0.018" damping="0.017">
+    <spatial name="ANC_tendon">
       <site site="ANC-P1"></site>
       <site site="ANC-P2"></site>
     </spatial>
-    <spatial name="SUP_tendon" springlength="0.028" damping="0.017">
+    <spatial name="SUP_tendon">
       <site site="SUP-P1"></site>
       <site site="SUP-P2"></site>
       <site site="SUP-P3"></site>
     </spatial>
-    <spatial name="BIClong_tendon" springlength="0.2723" damping="0.017">
+    <spatial name="BIClong_tendon">
       <site site="BIClong-P1"></site>
       <site site="BIClong-P2"></site>
       <site site="BIClong-P3"></site>
@@ -581,7 +584,7 @@
       <site site="BIClong-P9"></site>
       <site site="BIClong-P11"></site>
     </spatial>
-    <spatial name="BICshort_tendon" springlength="0.1923" damping="0.017">
+    <spatial name="BICshort_tendon">
       <site site="BICshort-P1"></site>
       <site site="BICshort-P2"></site>
       <site site="BICshort-P3"></site>
@@ -590,28 +593,30 @@
       <site site="BICshort-P6"></site>
       <site site="BICshort-P8"></site>
     </spatial>
-    <spatial name="BRA_tendon" springlength="0.0535" damping="0.017">
+    <spatial name="BRA_tendon">
       <site site="BRA-P1"></site>
+      <site site="BRA-P2"></site>
+      <site site="BRA-P3"></site>
       <site site="BRA-P4"></site>
     </spatial>
-    <spatial name="BRD_tendon" springlength="0.133" damping="0.017">
+    <spatial name="BRD_tendon">
       <site site="BRD-P1"></site>
       <site site="BRD-P2"></site>
       <site site="BRD-P3"></site>
     </spatial>
-    <spatial name="ECRL_tendon" springlength="0.244" damping="0.017">
+    <spatial name="ECRL_tendon">
       <site site="ECRL-P1"></site>
       <site site="ECRL-P2"></site>
       <site site="ECRL-P3"></site>
       <site site="ECRL-P4"></site>
     </spatial>
-    <spatial name="ECRB_tendon" springlength="0.2223" damping="0.017">
+    <spatial name="ECRB_tendon">
       <site site="ECRB-P1"></site>
       <site site="ECRB-P2"></site>
       <site site="ECRB-P3"></site>
       <site site="ECRB-P4"></site>
     </spatial>
-    <spatial name="ECU_tendon" springlength="0.2285" damping="0.017">
+    <spatial name="ECU_tendon">
       <site site="ECU-P1"></site>
       <site site="ECU-P2"></site>
       <site site="ECU-P3"></site>
@@ -619,34 +624,35 @@
       <site site="ECU-P5"></site>
       <site site="ECU-P6"></site>
     </spatial>
-    <spatial name="FCR_tendon" springlength="0.244" damping="0.017">
+    <spatial name="FCR_tendon">
       <site site="FCR-P1"></site>
       <site site="FCR-P2"></site>
       <site site="FCR-P3"></site>
     </spatial>
-    <spatial name="FCU_tendon" springlength="0.265" damping="0.017">
+    <spatial name="FCU_tendon">
       <site site="FCU-P1"></site>
       <site site="FCU-P2"></site>
       <site site="FCU-P3"></site>
       <site site="FCU-P4"></site>
     </spatial>
-    <spatial name="PL_tendon" springlength="0.2694" damping="0.017">
+    <spatial name="PL_tendon">
       <site site="PL-P1"></site>
       <site site="PL-P2"></site>
       <site site="PL-P3"></site>
       <site site="PL-P4"></site>
     </spatial>
-    <spatial name="PT_tendon" springlength="0.098" damping="0.017">
+    <spatial name="PT_tendon">
       <site site="PT-P1"></site>
       <site site="PT-P2"></site>
       <site site="PT-P3"></site>
+      <site site="PT-P4"></site>
       <site site="PT-P5"></site>
     </spatial>
-    <spatial name="PQ_tendon" springlength="0.005" damping="0.017">
+    <spatial name="PQ_tendon">
       <site site="PQ-P1"></site>
       <site site="PQ-P2"></site>
     </spatial>
-    <spatial name="FDSL_tendon" springlength="0.3386" damping="0.017">
+    <spatial name="FDSL_tendon">
       <site site="FDSL-P1"></site>
       <site site="FDSL-P2"></site>
       <site site="FDSL-P3"></site>
@@ -656,7 +662,7 @@
       <site site="FDSL-P7"></site>
       <site site="FDSL-P8"></site>
     </spatial>
-    <spatial name="FDSR_tendon" springlength="0.328" damping="0.017">
+    <spatial name="FDSR_tendon">
       <site site="FDSR-P1"></site>
       <site site="FDSR-P2"></site>
       <site site="FDSR-P3"></site>
@@ -666,7 +672,7 @@
       <site site="FDSR-P7"></site>
       <site site="FDSR-P8"></site>
     </spatial>
-    <spatial name="FDSM_tendon" springlength="0.295" damping="0.017">
+    <spatial name="FDSM_tendon">
       <site site="FDSM-P1"></site>
       <site site="FDSM-P2"></site>
       <site site="FDSM-P3"></site>
@@ -677,7 +683,7 @@
       <site site="FDSM-P8"></site>
       <site site="FDSM-P9"></site>
     </spatial>
-    <spatial name="FDSI_tendon" springlength="0.275" damping="0.017">
+    <spatial name="FDSI_tendon">
       <site site="FDSI-P1"></site>
       <site site="FDSI-P2"></site>
       <site site="FDSI-P3"></site>
@@ -688,7 +694,7 @@
       <site site="FDSI-P8"></site>
       <site site="FDSI-P9"></site>
     </spatial>
-    <spatial name="FDPL_tendon" springlength="0.2819" damping="0.017">
+    <spatial name="FDPL_tendon">
       <site site="FDPL-P1"></site>
       <site site="FDPL-P2"></site>
       <site site="FDPL-P3"></site>
@@ -699,7 +705,7 @@
       <site site="FDPL-P8"></site>
       <site site="FDPL-P9"></site>
     </spatial>
-    <spatial name="FDPR_tendon" springlength="0.2915" damping="0.017">
+    <spatial name="FDPR_tendon">
       <site site="FDPR-P1"></site>
       <site site="FDPR-P2"></site>
       <site site="FDPR-P3"></site>
@@ -710,7 +716,7 @@
       <site site="FDPR-P8"></site>
       <site site="FDPR-P9"></site>
     </spatial>
-    <spatial name="FDPM_tendon" springlength="0.303" damping="0.017">
+    <spatial name="FDPM_tendon">
       <site site="FDPM-P1"></site>
       <site site="FDPM-P2"></site>
       <site site="FDPM-P3"></site>
@@ -722,7 +728,7 @@
       <site site="FDPM-P9"></site>
       <site site="FDPM-P10"></site>
     </spatial>
-    <spatial name="FDPI_tendon" springlength="0.3015" damping="0.017">
+    <spatial name="FDPI_tendon">
       <site site="FDPI-P1"></site>
       <site site="FDPI-P2"></site>
       <site site="FDPI-P3"></site>
@@ -733,7 +739,7 @@
       <site site="FDPI-P8"></site>
       <site site="FDPI-P9"></site>
     </spatial>
-    <spatial name="EDCL_tendon" springlength="0.335" damping="0.017">
+    <spatial name="EDCL_tendon">
       <site site="EDCL-P1"></site>
       <site site="EDCL-P2"></site>
       <site site="EDCL-P3"></site>
@@ -745,7 +751,7 @@
       <site site="EDCL-P9"></site>
       <site site="EDCL-P10"></site>
     </spatial>
-    <spatial name="EDCR_tendon" springlength="0.365" damping="0.017">
+    <spatial name="EDCR_tendon">
       <site site="EDCR-P1"></site>
       <site site="EDCR-P2"></site>
       <site site="EDCR-P3"></site>
@@ -757,7 +763,7 @@
       <site site="EDCR-P9"></site>
       <site site="EDCR-P10"></site>
     </spatial>
-    <spatial name="EDCM_tendon" springlength="0.365" damping="0.017">
+    <spatial name="EDCM_tendon">
       <site site="EDCM-P1"></site>
       <site site="EDCM-P2"></site>
       <site site="EDCM-P3"></site>
@@ -770,7 +776,7 @@
       <site site="EDCM-P10"></site>
       <site site="EDCM-P11"></site>
     </spatial>
-    <spatial name="EDCI_tendon" springlength="0.365" damping="0.017">
+    <spatial name="EDCI_tendon">
       <site site="EDCI-P1"></site>
       <site site="EDCI-P2"></site>
       <site site="EDCI-P3"></site>
@@ -782,7 +788,7 @@
       <site site="EDCI-P9"></site>
       <site site="EDCI-P10"></site>
     </spatial>
-    <spatial name="EDM_tendon" springlength="0.335" damping="0.017">
+    <spatial name="EDM_tendon">
       <site site="EDM-P1"></site>
       <site site="EDM-P2"></site>
       <site site="EDM-P3"></site>
@@ -795,7 +801,7 @@
       <site site="EDM-P10"></site>
       <site site="EDM-P11"></site>
     </spatial>
-    <spatial name="EIP_tendon" springlength="0.21" damping="0.017">
+    <spatial name="EIP_tendon">
       <site site="EIP-P1"></site>
       <site site="EIP-P2"></site>
       <site site="EIP-P3"></site>
@@ -807,7 +813,7 @@
       <site site="EIP-P9"></site>
       <site site="EIP-P10"></site>
     </spatial>
-    <spatial name="EPL_tendon" springlength="0.2305" damping="0.017">
+    <spatial name="EPL_tendon">
       <site site="EPL-P1"></site>
       <site site="EPL-P2"></site>
       <site site="EPL-P3"></site>
@@ -821,7 +827,7 @@
       <site site="EPL-P11"></site>
       <site site="EPL-P12"></site>
     </spatial>
-    <spatial name="EPB_tendon" springlength="0.1155" damping="0.017">
+    <spatial name="EPB_tendon">
       <site site="EPB-P1"></site>
       <site site="EPB-P2"></site>
       <site site="EPB-P3"></site>
@@ -831,7 +837,7 @@
       <site site="EPB-P7"></site>
       <site site="EPB-P8"></site>
     </spatial>
-    <spatial name="FPL_tendon" springlength="0.197" damping="0.017">
+    <spatial name="FPL_tendon">
       <site site="FPL-P1"></site>
       <site site="FPL-P2"></site>
       <site site="FPL-P3"></site>
@@ -844,7 +850,7 @@
       <site site="FPL-P10"></site>
       <site site="FPL-P11"></site>
     </spatial>
-    <spatial name="APL_tendon" springlength="0.1295" damping="0.017">
+    <spatial name="APL_tendon">
       <site site="APL-P1"></site>
       <site site="APL-P2"></site>
       <site site="APL-P3"></site>
@@ -857,71 +863,71 @@
     </spatial>
   </tendon>
   <actuator>
-    <muscle name="DELT1" tendon="DELT1_tendon" lengthrange="0.002325     3.72" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="DELT2" tendon="DELT2_tendon" lengthrange="0.0027375     4.38" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="DELT3" tendon="DELT3_tendon" lengthrange=" 0.00095     1.52" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="SUPSP" tendon="SUPSP_tendon" lengthrange="0.0009875     1.58" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="INFSP" tendon="INFSP_tendon" lengthrange=" 0.00077    1.232" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="SUBSC" tendon="SUBSC_tendon" lengthrange="0.000825     1.32" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TMIN" tendon="TMIN_tendon" lengthrange="0.0017825    2.852" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TMAJ" tendon="TMAJ_tendon" lengthrange="  0.0005      0.8" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PECM1" tendon="PECM1_tendon" lengthrange="   7e-05    0.112" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PECM2" tendon="PECM2_tendon" lengthrange="0.002225     3.56" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PECM3" tendon="PECM3_tendon" lengthrange="  0.0033     5.28" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="LAT1" tendon="LAT1_tendon" lengthrange="   0.003      4.8" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="LAT2" tendon="LAT2_tendon" lengthrange="0.0044125     7.06" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="LAT3" tendon="LAT3_tendon" lengthrange="0.0035075    5.612" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="CORB" tendon="CORB_tendon" lengthrange="0.002425     3.88" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TRIlong" tendon="TRIlong_tendon" lengthrange="0.003575     5.72" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TRIlat" tendon="TRIlat_tendon" lengthrange=" 0.00245     3.92" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="TRImed" tendon="TRImed_tendon" lengthrange=" 0.00227    3.632" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="ANC" tendon="ANC_tendon" lengthrange=" 0.00045     0.72" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="SUP" tendon="SUP_tendon" lengthrange="  0.0007     1.12" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="BIClong" tendon="BIClong_tendon" lengthrange="0.0068075   10.892" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="BICshort" tendon="BICshort_tendon" lengthrange="0.0048075    7.692" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="BRA" tendon="BRA_tendon" lengthrange="0.0013375     2.14" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="BRD" tendon="BRD_tendon" lengthrange="0.003325     5.32" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="ECRL" tendon="ECRL_tendon" lengthrange="  0.0061     9.76" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="ECRB" tendon="ECRB_tendon" lengthrange="0.0055575    8.892" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="ECU" tendon="ECU_tendon" lengthrange="0.0057125     9.14" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FCR" tendon="FCR_tendon" lengthrange="  0.0061     9.76" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FCU" tendon="FCU_tendon" lengthrange="0.006625     10.6" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PL" tendon="PL_tendon" lengthrange="0.006735   10.776" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PT" tendon="PT_tendon" lengthrange=" 0.00245     3.92" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="PQ" tendon="PQ_tendon" lengthrange="0.000125      0.2" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDSL" tendon="FDSL_tendon" lengthrange="0.008465   13.544" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDSR" tendon="FDSR_tendon" lengthrange="  0.0082    13.12" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDSM" tendon="FDSM_tendon" lengthrange="0.007375     11.8" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDSI" tendon="FDSI_tendon" lengthrange="0.006875       11" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDPL" tendon="FDPL_tendon" lengthrange="0.0070475   11.276" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDPR" tendon="FDPR_tendon" lengthrange="0.0072875    11.66" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDPM" tendon="FDPM_tendon" lengthrange="0.007575    12.12" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FDPI" tendon="FDPI_tendon" lengthrange="0.0075375    12.06" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDCL" tendon="EDCL_tendon" lengthrange="0.008375     13.4" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDCR" tendon="EDCR_tendon" lengthrange="0.009125     14.6" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDCM" tendon="EDCM_tendon" lengthrange="0.009125     14.6" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDCI" tendon="EDCI_tendon" lengthrange="0.009125     14.6" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EDM" tendon="EDM_tendon" lengthrange="0.008375     13.4" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EIP" tendon="EIP_tendon" lengthrange=" 0.00525      8.4" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EPL" tendon="EPL_tendon" lengthrange="0.0057625     9.22" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="EPB" tendon="EPB_tendon" lengthrange="0.0028875     4.62" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="FPL" tendon="FPL_tendon" lengthrange="0.004925     7.88" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
-    <muscle name="APL" tendon="APL_tendon" lengthrange="0.0032375     5.18" timeconst="  0.7667 0.145985" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="DELT1" tendon="DELT1_tendon" class="muscle" timeconst="0.0151133 0.085625" force="1218.9" lengthrange="0.138247  0.22874" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="DELT2" tendon="DELT2_tendon" class="muscle" timeconst="0.0151133 0.085625" force="1103.5" lengthrange="0.161563  0.26569" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="DELT3" tendon="DELT3_tendon" class="muscle" timeconst="0.0151133 0.085625" force="201.6" lengthrange="0.103005 0.233014" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="SUPSP" tendon="SUPSP_tendon" class="muscle" timeconst="0.0151133 0.085625" force="499.2" lengthrange="0.0733458 0.141037" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="INFSP" tendon="INFSP_tendon" class="muscle" timeconst="0.0151133 0.085625" force="1075.8" lengthrange="0.0664933  0.13788" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="SUBSC" tendon="SUBSC_tendon" class="muscle" timeconst="0.0151133 0.085625" force="1306.9" lengthrange="0.0740175 0.156053" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TMIN" tendon="TMIN_tendon" class="muscle" timeconst="0.0151133 0.085625" force="269.5" lengthrange="0.105147 0.172841" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TMAJ" tendon="TMAJ_tendon" class="muscle" timeconst="0.0151133 0.085625" force="144" lengthrange="0.0980544 0.254163" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PECM1" tendon="PECM1_tendon" class="muscle" timeconst="0.0151133 0.085625" force="444.3" lengthrange="0.0717495 0.209649" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PECM2" tendon="PECM2_tendon" class="muscle" timeconst="0.0151133 0.085625" force="658.3" lengthrange="0.151241 0.275724" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PECM3" tendon="PECM3_tendon" class="muscle" timeconst="0.0151133 0.085625" force="498.1" lengthrange="0.194762 0.320285" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="LAT1" tendon="LAT1_tendon" class="muscle" timeconst="0.0151133 0.085625" force="290.5" lengthrange="0.235101 0.465303" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="LAT2" tendon="LAT2_tendon" class="muscle" timeconst="0.0151133 0.085625" force="317.5" lengthrange="0.286369 0.506108" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="LAT3" tendon="LAT3_tendon" class="muscle" timeconst="0.0151133 0.085625" force="189" lengthrange="0.270488 0.530863" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="CORB" tendon="CORB_tendon" class="muscle" timeconst="0.0151133 0.085625" force="208.2" lengthrange="0.138521 0.221563" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TRIlong" tendon="TRIlong_tendon" class="muscle" timeconst="0.0151133 0.085625" force="771.8" lengthrange="0.208536 0.339608" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TRIlat" tendon="TRIlat_tendon" class="muscle" timeconst="0.0151133 0.085625" force="717.5" lengthrange="0.154199 0.266598" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="TRImed" tendon="TRImed_tendon" class="muscle" timeconst="0.0151133 0.085625" force="717.5" lengthrange="0.146999 0.259398" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="ANC" tendon="ANC_tendon" class="muscle" timeconst="0.0151133 0.085625" force="283.2" lengthrange="  0.0315 0.0584999" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="SUP" tendon="SUP_tendon" class="muscle" timeconst="0.0151133 0.085625" force="379.6" lengthrange="  0.0445 0.0774999" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="BIClong" tendon="BIClong_tendon" class="muscle" timeconst="0.0151133 0.085625" force="525.1" lengthrange=" 0.33015  0.44585" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="BICshort" tendon="BICshort_tendon" class="muscle" timeconst="0.0151133 0.085625" force="316.8" lengthrange=" 0.25835  0.39045" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="BRA" tendon="BRA_tendon" class="muscle" timeconst="0.0151133 0.085625" force="1177.37" lengthrange="  0.0964   0.1822" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="BRD" tendon="BRD_tendon" class="muscle" timeconst="0.0151133 0.085625" force="276" lengthrange="  0.2193   0.3919" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="ECRL" tendon="ECRL_tendon" class="muscle" timeconst="0.0151133 0.085625" force="337.3" lengthrange="  0.2845   0.3655" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="ECRB" tendon="ECRB_tendon" class="muscle" timeconst="0.0151133 0.085625" force="252.5" lengthrange=" 0.25119  0.30897" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="ECU" tendon="ECU_tendon" class="muscle" timeconst="0.0151133 0.085625" force="192.9" lengthrange="0.259524 0.321573" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FCR" tendon="FCR_tendon" class="muscle" timeconst="0.0151133 0.085625" force="407.9" lengthrange="0.275357 0.338071" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FCU" tendon="FCU_tendon" class="muscle" timeconst="0.0151133 0.085625" force="479.8" lengthrange="0.289894 0.339681" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PL" tendon="PL_tendon" class="muscle" timeconst="0.0151133 0.085625" force="101" lengthrange="0.301222 0.364867" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PT" tendon="PT_tendon" class="muscle" timeconst="0.0151133 0.085625" force="557.2" lengthrange="0.122226 0.170679" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="PQ" tendon="PQ_tendon" class="muscle" timeconst="0.0151133 0.085625" force="284.7" lengthrange="0.0188857 0.0466573" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDSL" tendon="FDSL_tendon" class="muscle" timeconst="0.0151133 0.085625" force="75.3" lengthrange="0.364252 0.415556" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDSR" tendon="FDSR_tendon" class="muscle" timeconst="0.0151133 0.085625" force="171.2" lengthrange=" 0.36471 0.438131" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDSM" tendon="FDSM_tendon" class="muscle" timeconst="0.0151133 0.085625" force="258.8" lengthrange="0.332171 0.406512" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDSI" tendon="FDSI_tendon" class="muscle" force="162.5" lengthrange="0.316521 0.399564" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDPL" tendon="FDPL_tendon" class="muscle" force="236.8" lengthrange="0.318985 0.393157" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDPR" tendon="FDPR_tendon" class="muscle" timeconst="0.0151133 0.085625" force="172.9" lengthrange="0.331103 0.410308" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDPM" tendon="FDPM_tendon" class="muscle" timeconst="0.0151133 0.085625" force="212.4" lengthrange="0.344521 0.427564" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FDPI" tendon="FDPI_tendon" class="muscle" timeconst="0.0151133 0.085625" force="197.3" lengthrange="0.338671 0.413012" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDCL" tendon="EDCL_tendon" class="muscle" timeconst="0.0151133 0.085625" force="39.4" lengthrange=" 0.36748 0.432441" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDCR" tendon="EDCR_tendon" class="muscle" timeconst="0.0151133 0.085625" force="109.2" lengthrange="0.396257 0.458771" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDCM" tendon="EDCM_tendon" class="muscle" timeconst="0.0151133 0.085625" force="94.4" lengthrange=" 0.40115 0.473451" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDCI" tendon="EDCI_tendon" class="muscle" timeconst="0.0151133 0.085625" force="48.8" lengthrange="0.399952 0.469856" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EDM" tendon="EDM_tendon" class="muscle" timeconst="0.0151133 0.085625" force="72.4" lengthrange="0.368704 0.436111" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EIP" tendon="EIP_tendon" class="muscle" timeconst="0.0151133 0.085625" force="47.3" lengthrange="0.239289 0.297866" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EPL" tendon="EPL_tendon" class="muscle" timeconst="0.0151133 0.085625" force="88.3" lengthrange="0.257352 0.311056" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="EPB" tendon="EPB_tendon" class="muscle" timeconst="0.0151133 0.085625" force="46" lengthrange="0.148998 0.215995" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="FPL" tendon="FPL_tendon" class="muscle" timeconst="0.0151133 0.085625" force="201" lengthrange="0.224394 0.279183" ctrllimited="true" ctrlrange="       0        1"></muscle>
+    <muscle name="APL" tendon="APL_tendon" class="muscle" timeconst="0.0151133 0.085625" force="116.7" lengthrange="0.164803 0.235409" ctrllimited="true" ctrlrange="       0        1"></muscle>
   </actuator>
   <equality>
-    <joint name="sternoclavicular_r2_con" joint1="sternoclavicular_r2" joint2="shoulder_elv" active="true" polycoef="1.11022e-16 -0.242001        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="sternoclavicular_r3_con" joint1="sternoclavicular_r3" joint2="shoulder_elv" active="true" polycoef="-8.32667e-17   0.1025        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="unrotscap_r2_con" joint1="unrotscap_r2" joint2="shoulder_elv" active="true" polycoef="-1.11022e-16 0.242001        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="unrotscap_r3_con" joint1="unrotscap_r3" joint2="shoulder_elv" active="true" polycoef="8.32667e-17  -0.1025        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="acromioclavicular_r1_con" joint1="acromioclavicular_r1" joint2="shoulder_elv" active="true" polycoef="-8.32667e-17    0.178        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="sternoclavicular_r2_con" joint1="sternoclavicular_r2" joint2="shoulder_elv" active="true" polycoef="8.32667e-17 -0.242001        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="sternoclavicular_r3_con" joint1="sternoclavicular_r3" joint2="shoulder_elv" active="true" polycoef="-7.63278e-17   0.1025        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="unrotscap_r2_con" joint1="unrotscap_r2" joint2="shoulder_elv" active="true" polycoef="-8.32667e-17 0.242001        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="unrotscap_r3_con" joint1="unrotscap_r3" joint2="shoulder_elv" active="true" polycoef="7.63278e-17  -0.1025        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="acromioclavicular_r1_con" joint1="acromioclavicular_r1" joint2="shoulder_elv" active="true" polycoef="-6.93889e-17    0.178        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="acromioclavicular_r2_con" joint1="acromioclavicular_r2" joint2="shoulder_elv" active="true" polycoef="2.77556e-17 -0.0490002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="acromioclavicular_r3_con" joint1="acromioclavicular_r3" joint2="shoulder_elv" active="true" polycoef="-1.11022e-16 0.396002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="unrothum_r1_con" joint1="unrothum_r1" joint2="shoulder_elv" active="true" polycoef="8.32667e-17   -0.178        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="acromioclavicular_r3_con" joint1="acromioclavicular_r3" joint2="shoulder_elv" active="true" polycoef="-5.55112e-17 0.396002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="unrothum_r1_con" joint1="unrothum_r1" joint2="shoulder_elv" active="true" polycoef="6.93889e-17   -0.178        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="unrothum_r2_con" joint1="unrothum_r2" joint2="shoulder_elv" active="true" polycoef="-2.77556e-17 0.0490002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="unrothum_r3_con" joint1="unrothum_r3" joint2="shoulder_elv" active="true" polycoef="1.11022e-16 -0.396002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="shoulder1_r2_con" joint1="shoulder1_r2" joint2="elv_angle" active="true" polycoef="       0       -1        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="wrist_hand_r1_con" joint1="wrist_hand_r1" joint2="deviation" active="true" polycoef="2.77556e-17  1.35714 -0.818507        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
-    <joint name="wrist_hand_r3_con" joint1="wrist_hand_r3" joint2="flexion" active="true" polycoef="       0      0.5        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="unrothum_r3_con" joint1="unrothum_r3" joint2="shoulder_elv" active="true" polycoef="5.55112e-17 -0.396002        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="shoulder1_r2_con" joint1="shoulder1_r2" joint2="elv_angle" active="true" polycoef="-5.55112e-17       -1        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="wrist_hand_r1_con" joint1="wrist_hand_r1" joint2="deviation" active="true" polycoef="1.38778e-16  1.35714 -0.818507        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="wrist_hand_r3_con" joint1="wrist_hand_r3" joint2="flexion" active="true" polycoef="       0        1        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
     <joint name="r_z_constraint" active="true" joint1="r_z" polycoef="0.174533        0        0        0        0"></joint>
     <weld name="origin_to_worldbody" body1="thorax" active="false"></weld>
   </equality>

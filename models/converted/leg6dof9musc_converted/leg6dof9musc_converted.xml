@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mujoco model="leg6dof9musc">
-  <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001"></compiler>
+  <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001">
+    <lengthrange inttotal="50" useexisting="true"></lengthrange>
+  </compiler>
   <default>
-    <joint limited="true" damping="0.5" armature="0.01" stiffness="0"></joint>
-    <geom contype="1" conaffinity="1" condim="3" rgba="0.8 0.6 .4 1" margin="0.001" solref=".02 1" solimp=".8 .8 .01" material="geom"></geom>
+    <joint limited="true" damping="0.5" armature="0.1" stiffness="0"></joint>
+    <geom rgba="0.8 0.6 .4 1" margin="0.001"></geom>
     <site size="0.001"></site>
     <tendon width="0.001" rgba=".95 .3 .3 1" limited="false"></tendon>
-    <muscle scale="400"></muscle>
+    <default class="muscle">
+      <muscle ctrllimited="true" ctrlrange="0 1" scale="200"></muscle>
+    </default>
+    <default class="motor">
+      <general gainprm="5 0 0 0 0 0 0 0 0 0"></general>
+    </default>
   </default>
-  <option timestep="0.002">
-    <flag energy="enable"></flag>
-  </option>
-  <size nconmax="400" nuser_jnt="1"></size>
-  <visual>
-    <map fogstart="3" fogend="5" force="0.1"></map>
-    <quality shadowsize="2048"></quality>
-  </visual>
+  <option timestep="0.002"></option>
+  <size njmax="1000" nconmax="400" nuser_jnt="1"></size>
   <worldbody>
     <geom name="floor" pos="0 0 0" size="10 10 0.125" type="plane" material="MatPlane" condim="3"></geom>
-    <body name="pelvis" pos="0.593075 -0.017089 1.0464e-18" quat="0.7070896702840977 0.7070896702840974 -0.004919164311757895 -0.004919164311757895">
-      <light mode="trackcom" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1"></light>
+    <body name="pelvis" pos="0.593075 -0.017089        1" quat="0.7070896702840977 0.7070896702840974 -0.004919164311757895 -0.004919164311757895">
+      <light mode="trackcom" directional="false" pos="0 0 4.0" dir="0 0 -1"></light>
       <geom name="sacrum" type="mesh" mesh="sacrum"></geom>
       <geom name="pelvis" type="mesh" mesh="pelvis"></geom>
       <geom name="l_pelvis" type="mesh" mesh="l_pelvis"></geom>
@@ -29,6 +30,7 @@
       <site name="glut_max2_r-P2" pos="-0.143928 -0.0543913 0.0956031"></site>
       <site name="psoas_r-P1" pos="-0.0676753 0.0927789 0.030229"></site>
       <site name="psoas_r-P2" pos="-0.0248945 -0.0596212 0.0793903"></site>
+      <site name="psoas_r-P3" pos="-0.0301244 -0.0842019 0.0853524"></site>
       <site name="rect_fem_r-P1" pos="-0.0308566 -0.0325302 0.101251"></site>
       <joint name="pelvis_ty" type="slide" pos="0 0 0" axis="       0        1        0" limited="false" range="      -1        3" ref="0" armature="0" damping="0" stiffness="0"></joint>
       <joint name="pelvis_tx" type="slide" pos="0 0 0" axis="       1        0        0" limited="false" range="      -1        1" ref="0" armature="0" damping="0" stiffness="0"></joint>
@@ -41,9 +43,12 @@
         <site name="glut_max2_r-P4" pos="-0.018311 -0.119256 0.0491814"></site>
         <site name="psoas_r-P4" pos="0.00187804 -0.0595106 0.00446036"></site>
         <site name="psoas_r-P5" pos="-0.0220671 -0.0700747 0.0122073"></site>
+        <site name="rect_fem_r-P2" pos="0.0392043 -0.473033 0.00223019"></site>
         <site name="vas_int_r-P1" pos="0.0340396 -0.225835 0.0363872"></site>
         <site name="vas_int_r-P2" pos="0.0393216 -0.244616 0.0334527"></site>
+        <site name="vas_int_r-P3" pos="0.0402607 -0.473033 0.00645579"></site>
         <site name="med_gas_r-P1" pos="-0.0223018 -0.461178 -0.0275838"></site>
+        <site name="med_gas_r-P2" pos="-0.0352134 -0.472094 -0.0302835"></site>
         <joint name="hip_flexion_r" type="hinge" pos="0 0 0" axis="       0        0        1" limited="true" range=" -2.0944   2.0944" ref="0"></joint>
         <body name="tibia_r" pos="       0        0        0" quat="1.0 0.0 0.0 0.0">
           <geom name="tibia_r" type="mesh" mesh="tibia_r"></geom>
@@ -86,6 +91,7 @@
         </body>
       </body>
     </body>
+    <camera name="for_testing" pos="0 0 0" euler="0 0 0"></camera>
   </worldbody>
   <asset>
     <mesh name="sacrum" file="Geometry/sacrum.stl" scale=" 1.04599  1.04599  1.04599"></mesh>
@@ -99,66 +105,68 @@
     <mesh name="foot" file="Geometry/foot.stl" scale=" 1.02693  1.02693  1.02693"></mesh>
     <mesh name="bofoot" file="Geometry/bofoot.stl" scale=" 1.02693  1.02693  1.02693"></mesh>
     <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="100" height="100"></texture>
-    <texture name="texgeom" type="cube" builtin="flat" mark="cross" width="127" height="1278" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1" random="0.01"></texture>
-    <material name="MatPlane" reflectance="0.5" texture="texplane" texrepeat="1 1" texuniform="true"></material>
-    <material name="geom" texture="texgeom" texuniform="true"></material>
+    <material name="MatPlane" reflectance="0.0" texture="texplane" texrepeat="1 1" texuniform="true"></material>
   </asset>
   <tendon>
-    <spatial name="bifemlh_r_tendon" springlength="0.38353904">
+    <spatial name="bifemlh_r_tendon">
       <site site="bifemlh_r-P1"></site>
       <site site="bifemlh_r-P2"></site>
       <site site="bifemlh_r-P3"></site>
     </spatial>
-    <spatial name="bifemsh_r_tendon" springlength="0.10332094">
+    <spatial name="bifemsh_r_tendon">
       <site site="bifemsh_r-P1"></site>
       <site site="bifemsh_r-P2"></site>
       <site site="bifemsh_r-P3"></site>
     </spatial>
-    <spatial name="glut_max2_r_tendon" springlength="0.14074875">
+    <spatial name="glut_max2_r_tendon">
       <site site="glut_max2_r-P1"></site>
       <site site="glut_max2_r-P2"></site>
       <site site="glut_max2_r-P3"></site>
       <site site="glut_max2_r-P4"></site>
     </spatial>
-    <spatial name="psoas_r_tendon" springlength="0.17188505">
+    <spatial name="psoas_r_tendon">
       <site site="psoas_r-P1"></site>
       <site site="psoas_r-P2"></site>
+      <site site="psoas_r-P3"></site>
       <site site="psoas_r-P4"></site>
       <site site="psoas_r-P5"></site>
     </spatial>
-    <spatial name="rect_fem_r_tendon" springlength="0.36132377">
+    <spatial name="rect_fem_r_tendon">
       <site site="rect_fem_r-P1"></site>
+      <site site="rect_fem_r-P2"></site>
       <site site="rect_fem_r-P3"></site>
     </spatial>
-    <spatial name="vas_int_r_tendon" springlength="0.13678598">
+    <spatial name="vas_int_r_tendon">
       <site site="vas_int_r-P1"></site>
       <site site="vas_int_r-P2"></site>
+      <site site="vas_int_r-P3"></site>
       <site site="vas_int_r-P4"></site>
     </spatial>
-    <spatial name="med_gas_r_tendon" springlength="0.41245126">
+    <spatial name="med_gas_r_tendon">
       <site site="med_gas_r-P1"></site>
+      <site site="med_gas_r-P2"></site>
       <site site="med_gas_r-P3"></site>
     </spatial>
-    <spatial name="soleus_r_tendon" springlength="0.25477925">
+    <spatial name="soleus_r_tendon">
       <site site="soleus_r-P1"></site>
       <site site="soleus_r-P2"></site>
     </spatial>
-    <spatial name="tib_ant_r_tendon" springlength="0.25042619">
+    <spatial name="tib_ant_r_tendon">
       <site site="tib_ant_r-P1"></site>
       <site site="tib_ant_r-P2"></site>
       <site site="tib_ant_r-P3"></site>
     </spatial>
   </tendon>
   <actuator>
-    <muscle name="bifemlh_r" tendon="bifemlh_r_tendon" lengthrange="0.00958848  15.3416" timeconst="    0.01     0.04" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
-    <muscle name="bifemsh_r" tendon="bifemsh_r_tendon" lengthrange="0.00258302  4.13284" timeconst="    0.01     0.04" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
-    <muscle name="glut_max2_r" tendon="glut_max2_r_tendon" lengthrange="0.00351872  5.62995" timeconst="    0.01     0.04" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
-    <muscle name="psoas_r" tendon="psoas_r_tendon" lengthrange="0.00429713   6.8754" timeconst="    0.01     0.04" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
-    <muscle name="rect_fem_r" tendon="rect_fem_r_tendon" lengthrange="0.00903309   14.453" timeconst="    0.01     0.04" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
-    <muscle name="vas_int_r" tendon="vas_int_r_tendon" lengthrange="0.00341965  5.47144" timeconst="    0.01     0.04" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
-    <muscle name="med_gas_r" tendon="med_gas_r_tendon" lengthrange="0.0103113  16.4981" timeconst="    0.01     0.04" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
-    <muscle name="soleus_r" tendon="soleus_r_tendon" lengthrange="0.00636948  10.1912" timeconst="    0.01     0.04" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
-    <muscle name="tib_ant_r" tendon="tib_ant_r_tendon" lengthrange="0.00626065   10.017" timeconst="    0.01     0.04" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
+    <muscle name="bifemlh_r" tendon="bifemlh_r_tendon" class="muscle" timeconst="    0.01     0.04" force="2594" lengthrange="0.447658 0.575897" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
+    <muscle name="bifemsh_r" tendon="bifemsh_r_tendon" class="muscle" timeconst="    0.01     0.04" force="960" lengthrange="0.195757 0.380628" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
+    <muscle name="glut_max2_r" tendon="glut_max2_r_tendon" class="muscle" timeconst="    0.01     0.04" force="1944" lengthrange="0.222206  0.38512" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
+    <muscle name="psoas_r" tendon="psoas_r_tendon" class="muscle" timeconst="    0.01     0.04" force="2342" lengthrange="0.225076 0.331459" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
+    <muscle name="rect_fem_r" tendon="rect_fem_r_tendon" class="muscle" timeconst="    0.01     0.04" force="1169" lengthrange="0.427508 0.559876" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
+    <muscle name="vas_int_r" tendon="vas_int_r_tendon" class="muscle" timeconst="    0.01     0.04" force="4530" lengthrange="0.199786 0.325786" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
+    <muscle name="med_gas_r" tendon="med_gas_r_tendon" class="muscle" timeconst="    0.01     0.04" force="2241" lengthrange="0.461755 0.560362" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
+    <muscle name="soleus_r" tendon="soleus_r_tendon" class="muscle" timeconst="    0.01     0.04" force="5137" lengthrange="0.296763 0.380729" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
+    <muscle name="tib_ant_r" tendon="tib_ant_r_tendon" class="muscle" timeconst="    0.01     0.04" force="1759" lengthrange="0.305243 0.414877" ctrllimited="true" ctrlrange="    0.01        1"></muscle>
   </actuator>
   <equality>
     <joint name="knee_angle_r_translation2_constraint" active="true" joint1="knee_angle_r_translation2" joint2="knee_angle_r" polycoef="-0.46448 0.00400632 -0.00655771 0.000786081 0.000666101" solimp="0.9999 0.9999 0.001 0.5 2"></joint>

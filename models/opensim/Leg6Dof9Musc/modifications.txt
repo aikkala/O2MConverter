@@ -1,0 +1,2 @@
+leg6dof9musc.osim:
+  - set ground_pelvis/location_in_parent to (0.593075, 1.0, 0.017089)

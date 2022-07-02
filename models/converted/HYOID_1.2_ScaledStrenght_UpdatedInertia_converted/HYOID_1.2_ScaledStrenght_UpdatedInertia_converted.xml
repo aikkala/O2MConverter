@@ -1,0 +1,752 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mujoco model="HYOID_Scaled">
+  <compiler inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia="0.001">
+    <lengthrange inttotal="50" useexisting="true"></lengthrange>
+  </compiler>
+  <default>
+    <joint limited="true" damping="0.5" armature="0.1" stiffness="0"></joint>
+    <geom rgba="0.8 0.6 .4 1" margin="0.001"></geom>
+    <site size="0.001"></site>
+    <tendon width="0.001" rgba=".95 .3 .3 1" limited="false"></tendon>
+    <default class="muscle">
+      <muscle ctrllimited="true" ctrlrange="0 1" scale="200"></muscle>
+    </default>
+    <default class="motor">
+      <general gainprm="5 0 0 0 0 0 0 0 0 0"></general>
+    </default>
+  </default>
+  <option timestep="0.002"></option>
+  <size njmax="1000" nconmax="400" nuser_jnt="1"></size>
+  <worldbody>
+    <geom name="floor" pos="0 0 0" size="10 10 0.125" type="plane" material="MatPlane" condim="3"></geom>
+    <body name="spine" pos="       0        0        0" quat="0.7071067811865475 0.7071067811865475 0.0 0.0">
+      <light mode="trackcom" directional="false" pos="0 0 4.0" dir="0 0 -1"></light>
+      <geom name="tlspine" type="mesh" mesh="tlspine"></geom>
+      <inertial pos="       0        0        0" mass="70.0" fullinertia="       1        1        1        0        0        0"></inertial>
+      <site name="long_col_c1thx-P1" pos="-0.04888 0.30334 0.0037"></site>
+      <site name="long_col_c1thx_L-P1" pos="-0.04888 0.30334 -0.0037"></site>
+      <site name="long_col_c5thx-P1" pos="-0.04981 0.30296 0.0068"></site>
+      <site name="long_col_c5thx-P2" pos="-0.04825 0.32027 0.01022"></site>
+      <site name="long_col_c5thx-P3" pos="-0.04566 0.33463 0.01337"></site>
+      <site name="long_col_c5thx-P4" pos="-0.04466 0.3436 0.01508"></site>
+      <site name="long_col_c5thx-P5" pos="-0.04239 0.35783 0.01778"></site>
+      <site name="long_col_c5thx_L-P1" pos="-0.04981 0.30296 -0.0068"></site>
+      <site name="long_col_c5thx_L-P2" pos="-0.04825 0.32027 -0.01022"></site>
+      <site name="long_col_c5thx_L-P3" pos="-0.04566 0.33463 -0.01337"></site>
+      <site name="long_col_c5thx_L-P4" pos="-0.04466 0.3436 -0.01508"></site>
+      <site name="long_col_c5thx_L-P5" pos="-0.04239 0.35783 -0.01778"></site>
+      <site name="splen_cap_sklthx-P1" pos="-0.10384 0.33902 0.003"></site>
+      <site name="splen_cap_sklthx_L-P1" pos="-0.10384 0.33902 -0.003"></site>
+      <site name="splen_cerv_c3thx-P1" pos="-0.12848 0.26222 0.0041"></site>
+      <site name="splen_cerv_c3thx_L-P1" pos="-0.12848 0.26222 -0.0041"></site>
+      <site name="semi_cap_sklthx-P1" pos="-0.08539 0.37732 0.0347"></site>
+      <site name="semi_cap_sklthx_L-P1" pos="-0.08539 0.37732 -0.0347"></site>
+      <site name="semi_cerv_c3thx-P1" pos="-0.08896 0.34997 0.02607"></site>
+      <site name="semi_cerv_c3thx_L-P1" pos="-0.08896 0.34997 -0.02607"></site>
+      <site name="longissi_cerv_c4thx-P1" pos="-0.10994 0.27586 0.03215"></site>
+      <site name="longissi_cerv_c4thx-P2" pos="-0.10918 0.30238 0.03041"></site>
+      <site name="longissi_cerv_c4thx-P3" pos="-0.09978 0.32692 0.02919"></site>
+      <site name="longissi_cerv_c4thx-P4" pos="-0.0813 0.373 0.0279"></site>
+      <site name="longissi_cerv_c4thx_L-P1" pos="-0.10994 0.27586 -0.03215"></site>
+      <site name="longissi_cerv_c4thx_L-P2" pos="-0.10918 0.30238 -0.03041"></site>
+      <site name="longissi_cerv_c4thx_L-P3" pos="-0.09978 0.32692 -0.02919"></site>
+      <site name="longissi_cerv_c4thx_L-P4" pos="-0.0813 0.373 -0.0279"></site>
+      <site name="iliocost_cerv_c5rib-P1" pos="-0.10349 0.32797 0.0533"></site>
+      <site name="iliocost_cerv_c5rib-P2" pos="-0.08374 0.37638 0.04035"></site>
+      <site name="iliocost_cerv_c5rib_L-P1" pos="-0.10349 0.32797 -0.0533"></site>
+      <site name="iliocost_cerv_c5rib_L-P2" pos="-0.08374 0.37638 -0.04035"></site>
+      <joint name="spine_tz" type="slide" pos="0 0 0" axis="       0        0        1" limited="true" range="      -1        1" ref="0" armature="0" damping="0" stiffness="0"></joint>
+      <joint name="spine_ty" type="slide" pos="0 0 0" axis="       0        1        0" limited="true" range="      -1        1" ref="0" armature="0" damping="0" stiffness="0"></joint>
+      <joint name="spine_tx" type="slide" pos="0 0 0" axis="       1        0        0" limited="true" range="      -1        1" ref="0" armature="0" damping="0" stiffness="0"></joint>
+      <joint name="gndpitch" type="hinge" pos="0 0 0" axis="       0        0        1" limited="true" range="-3.14159  3.14159" ref="0" armature="0" damping="0" stiffness="0"></joint>
+      <joint name="gndroll" type="hinge" pos="0 0 0" axis="       1        0        0" limited="true" range="-3.14159  3.14159" ref="0" armature="0" damping="0" stiffness="0"></joint>
+      <joint name="gndyaw" type="hinge" pos="0 0 0" axis="       0        1        0" limited="true" range="-3.14159  3.14159" ref="0" armature="0" damping="0" stiffness="0"></joint>
+      <body name="rscapula" pos=" -0.0366   0.3623   0.1837" quat="0.9803803981859424 0.09870381862033714 -0.13917394595361585 -0.09870381862033714">
+        <geom name="rscapula" type="mesh" mesh="rscapula"></geom>
+        <inertial pos="       0        0        0" mass="1.0" fullinertia="       1        1      0.5        0        0        0"></inertial>
+        <site name="trap_acr-P1" pos="-0.02379 -0.00916 -0.00736"></site>
+        <site name="levator_scap-P1" pos="-0.09749 -0.03624 -0.08146"></site>
+      </body>
+      <body name="rclavicle" pos=" -0.0118   0.3353    0.022" quat="0.9975640502598083 0.0 0.06975647374435157 0.0">
+        <geom name="rclavicle" type="mesh" mesh="rclavicle"></geom>
+        <inertial pos="       0        0        0" mass="1.0" fullinertia="       1        1      0.5        0        0        0"></inertial>
+        <site name="cleid_mast-P1" pos="0.00388 0.00542 0.0352"></site>
+        <site name="cleid_occ-P1" pos="0.00388 0.00542 0.0352"></site>
+        <site name="trap_cl-P1" pos="-0.0294 0.0232 0.0869"></site>
+      </body>
+      <body name="lscapula" pos=" -0.0366   0.3623  -0.1837" quat="0.9803803981859424 -0.09870381862033714 0.13917394595361585 -0.09870381862033714">
+        <geom name="lscapula" type="mesh" mesh="lscapula"></geom>
+        <inertial pos="       0        0        0" mass="1.0" fullinertia="       1        1      0.5        0        0        0"></inertial>
+        <site name="trap_acr_L-P1" pos="-0.02379 -0.00916 0.00736"></site>
+        <site name="levator_scap_L-P1" pos="-0.09749 -0.03624 0.08146"></site>
+      </body>
+      <body name="lclavicle" pos=" -0.0118   0.3353   -0.022" quat="0.9975640502598083 0.0 -0.06975647374435157 0.0">
+        <geom name="lclavicle" type="mesh" mesh="lclavicle"></geom>
+        <inertial pos="       0        0        0" mass="1.0" fullinertia="       1        1      0.5        0        0        0"></inertial>
+        <site name="cleid_mast_L-P1" pos="0.00388 0.00542 -0.0352"></site>
+        <site name="cleid_occ_L-P1" pos="0.00388 0.00542 -0.0352"></site>
+        <site name="trap_cl_L-P1" pos="-0.0294 0.0232 -0.0869"></site>
+      </body>
+      <body name="ribcage" pos="       0        0        0" quat="1.0 0.0 0.0 0.0">
+        <geom name="ribcage" type="mesh" mesh="ribcage"></geom>
+        <inertial pos="       0        0        0" mass="1.0" fullinertia="       1        1     0.75        0        0        0"></inertial>
+        <site name="sterno hyoid-P2" pos="-0.014033 0.31252 0.01984"></site>
+        <site name="sterno thyroid-P2" pos="-0.014643 0.30575 0.0153"></site>
+        <site name="omo hyoid-P2" pos="-0.021033 0.37083 0.03774"></site>
+        <site name="sterno hyoid L-P2" pos="-0.014033 0.31252 -0.01984"></site>
+        <site name="sterno thyroid L-P2" pos="-0.014643 0.30575 -0.0153"></site>
+        <site name="omo hyoid L-P2" pos="-0.021033 0.37083 -0.03774"></site>
+        <site name="stern_mast-P1" pos="-0.0007 0.3269 0.0096"></site>
+        <site name="stern_mast_L-P1" pos="-0.0007 0.3269 -0.0096"></site>
+        <site name="scalenus_ant-P1" pos="-0.02139 0.33246 0.0529"></site>
+        <site name="scalenus_ant_L-P1" pos="-0.02139 0.33246 -0.0529"></site>
+        <site name="scalenus_med-P1" pos="-0.03398 0.34333 0.0627"></site>
+        <site name="scalenus_med_L-P1" pos="-0.03398 0.34333 -0.0627"></site>
+        <site name="scalenus_post-P1" pos="-0.03638 0.3127 0.1062"></site>
+        <site name="scalenus_post_L-P1" pos="-0.03638 0.3127 -0.1062"></site>
+      </body>
+      <body name="cerv7" pos="-0.05434 0.366955        0" quat="1.0 0.0 0.0 0.0">
+        <geom name="rotatedcerv7" type="mesh" mesh="rotatedcerv7"></geom>
+        <inertial pos=" -0.0002   0.0071        0" mass="0.584084674000695" fullinertia="    0.02     0.08     0.02        0        0        0"></inertial>
+        <site name="long_col_c1thx-P2" pos="0.0232 0.0011 0.004"></site>
+        <site name="long_col_c1thx_L-P2" pos="0.0232 0.0011 -0.004"></site>
+        <site name="long_col_c5thx-P6" pos="0.01111 0.00731 0.01979"></site>
+        <site name="long_col_c5thx_L-P6" pos="0.01111 0.00731 -0.01979"></site>
+        <site name="trap_acr-P2" pos="-0.0477 0.019 0.00305"></site>
+        <site name="trap_acr_L-P2" pos="-0.0477 0.019 -0.00305"></site>
+        <joint name="pitch2" type="hinge" pos="0 0 0" axis="       0        0        1" limited="true" range="-0.05702 0.0829382" ref="0"></joint>
+        <joint name="roll2" type="hinge" pos="0 0 0" axis="       1        0        0" limited="true" range="-0.0449249 0.0449249" ref="0"></joint>
+        <joint name="yaw2" type="hinge" pos="0 0 0" axis="       0        1        0" limited="true" range="-0.0296881 0.0296881" ref="0"></joint>
+        <body name="cerv6" pos="0.003837 0.016445        0" quat="1.0 0.0 0.0 0.0">
+          <geom name="cerv6" type="mesh" mesh="cerv6"></geom>
+          <inertial pos="  0.0002   0.0064        0" mass="0.507748855220406" fullinertia="    0.02     0.08     0.02        0        0        0"></inertial>
+          <site name="long_col_c1thx-P3" pos="0.02314 0.00231 0.00402"></site>
+          <site name="long_col_c1thx_L-P3" pos="0.02314 0.00231 -0.00402"></site>
+          <site name="long_col_c5thx-P7" pos="0.00961 0.00713 0.02216"></site>
+          <site name="long_col_c5thx_L-P7" pos="0.00961 0.00713 -0.02216"></site>
+          <site name="splen_cap_sklc6-P1" pos="-0.0486 0.01647 0.00305"></site>
+          <site name="splen_cap_sklc6_L-P1" pos="-0.0486 0.01647 -0.00305"></site>
+          <site name="longissi_cap_sklc6-P1" pos="-0.00817 0.01515 0.02759"></site>
+          <site name="longissi_cap_sklc6_L-P1" pos="-0.00817 0.01515 -0.02759"></site>
+          <joint name="aux7jnt_r3" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+          <joint name="aux7jnt_r1" type="hinge" pos="0 0 0" axis="       1        0        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+          <joint name="aux7jnt_r2" type="hinge" pos="0 0 0" axis="       0        1        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+          <body name="cerv5" pos=" 0.00418   0.0179        0" quat="1.0 0.0 0.0 0.0">
+            <geom name="cerv5" type="mesh" mesh="cerv5"></geom>
+            <inertial pos="  0.0001   0.0063        0" mass="0.4291" fullinertia="    0.02     0.08     0.02        0        0        0"></inertial>
+            <site name="scalenus_post-P2" pos="-0.0032 0.01371 0.0257"></site>
+            <site name="scalenus_post_L-P2" pos="-0.0032 0.01371 -0.0257"></site>
+            <site name="long_col_c1thx-P4" pos="0.02228 0.00228 0.0039"></site>
+            <site name="long_col_c1thx_L-P4" pos="0.02228 0.00228 -0.0039"></site>
+            <site name="long_col_c1c5-P1" pos="0.00669 0.00889 0.0238"></site>
+            <site name="long_col_c1c5_L-P1" pos="0.00669 0.00889 -0.0238"></site>
+            <site name="long_col_c5thx-P8" pos="0.00669 0.00889 0.0238"></site>
+            <site name="long_col_c5thx_L-P8" pos="0.00669 0.00889 -0.0238"></site>
+            <site name="semi_cap_sklc5-P1" pos="-0.00931 0.01154 0.0235"></site>
+            <site name="semi_cap_sklc5_L-P1" pos="-0.00931 0.01154 -0.0235"></site>
+            <site name="iliocost_cerv_c5rib-P3" pos="-0.0094 0.01258 0.026"></site>
+            <site name="iliocost_cerv_c5rib_L-P3" pos="-0.0094 0.01258 -0.026"></site>
+            <joint name="aux6jnt_r3" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+            <joint name="aux6jnt_r1" type="hinge" pos="0 0 0" axis="       1        0        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+            <joint name="aux6jnt_r2" type="hinge" pos="0 0 0" axis="       0        1        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+            <body name="cerv4" pos=" 0.00341  0.01917        0" quat="1.0 0.0 0.0 0.0">
+              <geom name="cerv4" type="mesh" mesh="cerv4"></geom>
+              <inertial pos=" -0.0003   0.0067        0" mass="0.423316813" fullinertia="    0.02     0.08     0.02        0        0        0"></inertial>
+              <site name="scalenus_ant-P2" pos="0.00713 0.0079 0.02323"></site>
+              <site name="scalenus_ant_L-P2" pos="0.00713 0.0079 -0.02323"></site>
+              <site name="long_cap_sklc4-P1" pos="0.00652 0.01164 0.0242"></site>
+              <site name="long_cap_sklc4_L-P1" pos="0.00652 0.01164 -0.0242"></site>
+              <site name="long_col_c1thx-P5" pos="0.02205 0.00331 0.00379"></site>
+              <site name="long_col_c1thx_L-P5" pos="0.02205 0.00331 -0.00379"></site>
+              <site name="long_col_c1c5-P2" pos="0.01121 0.00749 0.0207"></site>
+              <site name="long_col_c1c5_L-P2" pos="0.01121 0.00749 -0.0207"></site>
+              <site name="longissi_cerv_c4thx-P5" pos="-0.00709 0.01157 0.0261"></site>
+              <site name="longissi_cerv_c4thx_L-P5" pos="-0.00709 0.01157 -0.0261"></site>
+              <joint name="aux5jnt_r3" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+              <joint name="aux5jnt_r1" type="hinge" pos="0 0 0" axis="       1        0        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+              <joint name="aux5jnt_r2" type="hinge" pos="0 0 0" axis="       0        1        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+              <body name="cerv3" pos=" 0.00261   0.0154        0" quat="1.0 0.0 0.0 0.0">
+                <geom name="cerv3" type="mesh" mesh="cerv3"></geom>
+                <inertial pos=" -0.0008   0.0071        0" mass="0.419847003" fullinertia="    0.02     0.08     0.02        0        0        0"></inertial>
+                <site name="digastric post-P2" pos="0.02321 0.00597 0.0287"></site>
+                <site name="sterno hyoid-P1" pos="0.05742 -0.02314 0.00629"></site>
+                <site name="sterno thyroid-P1" pos="0.0404201 -0.04316 0.0133"></site>
+                <site name="omo hyoid-P1" pos="0.05212 -0.0139 0.0132"></site>
+                <site name="digastric post L-P2" pos="0.02321 0.00597 -0.0287"></site>
+                <site name="sterno hyoid L-P1" pos="0.05742 -0.02314 -0.00629"></site>
+                <site name="sterno thyroid L-P1" pos="0.0404201 -0.04316 -0.0133"></site>
+                <site name="omo hyoid L-P1" pos="0.05212 -0.0139 -0.0132"></site>
+                <site name="scalenus_med-P2" pos="-0.00902 0.00981 0.02119"></site>
+                <site name="scalenus_med_L-P2" pos="-0.00902 0.00981 -0.02119"></site>
+                <site name="long_cap_sklc4-P2" pos="0.01197 0.01009 0.01897"></site>
+                <site name="long_cap_sklc4_L-P2" pos="0.01197 0.01009 -0.01897"></site>
+                <site name="long_col_c1thx-P6" pos="0.02212 0.00603 0.00368"></site>
+                <site name="long_col_c1thx_L-P6" pos="0.02212 0.00603 -0.00368"></site>
+                <site name="splen_cerv_c3thx-P2" pos="-0.00787 0.01005 0.02365"></site>
+                <site name="splen_cerv_c3thx_L-P2" pos="-0.00787 0.01005 -0.02365"></site>
+                <site name="semi_cerv_c3thx-P2" pos="-0.04064 -0.00322 0.0024"></site>
+                <site name="semi_cerv_c3thx_L-P2" pos="-0.04064 -0.00322 -0.0024"></site>
+                <joint name="aux4jnt_r3" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+                <joint name="aux4jnt_r1" type="hinge" pos="0 0 0" axis="       1        0        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+                <joint name="aux4jnt_r2" type="hinge" pos="0 0 0" axis="       0        1        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+                <body name="cerv2" pos="-0.00018  0.01629        0" quat="1.0 0.0 0.0 0.0">
+                  <geom name="cerv2" type="mesh" mesh="cerv2"></geom>
+                  <inertial pos="  -0.001   0.0059        0" mass="0.587554484" fullinertia="    0.02     0.08     0.02        0        0        0"></inertial>
+                  <site name="long_cap_sklc4-P3" pos="0.0172 0.00829 0.01477"></site>
+                  <site name="long_cap_sklc4_L-P3" pos="0.0172 0.00829 -0.01477"></site>
+                  <site name="long_col_c1thx-P7" pos="0.02122 0.00973 0.00356"></site>
+                  <site name="long_col_c1thx_L-P7" pos="0.02122 0.00973 -0.00356"></site>
+                  <site name="long_col_c1c5-P3" pos="0.01739 0.00159 0.01365"></site>
+                  <site name="long_col_c1c5_L-P3" pos="0.01739 0.00159 -0.01365"></site>
+                  <site name="levator_scap-P2" pos="-0.01186 0.00725 0.02121"></site>
+                  <site name="levator_scap_L-P2" pos="-0.01186 0.00725 -0.02121"></site>
+                  <site name="rectcap_post_maj-P1" pos="-0.03637 -0.00647 0.0024"></site>
+                  <site name="rectcap_post_maj_L-P1" pos="-0.03637 -0.00647 -0.0024"></site>
+                  <site name="obl_cap_inf-P1" pos="-0.03637 -0.00647 0.00547"></site>
+                  <site name="obl_cap_inf_L-P1" pos="-0.03637 -0.00647 -0.00547"></site>
+                  <joint name="aux3jnt_r3" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+                  <joint name="aux3jnt_r1" type="hinge" pos="0 0 0" axis="       1        0        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+                  <joint name="aux3jnt_r2" type="hinge" pos="0 0 0" axis="       0        1        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+                  <body name="cerv1" pos="-0.03556  0.01776        0" quat="1.0 0.0 0.0 0.0">
+                    <geom name="cerv1" type="mesh" mesh="cerv1"></geom>
+                    <inertial pos="  0.0312   0.0019        0" mass="0.467267739" fullinertia="    0.02     0.08     0.02        0        0        0"></inertial>
+                    <site name="digastric ant-P2" pos="0.07289 -0.05758 0.0057"></site>
+                    <site name="geniohyoid-P1" pos="0.0717298 -0.0537906 0.00509443"></site>
+                    <site name="mylohyoid post-P1" pos="0.07525 -0.05588 0.0031"></site>
+                    <site name="mylohyoid ant-P1" pos="0.09725 -0.05668 -0.0031"></site>
+                    <site name="stylohyoid lat-P2" pos="0.0643381 -0.0496832 0.01544"></site>
+                    <site name="stylohyoid med-P2" pos="0.0632661 -0.0450538 0.0162521"></site>
+                    <site name="digastric ant L-P2" pos="0.07289 -0.05758 -0.0057"></site>
+                    <site name="geniohyoid L-P1" pos="0.0714947 -0.0538159 -0.00630312"></site>
+                    <site name="mylohyoid post L-P1" pos="0.07525 -0.05588 -0.0031"></site>
+                    <site name="mylohyoid ant L-P1" pos="0.09725 -0.05668 0.0031"></site>
+                    <site name="stylohyoid lat L-P2" pos="0.0636822 -0.0497536 -0.0163531"></site>
+                    <site name="stylohyoid med L-P2" pos="0.0625772 -0.0451277 -0.0171408"></site>
+                    <site name="long_cap_sklc4-P4" pos="0.05818 0.00309 0.01159"></site>
+                    <site name="long_cap_sklc4_L-P4" pos="0.05818 0.00309 -0.01159"></site>
+                    <site name="long_col_c1thx-P8" pos="0.05825 0.00482 0.0031"></site>
+                    <site name="long_col_c1thx_L-P8" pos="0.05825 0.00482 -0.0031"></site>
+                    <site name="long_col_c1c5-P4" pos="0.05725 0.00482 0.0062"></site>
+                    <site name="long_col_c1c5_L-P4" pos="0.05725 0.00482 -0.0062"></site>
+                    <site name="rectcap_post_min-P1" pos="7e-005 0.0009 0.0061"></site>
+                    <site name="rectcap_post_min_L-P1" pos="7e-005 0.0009 -0.0061"></site>
+                    <site name="obl_cap_sup-P1" pos="0.03505 0.00385 0.042"></site>
+                    <site name="obl_cap_sup_L-P1" pos="0.03505 0.00385 -0.042"></site>
+                    <site name="obl_cap_inf-P2" pos="0.02996 0.00349 0.03791"></site>
+                    <site name="obl_cap_inf_L-P2" pos="0.02996 0.00349 -0.03791"></site>
+                    <joint name="pitch1" type="hinge" pos="0 0 0" axis="       0        0        1" limited="true" range="-0.123988 0.185982" ref="0"></joint>
+                    <joint name="roll1" type="hinge" pos="0 0 0" axis="       1        0        0" limited="true" range="-0.0523599 0.0523599" ref="0"></joint>
+                    <joint name="yaw1" type="hinge" pos="0 0 0" axis="       0        1        0" limited="true" range="-0.589608 0.589608" ref="0"></joint>
+                    <body name="skull" pos=" 0.04335  0.01492        0" quat="1.0 0.0 0.0 0.0">
+                      <geom name="skull" type="mesh" mesh="skull"></geom>
+                      <inertial pos="  0.0173    0.063        0" mass="4.3" fullinertia=" 0.02073    0.015 0.022605        0        0        0"></inertial>
+                      <site name="digastric post-P1" pos="-0.0061 0.0034 0.0477"></site>
+                      <site name="digastric ant-P1" pos="0.0303 -0.0643 0.0173"></site>
+                      <site name="geniohyoid-P2" pos="0.0691 -0.0673 0.0016"></site>
+                      <site name="mylohyoid post-P2" pos="0.0413 -0.0389 0.0291"></site>
+                      <site name="mylohyoid ant-P2" pos="0.0579 -0.0596 0.0158"></site>
+                      <site name="stylohyoid lat-P1" pos="0.0113 -0.0008 0.0376"></site>
+                      <site name="stylohyoid med-P1" pos="0.0118 -0.002 0.0376"></site>
+                      <site name="digastric post L-P1" pos="-0.0061 0.0034 -0.0477"></site>
+                      <site name="digastric ant L-P1" pos="0.0303 -0.0643 -0.0173"></site>
+                      <site name="geniohyoid L-P2" pos="0.0691 -0.0673 -0.0016"></site>
+                      <site name="mylohyoid post L-P2" pos="0.0413 -0.0389 -0.0291"></site>
+                      <site name="mylohyoid ant L-P2" pos="0.0579 -0.0596 -0.0158"></site>
+                      <site name="stylohyoid lat L-P1" pos="0.0113 -0.0008 -0.0376"></site>
+                      <site name="stylohyoid med L-P1" pos="0.0118 -0.002 -0.0376"></site>
+                      <site name="stern_mast-P2" pos="-0.0051 0.00693 0.0643"></site>
+                      <site name="stern_mast_L-P2" pos="-0.0051 0.00693 -0.0643"></site>
+                      <site name="cleid_mast-P2" pos="-0.0051 0.00693 0.0643"></site>
+                      <site name="cleid_mast_L-P2" pos="-0.0051 0.00693 -0.0643"></site>
+                      <site name="cleid_occ-P2" pos="-0.035 0.023 0.0664"></site>
+                      <site name="cleid_occ_L-P2" pos="-0.035 0.023 -0.0664"></site>
+                      <site name="long_cap_sklc4-P5" pos="0.0098 0.01596 0.0036"></site>
+                      <site name="long_cap_sklc4_L-P5" pos="0.0098 0.01596 -0.0036"></site>
+                      <site name="trap_cl-P2" pos="-0.08031 0.02604 0.01324"></site>
+                      <site name="trap_cl_L-P2" pos="-0.08031 0.02604 -0.01324"></site>
+                      <site name="splen_cap_sklc6-P2" pos="-0.06164 0.01918 0.044"></site>
+                      <site name="splen_cap_sklc6_L-P2" pos="-0.06164 0.01918 -0.044"></site>
+                      <site name="splen_cap_sklthx-P2" pos="-0.04016 0.011 0.05423"></site>
+                      <site name="splen_cap_sklthx_L-P2" pos="-0.04016 0.011 -0.05423"></site>
+                      <site name="semi_cap_sklc5-P2" pos="-0.07441 0.02 0.018"></site>
+                      <site name="semi_cap_sklc5_L-P2" pos="-0.07441 0.02 -0.018"></site>
+                      <site name="semi_cap_sklthx-P2" pos="-0.07671 0.02 0.0111"></site>
+                      <site name="semi_cap_sklthx_L-P2" pos="-0.07671 0.02 -0.0111"></site>
+                      <site name="longissi_cap_sklc6-P2" pos="-0.0344 0.0051 0.055"></site>
+                      <site name="longissi_cap_sklc6_L-P2" pos="-0.0344 0.0051 -0.055"></site>
+                      <site name="rectcap_post_maj-P2" pos="-0.0604 0.009 0.023"></site>
+                      <site name="rectcap_post_maj_L-P2" pos="-0.0604 0.009 -0.023"></site>
+                      <site name="rectcap_post_min-P2" pos="-0.0667 0.009 0.0145"></site>
+                      <site name="rectcap_post_min_L-P2" pos="-0.0667 0.009 -0.0145"></site>
+                      <site name="obl_cap_sup-P2" pos="-0.04758 0.00931 0.03818"></site>
+                      <site name="obl_cap_sup_L-P2" pos="-0.04758 0.00931 -0.03818"></site>
+                      <joint name="aux1jnt_r3" type="hinge" pos="0 0 0" axis="       0        0        1" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+                      <joint name="aux1jnt_r1" type="hinge" pos="0 0 0" axis="       1        0        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+                      <joint name="aux1jnt_r2" type="hinge" pos="0 0 0" axis="       0        1        0" limited="false" range="-99999.9  99999.9" ref="0"></joint>
+                      <body name="jaw" pos="       0        0        0" quat="1.0 0.0 0.0 0.0">
+                        <geom name="jaw" type="mesh" mesh="jaw"></geom>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+    <camera name="for_testing" pos="0 0 0" euler="0 0 0"></camera>
+  </worldbody>
+  <asset>
+    <mesh name="tlspine" file="Geometry/tlspine.stl" scale="       1        1        1"></mesh>
+    <mesh name="rscapula" file="Geometry/rscapula.stl" scale="       1        1        1"></mesh>
+    <mesh name="rclavicle" file="Geometry/rclavicle.stl" scale="       1        1        1"></mesh>
+    <mesh name="lscapula" file="Geometry/lscapula.stl" scale="       1        1        1"></mesh>
+    <mesh name="lclavicle" file="Geometry/lclavicle.stl" scale="       1        1        1"></mesh>
+    <mesh name="ribcage" file="Geometry/ribcage.stl" scale="       1        1        1"></mesh>
+    <mesh name="rotatedcerv7" file="Geometry/rotatedcerv7.stl" scale="       1        1        1"></mesh>
+    <mesh name="cerv6" file="Geometry/cerv6.stl" scale="       1        1        1"></mesh>
+    <mesh name="cerv5" file="Geometry/cerv5.stl" scale="       1        1        1"></mesh>
+    <mesh name="cerv4" file="Geometry/cerv4.stl" scale="       1        1        1"></mesh>
+    <mesh name="cerv3" file="Geometry/cerv3.stl" scale="       1        1        1"></mesh>
+    <mesh name="cerv2" file="Geometry/cerv2.stl" scale="       1        1        1"></mesh>
+    <mesh name="cerv1" file="Geometry/cerv1.stl" scale="       1        1        1"></mesh>
+    <mesh name="skull" file="Geometry/skull.stl" scale="       1        1        1"></mesh>
+    <mesh name="jaw" file="Geometry/jaw.stl" scale="       1        1        1"></mesh>
+    <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="100" height="100"></texture>
+    <material name="MatPlane" reflectance="0.0" texture="texplane" texrepeat="1 1" texuniform="true"></material>
+  </asset>
+  <tendon>
+    <spatial name="digastric_post_tendon">
+      <site site="digastric post-P1"></site>
+      <site site="digastric post-P2"></site>
+    </spatial>
+    <spatial name="digastric_ant_tendon">
+      <site site="digastric ant-P1"></site>
+      <site site="digastric ant-P2"></site>
+    </spatial>
+    <spatial name="Geniohyoid_tendon">
+      <site site="geniohyoid-P1"></site>
+      <site site="geniohyoid-P2"></site>
+    </spatial>
+    <spatial name="Mylohyoid_Post_tendon">
+      <site site="mylohyoid post-P1"></site>
+      <site site="mylohyoid post-P2"></site>
+    </spatial>
+    <spatial name="Mylohyoid_Ant_tendon">
+      <site site="mylohyoid ant-P1"></site>
+      <site site="mylohyoid ant-P2"></site>
+    </spatial>
+    <spatial name="Stylohyoid_Lat_tendon">
+      <site site="stylohyoid lat-P1"></site>
+      <site site="stylohyoid lat-P2"></site>
+    </spatial>
+    <spatial name="Stylohyoid_Med_tendon">
+      <site site="stylohyoid med-P1"></site>
+      <site site="stylohyoid med-P2"></site>
+    </spatial>
+    <spatial name="Sterno_hyoid_tendon">
+      <site site="sterno hyoid-P1"></site>
+      <site site="sterno hyoid-P2"></site>
+    </spatial>
+    <spatial name="SternoThyroid_tendon">
+      <site site="sterno thyroid-P1"></site>
+      <site site="sterno thyroid-P2"></site>
+    </spatial>
+    <spatial name="Omo_hyoid_tendon">
+      <site site="omo hyoid-P1"></site>
+      <site site="omo hyoid-P2"></site>
+    </spatial>
+    <spatial name="digastric_post_L_tendon">
+      <site site="digastric post L-P1"></site>
+      <site site="digastric post L-P2"></site>
+    </spatial>
+    <spatial name="digastric_ant_L_tendon">
+      <site site="digastric ant L-P1"></site>
+      <site site="digastric ant L-P2"></site>
+    </spatial>
+    <spatial name="Geniohyoid_L_tendon">
+      <site site="geniohyoid L-P1"></site>
+      <site site="geniohyoid L-P2"></site>
+    </spatial>
+    <spatial name="Mylohyoid_Post_L_tendon">
+      <site site="mylohyoid post L-P1"></site>
+      <site site="mylohyoid post L-P2"></site>
+    </spatial>
+    <spatial name="Mylohyoid_Ant_L_tendon">
+      <site site="mylohyoid ant L-P1"></site>
+      <site site="mylohyoid ant L-P2"></site>
+    </spatial>
+    <spatial name="Stylohyoid_Lat_L_tendon">
+      <site site="stylohyoid lat L-P1"></site>
+      <site site="stylohyoid lat L-P2"></site>
+    </spatial>
+    <spatial name="Stylohyoid_Med_L_tendon">
+      <site site="stylohyoid med L-P1"></site>
+      <site site="stylohyoid med L-P2"></site>
+    </spatial>
+    <spatial name="Sterno_hyoid_L_tendon">
+      <site site="sterno hyoid L-P1"></site>
+      <site site="sterno hyoid L-P2"></site>
+    </spatial>
+    <spatial name="SternoThyroid_L_tendon">
+      <site site="sterno thyroid L-P1"></site>
+      <site site="sterno thyroid L-P2"></site>
+    </spatial>
+    <spatial name="Omo_hyoid_L_tendon">
+      <site site="omo hyoid L-P1"></site>
+      <site site="omo hyoid L-P2"></site>
+    </spatial>
+    <spatial name="stern_mast_tendon">
+      <site site="stern_mast-P1"></site>
+      <site site="stern_mast-P2"></site>
+    </spatial>
+    <spatial name="stern_mast_L_tendon">
+      <site site="stern_mast_L-P1"></site>
+      <site site="stern_mast_L-P2"></site>
+    </spatial>
+    <spatial name="cleid_mast_tendon">
+      <site site="cleid_mast-P1"></site>
+      <site site="cleid_mast-P2"></site>
+    </spatial>
+    <spatial name="cleid_mast_L_tendon">
+      <site site="cleid_mast_L-P1"></site>
+      <site site="cleid_mast_L-P2"></site>
+    </spatial>
+    <spatial name="cleid_occ_tendon">
+      <site site="cleid_occ-P1"></site>
+      <site site="cleid_occ-P2"></site>
+    </spatial>
+    <spatial name="cleid_occ_L_tendon">
+      <site site="cleid_occ_L-P1"></site>
+      <site site="cleid_occ_L-P2"></site>
+    </spatial>
+    <spatial name="scalenus_ant_tendon">
+      <site site="scalenus_ant-P1"></site>
+      <site site="scalenus_ant-P2"></site>
+    </spatial>
+    <spatial name="scalenus_ant_L_tendon">
+      <site site="scalenus_ant_L-P1"></site>
+      <site site="scalenus_ant_L-P2"></site>
+    </spatial>
+    <spatial name="scalenus_med_tendon">
+      <site site="scalenus_med-P1"></site>
+      <site site="scalenus_med-P2"></site>
+    </spatial>
+    <spatial name="scalenus_med_L_tendon">
+      <site site="scalenus_med_L-P1"></site>
+      <site site="scalenus_med_L-P2"></site>
+    </spatial>
+    <spatial name="scalenus_post_tendon">
+      <site site="scalenus_post-P1"></site>
+      <site site="scalenus_post-P2"></site>
+    </spatial>
+    <spatial name="scalenus_post_L_tendon">
+      <site site="scalenus_post_L-P1"></site>
+      <site site="scalenus_post_L-P2"></site>
+    </spatial>
+    <spatial name="long_cap_sklc4_tendon">
+      <site site="long_cap_sklc4-P1"></site>
+      <site site="long_cap_sklc4-P2"></site>
+      <site site="long_cap_sklc4-P3"></site>
+      <site site="long_cap_sklc4-P4"></site>
+      <site site="long_cap_sklc4-P5"></site>
+    </spatial>
+    <spatial name="long_cap_sklc4_L_tendon">
+      <site site="long_cap_sklc4_L-P1"></site>
+      <site site="long_cap_sklc4_L-P2"></site>
+      <site site="long_cap_sklc4_L-P3"></site>
+      <site site="long_cap_sklc4_L-P4"></site>
+      <site site="long_cap_sklc4_L-P5"></site>
+    </spatial>
+    <spatial name="long_col_c1thx_tendon">
+      <site site="long_col_c1thx-P1"></site>
+      <site site="long_col_c1thx-P2"></site>
+      <site site="long_col_c1thx-P3"></site>
+      <site site="long_col_c1thx-P4"></site>
+      <site site="long_col_c1thx-P5"></site>
+      <site site="long_col_c1thx-P6"></site>
+      <site site="long_col_c1thx-P7"></site>
+      <site site="long_col_c1thx-P8"></site>
+    </spatial>
+    <spatial name="long_col_c1thx_L_tendon">
+      <site site="long_col_c1thx_L-P1"></site>
+      <site site="long_col_c1thx_L-P2"></site>
+      <site site="long_col_c1thx_L-P3"></site>
+      <site site="long_col_c1thx_L-P4"></site>
+      <site site="long_col_c1thx_L-P5"></site>
+      <site site="long_col_c1thx_L-P6"></site>
+      <site site="long_col_c1thx_L-P7"></site>
+      <site site="long_col_c1thx_L-P8"></site>
+    </spatial>
+    <spatial name="long_col_c1c5_tendon">
+      <site site="long_col_c1c5-P1"></site>
+      <site site="long_col_c1c5-P2"></site>
+      <site site="long_col_c1c5-P3"></site>
+      <site site="long_col_c1c5-P4"></site>
+    </spatial>
+    <spatial name="long_col_c1c5_L_tendon">
+      <site site="long_col_c1c5_L-P1"></site>
+      <site site="long_col_c1c5_L-P2"></site>
+      <site site="long_col_c1c5_L-P3"></site>
+      <site site="long_col_c1c5_L-P4"></site>
+    </spatial>
+    <spatial name="long_col_c5thx_tendon">
+      <site site="long_col_c5thx-P1"></site>
+      <site site="long_col_c5thx-P2"></site>
+      <site site="long_col_c5thx-P3"></site>
+      <site site="long_col_c5thx-P4"></site>
+      <site site="long_col_c5thx-P5"></site>
+      <site site="long_col_c5thx-P6"></site>
+      <site site="long_col_c5thx-P7"></site>
+      <site site="long_col_c5thx-P8"></site>
+    </spatial>
+    <spatial name="long_col_c5thx_L_tendon">
+      <site site="long_col_c5thx_L-P1"></site>
+      <site site="long_col_c5thx_L-P2"></site>
+      <site site="long_col_c5thx_L-P3"></site>
+      <site site="long_col_c5thx_L-P4"></site>
+      <site site="long_col_c5thx_L-P5"></site>
+      <site site="long_col_c5thx_L-P6"></site>
+      <site site="long_col_c5thx_L-P7"></site>
+      <site site="long_col_c5thx_L-P8"></site>
+    </spatial>
+    <spatial name="trap_cl_tendon">
+      <site site="trap_cl-P1"></site>
+      <site site="trap_cl-P2"></site>
+    </spatial>
+    <spatial name="trap_cl_L_tendon">
+      <site site="trap_cl_L-P1"></site>
+      <site site="trap_cl_L-P2"></site>
+    </spatial>
+    <spatial name="trap_acr_tendon">
+      <site site="trap_acr-P1"></site>
+      <site site="trap_acr-P2"></site>
+    </spatial>
+    <spatial name="trap_acr_L_tendon">
+      <site site="trap_acr_L-P1"></site>
+      <site site="trap_acr_L-P2"></site>
+    </spatial>
+    <spatial name="splen_cap_sklc6_tendon">
+      <site site="splen_cap_sklc6-P1"></site>
+      <site site="splen_cap_sklc6-P2"></site>
+    </spatial>
+    <spatial name="splen_cap_sklc6_L_tendon">
+      <site site="splen_cap_sklc6_L-P1"></site>
+      <site site="splen_cap_sklc6_L-P2"></site>
+    </spatial>
+    <spatial name="splen_cap_sklthx_tendon">
+      <site site="splen_cap_sklthx-P1"></site>
+      <site site="splen_cap_sklthx-P2"></site>
+    </spatial>
+    <spatial name="splen_cap_sklthx_L_tendon">
+      <site site="splen_cap_sklthx_L-P1"></site>
+      <site site="splen_cap_sklthx_L-P2"></site>
+    </spatial>
+    <spatial name="splen_cerv_c3thx_tendon">
+      <site site="splen_cerv_c3thx-P1"></site>
+      <site site="splen_cerv_c3thx-P2"></site>
+    </spatial>
+    <spatial name="splen_cerv_c3thx_L_tendon">
+      <site site="splen_cerv_c3thx_L-P1"></site>
+      <site site="splen_cerv_c3thx_L-P2"></site>
+    </spatial>
+    <spatial name="semi_cap_sklc5_tendon">
+      <site site="semi_cap_sklc5-P1"></site>
+      <site site="semi_cap_sklc5-P2"></site>
+    </spatial>
+    <spatial name="semi_cap_sklc5_L_tendon">
+      <site site="semi_cap_sklc5_L-P1"></site>
+      <site site="semi_cap_sklc5_L-P2"></site>
+    </spatial>
+    <spatial name="semi_cap_sklthx_tendon">
+      <site site="semi_cap_sklthx-P1"></site>
+      <site site="semi_cap_sklthx-P2"></site>
+    </spatial>
+    <spatial name="semi_cap_sklthx_L_tendon">
+      <site site="semi_cap_sklthx_L-P1"></site>
+      <site site="semi_cap_sklthx_L-P2"></site>
+    </spatial>
+    <spatial name="semi_cerv_c3thx_tendon">
+      <site site="semi_cerv_c3thx-P1"></site>
+      <site site="semi_cerv_c3thx-P2"></site>
+    </spatial>
+    <spatial name="semi_cerv_c3thx_L_tendon">
+      <site site="semi_cerv_c3thx_L-P1"></site>
+      <site site="semi_cerv_c3thx_L-P2"></site>
+    </spatial>
+    <spatial name="levator_scap_tendon">
+      <site site="levator_scap-P1"></site>
+      <site site="levator_scap-P2"></site>
+    </spatial>
+    <spatial name="levator_scap_L_tendon">
+      <site site="levator_scap_L-P1"></site>
+      <site site="levator_scap_L-P2"></site>
+    </spatial>
+    <spatial name="longissi_cap_sklc6_tendon">
+      <site site="longissi_cap_sklc6-P1"></site>
+      <site site="longissi_cap_sklc6-P2"></site>
+    </spatial>
+    <spatial name="longissi_cap_sklc6_L_tendon">
+      <site site="longissi_cap_sklc6_L-P1"></site>
+      <site site="longissi_cap_sklc6_L-P2"></site>
+    </spatial>
+    <spatial name="longissi_cerv_c4thx_tendon">
+      <site site="longissi_cerv_c4thx-P1"></site>
+      <site site="longissi_cerv_c4thx-P2"></site>
+      <site site="longissi_cerv_c4thx-P3"></site>
+      <site site="longissi_cerv_c4thx-P4"></site>
+      <site site="longissi_cerv_c4thx-P5"></site>
+    </spatial>
+    <spatial name="longissi_cerv_c4thx_L_tendon">
+      <site site="longissi_cerv_c4thx_L-P1"></site>
+      <site site="longissi_cerv_c4thx_L-P2"></site>
+      <site site="longissi_cerv_c4thx_L-P3"></site>
+      <site site="longissi_cerv_c4thx_L-P4"></site>
+      <site site="longissi_cerv_c4thx_L-P5"></site>
+    </spatial>
+    <spatial name="iliocost_cerv_c5rib_tendon">
+      <site site="iliocost_cerv_c5rib-P1"></site>
+      <site site="iliocost_cerv_c5rib-P2"></site>
+      <site site="iliocost_cerv_c5rib-P3"></site>
+    </spatial>
+    <spatial name="iliocost_cerv_c5rib_L_tendon">
+      <site site="iliocost_cerv_c5rib_L-P1"></site>
+      <site site="iliocost_cerv_c5rib_L-P2"></site>
+      <site site="iliocost_cerv_c5rib_L-P3"></site>
+    </spatial>
+    <spatial name="rectcap_post_maj_tendon">
+      <site site="rectcap_post_maj-P1"></site>
+      <site site="rectcap_post_maj-P2"></site>
+    </spatial>
+    <spatial name="rectcap_post_maj_L_tendon">
+      <site site="rectcap_post_maj_L-P1"></site>
+      <site site="rectcap_post_maj_L-P2"></site>
+    </spatial>
+    <spatial name="rectcap_post_min_tendon">
+      <site site="rectcap_post_min-P1"></site>
+      <site site="rectcap_post_min-P2"></site>
+    </spatial>
+    <spatial name="rectcap_post_min_L_tendon">
+      <site site="rectcap_post_min_L-P1"></site>
+      <site site="rectcap_post_min_L-P2"></site>
+    </spatial>
+    <spatial name="obl_cap_sup_tendon">
+      <site site="obl_cap_sup-P1"></site>
+      <site site="obl_cap_sup-P2"></site>
+    </spatial>
+    <spatial name="obl_cap_sup_L_tendon">
+      <site site="obl_cap_sup_L-P1"></site>
+      <site site="obl_cap_sup_L-P2"></site>
+    </spatial>
+    <spatial name="obl_cap_inf_tendon">
+      <site site="obl_cap_inf-P1"></site>
+      <site site="obl_cap_inf-P2"></site>
+    </spatial>
+    <spatial name="obl_cap_inf_L_tendon">
+      <site site="obl_cap_inf_L-P1"></site>
+      <site site="obl_cap_inf_L-P2"></site>
+    </spatial>
+  </tendon>
+  <actuator>
+    <muscle name="digastric_post" tendon="digastric_post_tendon" class="muscle" force="109.62" lengthrange="0.0440663 0.063931"></muscle>
+    <muscle name="digastric_ant" tendon="digastric_ant_tendon" class="muscle" force="109.62" lengthrange="  0.0121 0.0262999"></muscle>
+    <muscle name="Geniohyoid" tendon="Geniohyoid_tendon" class="muscle" force="91.665" lengthrange=" 0.02257 0.0568699"></muscle>
+    <muscle name="Mylohyoid_Post" tendon="Mylohyoid_Post_tendon" class="muscle" force="50.085" lengthrange="0.0281133 0.0563133"></muscle>
+    <muscle name="Mylohyoid_Ant" tendon="Mylohyoid_Ant_tendon" class="muscle" force="150.255" lengthrange=" 0.01274 0.0327399"></muscle>
+    <muscle name="Stylohyoid_Lat" tendon="Stylohyoid_Lat_tendon" class="muscle" force="18.41785714" lengthrange="0.0586194 0.0767582"></muscle>
+    <muscle name="Stylohyoid_Med" tendon="Stylohyoid_Med_tendon" class="muscle" force="18.41785714" lengthrange="0.0526939 0.0708326"></muscle>
+    <muscle name="Sterno_hyoid" tendon="Sterno_hyoid_tendon" class="muscle" force="54.81" lengthrange="  0.0689   0.1431"></muscle>
+    <muscle name="SternoThyroid" tendon="SternoThyroid_tendon" class="muscle" force="61.425" lengthrange="0.057525 0.119475"></muscle>
+    <muscle name="Omo_hyoid" tendon="Omo_hyoid_tendon" class="muscle" force="70.875" lengthrange="0.042575 0.0884249"></muscle>
+    <muscle name="digastric_post_L" tendon="digastric_post_L_tendon" class="muscle" force="109.62" lengthrange="0.0440663 0.063931"></muscle>
+    <muscle name="digastric_ant_L" tendon="digastric_ant_L_tendon" class="muscle" force="109.62" lengthrange="  0.0121 0.0262999"></muscle>
+    <muscle name="Geniohyoid_L" tendon="Geniohyoid_L_tendon" class="muscle" force="91.665" lengthrange=" 0.02257 0.0568699"></muscle>
+    <muscle name="Mylohyoid_Post_L" tendon="Mylohyoid_Post_L_tendon" class="muscle" force="50.085" lengthrange="0.0281133 0.0563133"></muscle>
+    <muscle name="Mylohyoid_Ant_L" tendon="Mylohyoid_Ant_L_tendon" class="muscle" force="150.255" lengthrange=" 0.01274 0.0327399"></muscle>
+    <muscle name="Stylohyoid_Lat_L" tendon="Stylohyoid_Lat_L_tendon" class="muscle" force="18.41785714" lengthrange="0.0586194 0.0767582"></muscle>
+    <muscle name="Stylohyoid_Med_L" tendon="Stylohyoid_Med_L_tendon" class="muscle" force="18.41785714" lengthrange="0.0526939 0.0708326"></muscle>
+    <muscle name="Sterno_hyoid_L" tendon="Sterno_hyoid_L_tendon" class="muscle" force="54.81" lengthrange="  0.0689   0.1431"></muscle>
+    <muscle name="SternoThyroid_L" tendon="SternoThyroid_L_tendon" class="muscle" force="61.425" lengthrange="0.057525 0.119475"></muscle>
+    <muscle name="Omo_hyoid_L" tendon="Omo_hyoid_L_tendon" class="muscle" force="70.875" lengthrange="0.042575 0.0884249"></muscle>
+    <muscle name="stern_mast" tendon="stern_mast_tendon" class="muscle" force="186.165" lengthrange="0.108283 0.212603"></muscle>
+    <muscle name="stern_mast_L" tendon="stern_mast_L_tendon" class="muscle" force="186.165" lengthrange="0.108283 0.212603"></muscle>
+    <muscle name="cleid_mast" tendon="cleid_mast_tendon" class="muscle" force="93.0825" lengthrange="0.0873579 0.191678"></muscle>
+    <muscle name="cleid_mast_L" tendon="cleid_mast_L_tendon" class="muscle" force="93.0825" lengthrange="0.0873579 0.191678"></muscle>
+    <muscle name="cleid_occ" tendon="cleid_occ_tendon" class="muscle" force="93.0825" lengthrange="0.121627 0.225947"></muscle>
+    <muscle name="cleid_occ_L" tendon="cleid_occ_L_tendon" class="muscle" force="93.0825" lengthrange="0.121627 0.225947"></muscle>
+    <muscle name="scalenus_ant" tendon="scalenus_ant_tendon" class="muscle" force="138.915" lengthrange="0.0741019 0.115464"></muscle>
+    <muscle name="scalenus_ant_L" tendon="scalenus_ant_L_tendon" class="muscle" force="138.915" lengthrange="0.0741019 0.115464"></muscle>
+    <muscle name="scalenus_med" tendon="scalenus_med_tendon" class="muscle" force="100.94" lengthrange="0.0861281 0.135369"></muscle>
+    <muscle name="scalenus_med_L" tendon="scalenus_med_L_tendon" class="muscle" force="100.94" lengthrange="0.0861281 0.135369"></muscle>
+    <muscle name="scalenus_post" tendon="scalenus_post_tendon" class="muscle" force="76.93" lengthrange="0.103374 0.164432"></muscle>
+    <muscle name="scalenus_post_L" tendon="scalenus_post_L_tendon" class="muscle" force="76.93" lengthrange="0.103374 0.164432"></muscle>
+    <muscle name="long_cap_sklc4" tendon="long_cap_sklc4_tendon" class="muscle" force="89.964" lengthrange="0.0602247  0.09808"></muscle>
+    <muscle name="long_cap_sklc4_L" tendon="long_cap_sklc4_L_tendon" class="muscle" force="89.964" lengthrange="0.0602247  0.09808"></muscle>
+    <muscle name="long_col_c1thx" tendon="long_col_c1thx_tendon" class="muscle" force="32.319" lengthrange="0.131914 0.220705"></muscle>
+    <muscle name="long_col_c1thx_L" tendon="long_col_c1thx_L_tendon" class="muscle" force="32.319" lengthrange="0.131914 0.220705"></muscle>
+    <muscle name="long_col_c1c5" tendon="long_col_c1c5_tendon" class="muscle" force="32.319" lengthrange="0.0531306 0.0889139"></muscle>
+    <muscle name="long_col_c1c5_L" tendon="long_col_c1c5_L_tendon" class="muscle" force="32.319" lengthrange="0.0531306 0.0889139"></muscle>
+    <muscle name="long_col_c5thx" tendon="long_col_c5thx_tendon" class="muscle" force="32.319" lengthrange="0.0834744 0.140835"></muscle>
+    <muscle name="long_col_c5thx_L" tendon="long_col_c5thx_L_tendon" class="muscle" force="32.319" lengthrange="0.0834744 0.140835"></muscle>
+    <muscle name="trap_cl" tendon="trap_cl_tendon" class="muscle" force="108.64" lengthrange="0.155595 0.228341"></muscle>
+    <muscle name="trap_cl_L" tendon="trap_cl_L_tendon" class="muscle" force="108.64" lengthrange="0.155595 0.228341"></muscle>
+    <muscle name="trap_acr" tendon="trap_acr_tendon" class="muscle" force="527.73" lengthrange="0.122582 0.214582"></muscle>
+    <muscle name="trap_acr_L" tendon="trap_acr_L_tendon" class="muscle" force="527.73" lengthrange="0.122582 0.214582"></muscle>
+    <muscle name="splen_cap_sklc6" tendon="splen_cap_sklc6_tendon" class="muscle" force="69.314" lengthrange="0.073513 0.168513"></muscle>
+    <muscle name="splen_cap_sklc6_L" tendon="splen_cap_sklc6_L_tendon" class="muscle" force="69.314" lengthrange="0.073513 0.168513"></muscle>
+    <muscle name="splen_cap_sklthx" tendon="splen_cap_sklthx_tendon" class="muscle" force="69.314" lengthrange="0.129361 0.224361"></muscle>
+    <muscle name="splen_cap_sklthx_L" tendon="splen_cap_sklthx_L_tendon" class="muscle" force="69.314" lengthrange="0.129361 0.224361"></muscle>
+    <muscle name="splen_cerv_c3thx" tendon="splen_cerv_c3thx_tendon" class="muscle" force="69.314" lengthrange="0.155938 0.250938"></muscle>
+    <muscle name="splen_cerv_c3thx_L" tendon="splen_cerv_c3thx_L_tendon" class="muscle" force="69.314" lengthrange="0.155938 0.250938"></muscle>
+    <muscle name="semi_cap_sklc5" tendon="semi_cap_sklc5_tendon" class="muscle" force="89.67" lengthrange="0.0804326 0.148174"></muscle>
+    <muscle name="semi_cap_sklc5_L" tendon="semi_cap_sklc5_L_tendon" class="muscle" force="89.67" lengthrange="0.0804326 0.148174"></muscle>
+    <muscle name="semi_cap_sklthx" tendon="semi_cap_sklthx_tendon" class="muscle" force="89.67" lengthrange="0.102761 0.170502"></muscle>
+    <muscle name="semi_cap_sklthx_L" tendon="semi_cap_sklthx_L_tendon" class="muscle" force="89.67" lengthrange="0.102761 0.170502"></muscle>
+    <muscle name="semi_cerv_c3thx" tendon="semi_cerv_c3thx_tendon" class="muscle" force="89.67" lengthrange="0.0612446 0.128986"></muscle>
+    <muscle name="semi_cerv_c3thx_L" tendon="semi_cerv_c3thx_L_tendon" class="muscle" force="89.67" lengthrange="0.0612446 0.128986"></muscle>
+    <muscle name="levator_scap" tendon="levator_scap_tendon" class="muscle" force="106.82" lengthrange="0.078375 0.191375"></muscle>
+    <muscle name="levator_scap_L" tendon="levator_scap_L_tendon" class="muscle" force="106.82" lengthrange="0.078375 0.191375"></muscle>
+    <muscle name="longissi_cap_sklc6" tendon="longissi_cap_sklc6_tendon" class="muscle" force="43.652" lengthrange="0.059871 0.131721"></muscle>
+    <muscle name="longissi_cap_sklc6_L" tendon="longissi_cap_sklc6_L_tendon" class="muscle" force="43.652" lengthrange="0.059871 0.131721"></muscle>
+    <muscle name="longissi_cerv_c4thx" tendon="longissi_cerv_c4thx_tendon" class="muscle" force="28.07" lengthrange="0.108235 0.240048"></muscle>
+    <muscle name="longissi_cerv_c4thx_L" tendon="longissi_cerv_c4thx_L_tendon" class="muscle" force="28.07" lengthrange="0.108235 0.240048"></muscle>
+    <muscle name="iliocost_cerv_c5rib" tendon="iliocost_cerv_c5rib_tendon" class="muscle" force="28.07" lengthrange="0.0661536 0.147049"></muscle>
+    <muscle name="iliocost_cerv_c5rib_L" tendon="iliocost_cerv_c5rib_L_tendon" class="muscle" force="28.07" lengthrange="0.0661536 0.147049"></muscle>
+    <muscle name="rectcap_post_maj" tendon="rectcap_post_maj_tendon" class="muscle" force="45.668" lengthrange="0.0412616 0.0781207"></muscle>
+    <muscle name="rectcap_post_maj_L" tendon="rectcap_post_maj_L_tendon" class="muscle" force="45.668" lengthrange="0.0412616 0.0781207"></muscle>
+    <muscle name="rectcap_post_min" tendon="rectcap_post_min_tendon" class="muscle" force="25.088" lengthrange="0.0263608 0.0452885"></muscle>
+    <muscle name="rectcap_post_min_L" tendon="rectcap_post_min_L_tendon" class="muscle" force="25.088" lengthrange="0.0263608 0.0452885"></muscle>
+    <muscle name="obl_cap_sup" tendon="obl_cap_sup_tendon" class="muscle" force="51.107" lengthrange="0.0327271 0.0573472"></muscle>
+    <muscle name="obl_cap_sup_L" tendon="obl_cap_sup_L_tendon" class="muscle" force="51.107" lengthrange="0.0327271 0.0573472"></muscle>
+    <muscle name="obl_cap_inf" tendon="obl_cap_inf_tendon" class="muscle" force="63.406" lengthrange="0.034607 0.0726069"></muscle>
+    <muscle name="obl_cap_inf_L" tendon="obl_cap_inf_L_tendon" class="muscle" force="63.406" lengthrange="0.034607 0.0726069"></muscle>
+  </actuator>
+  <equality>
+    <joint name="aux7jnt_r1_con" joint1="aux7jnt_r1" joint2="roll2" active="true" polycoef="-1.96262e-17  1.75641        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux7jnt_r2_con" joint1="aux7jnt_r2" joint2="yaw2" active="true" polycoef="-4.1413e-17  2.98412        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux7jnt_r3_con" joint1="aux7jnt_r3" joint2="pitch2" active="true" polycoef="       0  1.88889        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux6jnt_r1_con" joint1="aux6jnt_r1" joint2="roll2" active="true" polycoef="3.92523e-17  2.01282        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux6jnt_r2_con" joint1="aux6jnt_r2" joint2="yaw2" active="true" polycoef="-4.82417e-17  3.47618        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux6jnt_r3_con" joint1="aux6jnt_r3" joint2="pitch2" active="true" polycoef="       0  2.22221        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux5jnt_r1_con" joint1="aux5jnt_r1" joint2="roll2" active="true" polycoef="       0  2.76922        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux5jnt_r2_con" joint1="aux5jnt_r2" joint2="yaw2" active="true" polycoef="-4.82417e-17  3.47618        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux5jnt_r3_con" joint1="aux5jnt_r3" joint2="pitch2" active="true" polycoef="       0  2.22221        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux4jnt_r1_con" joint1="aux4jnt_r1" joint2="roll2" active="true" polycoef="       0  2.76922        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux4jnt_r2_con" joint1="aux4jnt_r2" joint2="yaw2" active="true" polycoef="-4.82417e-17  3.47618        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux4jnt_r3_con" joint1="aux4jnt_r3" joint2="pitch2" active="true" polycoef="-7.85046e-17  1.66666        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux3jnt_r1_con" joint1="aux3jnt_r1" joint2="roll2" active="true" polycoef="       0  2.51282        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux3jnt_r2_con" joint1="aux3jnt_r2" joint2="yaw2" active="true" polycoef="-2.07065e-17  1.49206        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux3jnt_r3_con" joint1="aux3jnt_r3" joint2="pitch2" active="true" polycoef="       0  1.11111        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux1jnt_r1_con" joint1="aux1jnt_r1" joint2="roll1" active="true" polycoef="7.85046e-17        1        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux1jnt_r2_con" joint1="aux1jnt_r2" joint2="yaw1" active="true" polycoef="       0 0.124859        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="aux1jnt_r3_con" joint1="aux1jnt_r3" joint2="pitch1" active="true" polycoef="-7.85046e-17  1.25225        0        0        0" solimp="0.9999 0.9999 0.001 0.5 2"></joint>
+    <joint name="spine_tz_constraint" active="true" joint1="spine_tz" polycoef="-7.30667e-19        0        0        0        0"></joint>
+    <joint name="spine_ty_constraint" active="true" joint1="spine_ty" polycoef="8.44526e-17        0        0        0        0"></joint>
+    <joint name="spine_tx_constraint" active="true" joint1="spine_tx" polycoef="-3.97872e-17        0        0        0        0"></joint>
+    <joint name="gndpitch_constraint" active="true" joint1="gndpitch" polycoef="7.35301e-11        0        0        0        0"></joint>
+    <joint name="gndroll_constraint" active="true" joint1="gndroll" polycoef="1.39669e-11        0        0        0        0"></joint>
+    <joint name="gndyaw_constraint" active="true" joint1="gndyaw" polycoef="7.7499e-12        0        0        0        0"></joint>
+    <weld name="origin_to_worldbody" body1="spine" active="false"></weld>
+  </equality>
+</mujoco>
