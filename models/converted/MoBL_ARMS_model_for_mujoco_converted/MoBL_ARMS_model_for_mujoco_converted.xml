@@ -15,7 +15,7 @@
       <general gainprm="5 0 0 0 0 0 0 0 0 0"></general>
     </default>
   </default>
-  <option timestep="0.002"></option>
+  <option timestep="0.002" collision="predefined"></option>
   <size njmax="1000" nconmax="400" nuser_jnt="1"></size>
   <worldbody>
     <geom name="floor" pos="0 0 0" size="10 10 0.125" type="plane" material="MatPlane" condim="3"></geom>
