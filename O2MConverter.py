@@ -13,6 +13,7 @@ from natsort import natsorted, ns
 from operator import itemgetter
 from sklearn.metrics import r2_score
 from collections import OrderedDict
+from scipy.optimize import minimize
 
 import Utils
 
@@ -41,7 +42,7 @@ class Converter:
         # These dictionaries (or list of dicts) are in MuJoCo style (when converted to XML)
         self.asset = dict()
         self.tendon = []
-        self.actuator = {"motor": [], "muscle": []}
+        self.actuator = {"general": [], "muscle": []}
         self.equality = {"joint": [], "weld": []}
 
         # Use mesh files if they are given
@@ -66,7 +67,7 @@ class Converter:
         self.coordinates = dict()
         self.asset = dict()
         self.tendon = []
-        self.actuator = {"motor": [], "muscle": []}
+        self.actuator = {"general": [], "muscle": []}
         self.equality = {"joint": [], "weld": []}
         self.origin_body = None
         self.origin_joint = None
@@ -117,8 +118,7 @@ class Converter:
         # (or actually a dict version of the model so we can use xmltodict to save the model into a XML file)
         mujoco_model = self.build_mujoco_model(p["OpenSimDocument"]["Model"]["@name"])
 
-        # If we're building this model for testing we need to disable collisions, add a camera for recording, and
-        # remove the floor
+        # Add a camera for testing
         mujoco_model["mujoco"]["worldbody"]["camera"] = {"@name": "for_testing", "@pos": "0 0 0", "@euler": "0 0 0"}
         if for_testing:
             mujoco_model["mujoco"]["option"]["@collision"] = "predefined"
@@ -184,17 +184,21 @@ class Converter:
                     polycoef[0] = coefs[1]
                     polycoef[1] = coefs[0]
 
+                    # Dummy linear fit function
+                    fit = np.polynomial.polynomial.Polynomial.fit([0, 1], [0, 1], 1)
+
                 else:
                     raise NotImplementedError
 
-                # Create a constraint
+                # Create a constraint; note that 'fit' needs to be removed since it's not a valid mujoco keyword/string
                 self.equality["joint"].append({
                     "@name": constraint["@name"],
                     "@joint1": constraint["dependent_coordinate_name"],
                     "@joint2": constraint["independent_coordinate_names"],
                     "@active": "true" if constraint["isDisabled"] == "false" else "false",
                     "@polycoef": Utils.array_to_string(polycoef),
-                    "@solimp": "0.9999 0.9999 0.001 0.5 2"})
+                    "@solimp": "0.9999 0.9999 0.001 0.5 2",
+                    "fit": fit})
 
     def parse_bodies_and_joints(self, p):
 
@@ -233,7 +237,7 @@ class Converter:
                 continue
             elif muscle_type not in \
                     ["Millard2012EquilibriumMuscle", "Thelen2003Muscle",
-                     "Schutte1993Muscle_Deprecated", "CoordinateActuator"]:
+                     "Schutte1993Muscle_Deprecated", "CoordinateActuator", "Millard2012AccelerationMuscle"]:
                 print("Skipping a force: {}".format(muscle_type))
                 continue
 
@@ -257,7 +261,7 @@ class Converter:
                     for body_name in m.path_point_set:
                         self.bodies[body_name].add_sites(m.path_point_set[body_name])
                 else:
-                    self.actuator["motor"].append(m.get_actuator())
+                    self.actuator["general"].append(m.get_actuator())
 
     def parse_coordinate_limit_forces(self, forces):
 
@@ -360,22 +364,18 @@ class Converter:
         # (that contain incorrect inertial properties or massless moving bodies)
         model["mujoco"]["compiler"] = {"@inertiafromgeom": "auto", "@angle": "radian", "@balanceinertia": "true",
                                        "@boundmass": "0.001", "@boundinertia": "0.001"}
-        model["mujoco"]["compiler"]["lengthrange"] = {"@inttotal": "500"}
+        model["mujoco"]["compiler"]["lengthrange"] = {"@inttotal": "50", "@useexisting": "true"}
         model["mujoco"]["default"] = {
-            "joint": {"@limited": "true", "@damping": "0.5", "@armature": "0.01", "@stiffness": "0"},
-            "geom": {"@contype": "1", "@conaffinity": "1", "@condim": "3", "@rgba": "0.8 0.6 .4 1",
-                     "@margin": "0.001", "@solref": ".02 1", "@solimp": ".8 .8 .01", "@material": "geom"},
+            "joint": {"@limited": "true", "@damping": "0.5", "@armature": "0.1", "@stiffness": "0"},
+            "geom": {"@rgba": "0.8 0.6 .4 1", "@margin": "0.001"},
             "site": {"@size": "0.001"},
             "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"}}
         model["mujoco"]["default"]["default"] = [
-            {"@class": "muscle", "muscle": {"@ctrllimited": "true", "@ctrlrange": "0 1", "@scale": "400"}},
-            {"@class": "motor", "motor": {"@gear": "20"}}
+            {"@class": "muscle", "muscle": {"@ctrllimited": "true", "@ctrlrange": "0 1", "@scale": "200"}},
+            {"@class": "motor", "general": {"@gainprm": "5 0 0 0 0 0 0 0 0 0"}}
             ]
-        model["mujoco"]["option"] = {"@timestep": "0.002", "flag": {"@energy": "enable"}}
+        model["mujoco"]["option"] = {"@timestep": "0.002"}
         model["mujoco"]["size"] = {"@njmax": "1000", "@nconmax": "400", "@nuser_jnt": 1}
-        model["mujoco"]["visual"] = {
-            "map": {"@fogstart": "3", "@fogend": "5", "@force": "0.1"},
-            "quality": {"@shadowsize": "2048"}}
 
         # Start building the worldbody
         worldbody = {"geom": {"@name": "floor", "@pos": "0 0 0", "@size": "10 10 0.125",
@@ -396,9 +396,8 @@ class Converter:
         worldbody["site"] = self.bodies[self.origin_joint.parent_body].sites
 
         # Add some more defaults
-        worldbody["body"] = {
-            "light": {"@mode": "trackcom", "@directional": "false", "@diffuse": ".8 .8 .8",
-                      "@specular": "0.3 0.3 0.3", "@pos": "0 0 4.0", "@dir": "0 0 -1"}}
+        worldbody["body"] = {"light":
+                                 {"@mode": "trackcom", "@directional": "false", "@pos": "0 0 4.0", "@dir": "0 0 -1"}}
 
         # Build the kinematic chains
         worldbody["body"] = self.add_body(worldbody["body"], self.origin_body,
@@ -414,15 +413,10 @@ class Converter:
         # Set some asset defaults
         self.asset["texture"] = [
             {"@name": "texplane", "@type": "2d", "@builtin": "checker", "@rgb1": ".2 .3 .4",
-             "@rgb2": ".1 0.15 0.2", "@width": "100", "@height": "100"},
-            {"@name": "texgeom", "@type": "cube", "@builtin": "flat", "@mark": "cross",
-             "@width": "127", "@height": "1278", "@rgb1": "0.8 0.6 0.4", "@rgb2": "0.8 0.6 0.4",
-             "@markrgb": "1 1 1", "@random": "0.01"}]
-
+             "@rgb2": ".1 0.15 0.2", "@width": "100", "@height": "100"}]
         self.asset["material"] = [
-            {"@name": "MatPlane", "@reflectance": "0.5", "@texture": "texplane",
-             "@texrepeat": "1 1", "@texuniform": "true"},
-            {"@name": "geom", "@texture": "texgeom", "@texuniform": "true"}]
+            {"@name": "MatPlane", "@reflectance": "0.0", "@texture": "texplane",
+             "@texrepeat": "1 1", "@texuniform": "true"}]
 
         # Add assets to model
         model["mujoco"]["asset"] = self.asset
@@ -432,10 +426,13 @@ class Converter:
         model["mujoco"]["actuator"] = self.actuator
 
         # Add equality constraints between joints; note that we may need to remove some equality constraints
-        # that were set in ConstraintSet but then overwritten or not used
+        # that were set in ConstraintSet but then overwritten or not used. While we're iterating through constraints
+        # we also need to remove the "fit" keyword which is not a mujoco keyword/string
         remove_idxs = []
         for idx, constraint in enumerate(self.equality["joint"]):
             constraint_found = False
+            if "fit" in constraint:
+                del constraint["fit"]
             for parent_body in self.joints:
                 for joint in self.joints[parent_body]:
                     for mujoco_joint in joint.mujoco_joints:
@@ -826,7 +823,10 @@ class Joint:
                         assert r2_score(y_values, y_fit) > 0.5, "A bad approximation of the SimmSpline"
 
                         # Update range as min/max of the approximated range
-                        params["range"] = np.array([min(y_fit), max(y_fit)])
+                        if "range" in params:
+                            params["range"] = fit(params["range"])
+                        else:
+                            params["range"] = np.array([min(y_fit), max(y_fit)])
 
                         # Make this into an identity mapping
                         t["function"] = dict({"LinearFunction": {"coefficients": '1 0'}})
@@ -834,9 +834,23 @@ class Joint:
                     elif Utils.is_nested_field(t, "LinearFunction", ["function"]):
                         coefficients = np.array(t["function"]["LinearFunction"]["coefficients"].split(), dtype=float)
                         assert abs(coefficients[0]) == 1 and coefficients[1] == 0, "Should we modify limits?"
+                        x_values = np.array([0, 1])
+                        y_values = np.array([0, 1])
+                        fit = np.polynomial.polynomial.Polynomial.fit(x_values, y_values, 1)
+                        y_fit = fit(x_values)
 
                     else:
                         raise NotImplementedError
+
+                    # Joint values may have been mapped to a different range already, need to update constraints
+                    if "joint" in constraints:
+                        for c in constraints["joint"]:
+                            if "@joint2" in c and params["name"] == c["@joint2"]:
+                                assert c["fit"].degree() == fit.degree(), "Degrees must match"
+                                fit = np.polynomial.polynomial.Polynomial.fit(y_fit, c["fit"](x_values), deg=c["fit"].degree())
+                                polycoef = np.zeros((5,))
+                                polycoef[:fit.coef.shape[0]] = fit.convert().coef
+                                c["@polycoef"] = Utils.array_to_string(polycoef)
 
                     # Mark this dof as designated
                     dof_designated.append(params["name"])
@@ -948,7 +962,7 @@ class Joint:
 
                         # We're handling only an identity transformation for now
                         coeffs = np.array(c["@polycoef"].split(), dtype=float)
-                        assert np.array_equal(coeffs, np.array([0, 1, 0, 0, 0])), \
+                        assert np.allclose(coeffs, np.array([0, 1, 0, 0, 0])), \
                             "We're handling only identity transformations for now"
 
                         break
@@ -1230,36 +1244,67 @@ class Muscle:
         self.name = obj["@name"]
         self.disabled = False if "isDisabled" not in obj or obj["isDisabled"] == "false" else True
 
+        # The default range is from https://web.ecs.baylor.edu/faculty/garner/Research/GarnerPandy2003ParamEst.pdf
+        self.range = [0.5, 1.5]
+
         # Parse time constants
-        self.timeconst = np.ones((2, 1))
-        self.timeconst.fill(np.nan)
+        activation1 = np.nan
+        activation2 = np.nan
         if "activation_time_constant" in obj:
-            self.timeconst[0] = obj["activation_time_constant"]
+            activation1 = obj["activation_time_constant"]
         elif "activation1" in obj:
-            self.timeconst[0] = obj["activation1"]
+            activation1 = obj["activation1"]
         if "deactivation_time_constant" in obj:
-            self.timeconst[1] = obj["deactivation_time_constant"]
+            activation2 = obj["deactivation_time_constant"]
         elif "activation2" in obj:
-            self.timeconst[1] = obj["activation2"]
+            activation2 = obj["activation2"]
+        if "MuscleFirstOrderActivationDynamicModel" in obj:
+            if "activation_time_constant" in obj["MuscleFirstOrderActivationDynamicModel"]:
+                activation1 = obj["MuscleFirstOrderActivationDynamicModel"]["activation_time_constant"]
+            if "deactivation_time_constant" in obj["MuscleFirstOrderActivationDynamicModel"]:
+                activation2 = obj["MuscleFirstOrderActivationDynamicModel"]["deactivation_time_constant"]
+        activation1 = np.float(activation1)
+        activation2 = np.float(activation2)
 
-        # TODO I'm not sure if this is what time_scale means, but activation/deactivation times seem very large otherwise
+        # Get time scale
+        time_scale = 1.0
         if "time_scale" in obj:
-            time_scale = np.array(obj["time_scale"].split(), dtype=float)
-            self.timeconst *= time_scale
+            time_scale = np.float(obj["time_scale"])
 
-        # TODO We're adding length ranges here because MuJoCo's automatic computation fails. Not sure how they should
-        # be calculated though, these values are most likely incorrect
-        # ==> this is possibly fixed, just needed to give longer simulation time for the automatic computation
-        self.length_range = np.array([0, 2])
-        if "tendon_slack_length" in obj:
-            self.tendon_slack_length = obj["tendon_slack_length"]
-            #self.length_range = np.array([0.025*float(self.tendon_slack_length), 40*float(self.tendon_slack_length)])
+        # This gives odd values some for models, let's just do it if time_scale is non-zero
+        if time_scale != 1.0:
+            # Linearize at act=0.5 ctrl=0.5 and calculate activation and deactivation time constants
+            # Time constant calculations a la Florian Fischer
+            act_linearization = ctrl_linearization = 0.5
+            time_act = time_scale / ((0.5 + 1.5 * act_linearization) * (activation1 * ctrl_linearization + activation2))
+            time_deact = time_scale * (0.5 + 1.5 * act_linearization) / activation2
+            self.timeconst = np.array([time_act, time_deact])
+        else:
+            self.timeconst = np.array([activation1, activation2])
+
+        # Get optimal fiber length, tendon slack length, and pennation angle
+        self.optimal_fiber_length = np.float(obj.get("optimal_fiber_length", np.nan))
+        self.tendon_slack_length = np.float(obj.get("tendon_slack_length", np.nan))
+        self.pennation_angle = np.float(obj.get("pennation_angle_at_optimal", np.nan))
+
+        # Estimate length range if optimal fiber length and tendon slack length are defined
+        if np.all(np.isfinite([self.optimal_fiber_length, self.tendon_slack_length])):
+            # Length range computations a la Florian Fischer
+            self.length_range = np.array([0.5, 2]) * self.tendon_slack_length
+
+            # Estimate actuator length ranges by minimizing error between mujoco and opensim optimal fiber length
+            sol = minimize(mujoco_LO_loss, self.length_range,
+                           args=(self.range, self.optimal_fiber_length, self.tendon_slack_length, self.pennation_angle))
+            if sol.success:
+                self.length_range = sol.x
+        else:
+            self.length_range = np.array([np.nan, np.nan])
 
         # Get damping for tendon -- not sure what the unit in OpenSim is, or how it relates to MuJoCo damping parameter
         self.tendon_damping = obj.get("damping", None)
 
-        # Let's use max isometric force as an approximation for muscle scale parameter in MuJoCo
-        self.scale = obj.get("max_isometric_force", None)
+        # Let's use max isometric force as an approximation for peak active force at rest
+        self.force = obj.get("max_isometric_force", None)
 
         # Parse control limits
         self.limit = np.ones((2, 1))
@@ -1303,12 +1348,15 @@ class Muscle:
 
                     elif pp_type == "ConditionalPathPoint":
 
-                        # We're ignoring ConditionalPathPoints for now
-                        continue
+                        # Treat this is a fixed PathPoint, not kosher
+                        print("Approximating a ConditionalPathPoint with a fixed PathPoint")
+                        self.path_point_set[path_point["body"]].append(path_point)
+                        self.sites.append({"@site": path_point["@name"]})
 
                     elif pp_type == "MovingPathPoint":
 
                         # We treat this as a fixed PathPoint, definitely not kosher
+                        print("Approximating a MovingPathPoint with a fixed PathPoint")
 
                         # Get path point location
                         if "location" not in path_point:
@@ -1379,10 +1427,10 @@ class Muscle:
     def get_tendon(self):
         # Return MuJoCo tendon representation of this muscle
         tendon = {"@name": self.name + "_tendon", "site": self.sites}
-        if self.tendon_slack_length is not None:
-            tendon["@springlength"] = self.tendon_slack_length
-        if self.tendon_damping is not None:
-            tendon["@damping"] = self.tendon_damping
+        #if self.tendon_slack_length is not None:
+        #    tendon["@springlength"] = self.tendon_slack_length
+        #if self.tendon_damping is not None:
+        #    tendon["@damping"] = self.tendon_damping
         return tendon
 
     def get_actuator(self):
@@ -1391,19 +1439,23 @@ class Muscle:
         if self.is_muscle:
             actuator["@tendon"] = self.name + "_tendon"
             actuator["@class"] = "muscle"
-            #actuator["@lengthrange"] = Utils.array_to_string(self.length_range)
 
             # Set timeconst
             if np.all(np.isfinite(self.timeconst)):
                 actuator["@timeconst"] = Utils.array_to_string(self.timeconst)
+
+            # Set max peak force at rest
+            if self.force is not None:
+                actuator["@force"] = self.force
+
+            # Set estimated actuator length ranges
+            if np.all(np.isfinite(self.length_range)):
+                actuator["@lengthrange"] = Utils.array_to_string(self.length_range)
+
         else:
             #actuator["@gear"] = self.optimal_force
             actuator["@joint"] = self.coordinate
             actuator["@class"] = "motor"
-
-        # Set scale
-        #if self.scale is not None:
-        #    actuator["@scale"] = str(self.scale)
 
         # Set ctrl limit
         if np.all(np.isfinite(self.limit)):
@@ -1415,6 +1467,36 @@ class Muscle:
     def is_disabled(self):
         return self.disabled
 
+def mujoco_LO_loss(length_range, range, optimal_fiber_length, tendon_slack_length, pennation_angle):
+    """
+    Computes squared Euclidean distance between MuJoCo and OpenSim model,
+    regarding both optimal fiber length and constant tendon length/tendon slack length.
+
+    Original code for this function was provided by Florian Fischer (2022)
+
+    :param length_range: array of MuJoCo tendon length (=complete actuator length) ranges
+    :param range: Operating length of muscle
+    :param optimal_fiber_length: OpenSim optimal fiber length
+    :param tendon_slack_length: OpenSim tendon slack length (or any reasonable constant tendon lengths)
+    :param pennation_angle: OpenSim pennation angle at optimum
+            (i.e., angle between tendon and fibers at optimal fiber length expressed in radians)
+    :param use_optPennationAngle: Boolean; if this set to True, MuJoCo optimal fiber lengths LO should match
+            OpenSim optimal fiber lengths LO_osim * cos(OpenSim pennation angle at optimum); otherwise, LO should match LO_osim
+    :return: squared (unweighted) Euclidean distance of optimal fiber length and constant tendon lengths between MuJoCo and OpenSim
+    """
+    LO = estimate_fiber_length(length_range, range)
+    LT = estimate_tendon_slack_length(length_range, range)
+
+    if np.isnan(pennation_angle):
+        pennation_angle = 0
+
+    return np.linalg.norm(LO - optimal_fiber_length * np.cos(pennation_angle)) ** 2 + np.linalg.norm(LT - tendon_slack_length) ** 2
+
+def estimate_fiber_length(length_range, range):
+    return (length_range[0] - length_range[1]) / (range[0] - range[1])
+
+def estimate_tendon_slack_length(length_range, range):
+    return length_range[0] - range[0] * estimate_fiber_length(length_range, range)
 
 def main(argv):
     converter = Converter()
