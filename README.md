@@ -39,6 +39,8 @@ Easiest way to run the converter is to use conda to create the environment from 
 
 ## How to optimize converted model's parameters (for a new model)
 
+- **NOTE (added 2022 July)** This parameter optimization approach may be partially outdated (e.g. some function input parameters may have changed etc). Use at your own risk. Also note that this approach is intended to be used only on models that are fixed in air (like the MoBL ARMS model)
+
 - Use conda to create the environment from *conda_env_for_testing.yml*. Note that this installs MuJoCo, and you must have set the environment variable *MUJOCO_PY_MJKEY_PATH* (pointing to your MuJoCo license file) prior to creating the environment.
 
 - Convert the OpenSim model as instructed above, but this time input *true* as fourth argument to O2MConverter.py. This disables contacts in the MuJoCo model since they are disabled in OpenSim forward simulations also.
