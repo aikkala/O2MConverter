@@ -4,7 +4,7 @@
     <lengthrange inttotal="50" useexisting="true"></lengthrange>
   </compiler>
   <default>
-    <joint limited="true" damping="0.5" armature="0.1" stiffness="0"></joint>
+    <joint limited="true" damping="0.5" armature="0.1" stiffness="2"></joint>
     <geom rgba="0.8 0.6 .4 1" margin="0.001"></geom>
     <site size="0.001"></site>
     <tendon width="0.001" rgba=".95 .3 .3 1" limited="false"></tendon>

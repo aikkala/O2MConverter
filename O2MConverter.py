@@ -366,7 +366,7 @@ class Converter:
                                        "@boundmass": "0.001", "@boundinertia": "0.001"}
         model["mujoco"]["compiler"]["lengthrange"] = {"@inttotal": "50", "@useexisting": "true"}
         model["mujoco"]["default"] = {
-            "joint": {"@limited": "true", "@damping": "0.5", "@armature": "0.1", "@stiffness": "0"},
+            "joint": {"@limited": "true", "@damping": "0.5", "@armature": "0.1", "@stiffness": "2"},
             "geom": {"@rgba": "0.8 0.6 .4 1", "@margin": "0.001"},
             "site": {"@size": "0.001"},
             "tendon": {"@width": "0.001", "@rgba": ".95 .3 .3 1", "@limited": "false"}}
