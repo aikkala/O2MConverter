@@ -253,7 +253,7 @@ def main(model_name):
     # Load test data
     env = EnvFactory.get(model_name)
     with open(env.data_file, 'rb') as f:
-        params, data, train_idxs, test_idxs = pickle.load(f)
+        data, train_idxs, test_idxs = pickle.load(f)
 
     # Create a folder for output figures if it doesn't exist
     output_folder = os.path.join(env.output_folder, '..', 'figures')

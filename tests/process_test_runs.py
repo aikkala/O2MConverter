@@ -16,7 +16,7 @@ def calculate_joint_errors(env, viewer, sim, data, target_state_indices, initial
         print(run_idx)
 
         # Get data for this run
-        states = data[run_idx]["states"]
+        qpos = data[run_idx]["qpos"]
         controls = data[run_idx]["controls"]
         timestep = data[run_idx]["timestep"]
         run = data[run_idx]["run"]
@@ -25,10 +25,10 @@ def calculate_joint_errors(env, viewer, sim, data, target_state_indices, initial
         os.makedirs(os.path.join(env.output_folder, run), exist_ok=True)
 
         # Initialise sim
-        Utils.initialise_simulation(sim, timestep, initial_states)
+        Utils.initialise_simulation(sim, initial_states, timestep)
 
         # Run simulation
-        qpos = Utils.run_simulation(
+        sim_data = Utils.run_simulation(
             sim, controls, viewer=viewer,
             output_video_file=os.path.join(env.output_folder, run, "{}.mp4".format(condition)))
 
@@ -36,8 +36,8 @@ def calculate_joint_errors(env, viewer, sim, data, target_state_indices, initial
         timesteps = np.arange(timestep, (controls.shape[0]+1)*timestep, timestep)
 
         # Calculate joint errors
-        run_err = Utils.estimate_joint_error(states, qpos[:, target_state_indices], plot=True,
-                                             joint_names=env.target_states, timesteps=timesteps,
+        run_err = Utils.estimate_error(qpos, sim_data["qpos"][:, target_state_indices], plot=True,
+                                             target_names=env.target_states, timesteps=timesteps,
                                              output_file=os.path.join(env.output_folder, run,
                                                                       "{}.png".format(condition)),
                                              error="MAE")
@@ -77,7 +77,8 @@ def run_mujoco_simulations(env, params, test_data, output_folder):
     calculate_joint_errors(env, viewer, sim, test_data, target_state_indices, initial_states, "default_parameters")
 
     # Set parameters and calculate errors again
-    Utils.set_parameters(model, params["parameters"], params["muscle_idxs"], params["joint_idxs"])
+    #Utils.set_parameters(model, params["parameters"], params["muscle_idxs"], params["joint_idxs"])
+    params.set_values_to_model(model)
     calculate_joint_errors(env, viewer, sim, test_data, target_state_indices, initial_states, "optimized_parameters")
 
 
@@ -86,7 +87,9 @@ def main(model_name):
     # Load test data
     env = EnvFactory.get(model_name)
     with open(env.data_file, 'rb') as f:
-        params, data, train_idxs, test_idxs = pickle.load(f)
+        data, train_idxs, test_idxs = pickle.load(f)
+    with open(env.params_file, 'rb') as f:
+        params, history = pickle.load(f)
 
     # Create a folder for output figures if it doesn't exist
     output_folder = os.path.join(env.output_folder, '..', 'figures')
@@ -100,10 +103,11 @@ def main(model_name):
 
     # Save data again with default and optimized parameter errors
     Utils.save_data(env.data_file, [params, data, train_idxs, test_idxs])
+    with open(env.data_file, 'wb') as f:
+        pickle.dump([data, train_idxs, test_idxs], f)
 
     # Record opensim videos
     tests.run_opensim_simulations.run_forward_dynamics(env, [t["run"] for t in test_data], True)
-
 
 if __name__ == "__main__":
     main(*sys.argv[1:])
