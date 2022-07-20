@@ -1306,6 +1306,13 @@ class Muscle:
         # Let's use max isometric force as an approximation for peak active force at rest
         self.force = obj.get("max_isometric_force", None)
 
+        # Let's use max isometric force as max in forcerange.
+        self.forcerange = np.ones((2, 1))
+        self.forcerange.fill(np.nan)
+        if "max_isometric_force" in obj:
+            self.forcerange[1] = obj["max_isometric_force"]
+            
+            
         # Parse control limits
         self.limit = np.ones((2, 1))
         self.limit.fill(np.nan)
@@ -1448,6 +1455,10 @@ class Muscle:
             if self.force is not None:
                 actuator["@force"] = self.force
 
+            # Set max peak force at rest
+            if self.forcerange is not None:
+                actuator["@forcerange"] = Utils.array_to_string(self.forcerange)
+                
             # Set estimated actuator length ranges
             if np.all(np.isfinite(self.length_range)):
                 actuator["@lengthrange"] = Utils.array_to_string(self.length_range)
