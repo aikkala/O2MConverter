@@ -1263,12 +1263,12 @@ class Muscle:
                 activation1 = obj["MuscleFirstOrderActivationDynamicModel"]["activation_time_constant"]
             if "deactivation_time_constant" in obj["MuscleFirstOrderActivationDynamicModel"]:
                 activation2 = obj["MuscleFirstOrderActivationDynamicModel"]["deactivation_time_constant"]
-        activation1 = np.float(activation1)
-        activation2 = np.float(activation2)
+        activation1 = np.nan if np.float(activation1) == 0 else np.float(activation1)
+        activation2 = np.nan if np.float(activation2) == 0 else np.float(activation2)
 
         # Get time scale
         time_scale = 1.0
-        if "time_scale" in obj:
+        if "time_scale" in obj and np.float(obj["time_scale"]) != 0:
             time_scale = np.float(obj["time_scale"])
 
         # This gives odd values some for models, let's just do it if time_scale is non-zero
