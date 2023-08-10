@@ -1,5 +1,9 @@
 # OpenSim to MuJoCo XML converter
 
+| :exclamation:  This project is deprecated, but the development continues in [MyoConverter](https://github.com/MyoHub/myoconverter). |
+|-------------------------------------------------------------------------------------------------------------------------------------|
+
+
 If you use these converted MuJoCo models in your research, please cite ["Converting Biomechanical Models from OpenSim to MuJoCo"](https://arxiv.org/abs/2006.10618), as well as the original models. The converted models, and the original ones, are available for academic and other non-commercial use (check the references given in table below for licenses of original models).
 
 Disclaimer: I started writing this code when I was still learning MuJoCo and OpenSim, and therefore the code logic is subpar at some places and could use a little update.
