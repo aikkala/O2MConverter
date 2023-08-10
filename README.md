@@ -1,6 +1,6 @@
 # OpenSim to MuJoCo XML converter
 
-| :exclamation:  This project is deprecated, but the development continues in [MyoConverter](https://github.com/MyoHub/myoconverter). |
+| :exclamation: **IMPORTANT!** This project is deprecated, but the development continues in [MyoConverter](https://github.com/MyoHub/myoconverter). Please use MyoConverter for your model conversion needs. |
 |-------------------------------------------------------------------------------------------------------------------------------------|
 
 
